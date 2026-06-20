@@ -25,4 +25,14 @@ public sealed class ChatResponse
     public int OutputTokens { get; init; }
 }
 
-public readonly record struct ChatChunk(string Delta, bool IsToolCall, string? ToolCallId, string? ToolCallName);
+/// <summary>
+/// A chunk from a streaming chat response. Text deltas arrive as Delta.
+/// Tool call fragments arrive with IsToolCall = true.
+/// </summary>
+public readonly record struct ChatChunk(
+    string Delta,
+    bool IsToolCall,
+    int ToolCallIndex,
+    string? ToolCallId,
+    string? ToolCallName,
+    string? ToolCallArguments);

@@ -2,18 +2,19 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:IsaacAgent.App.ViewModels"
         x:Class="IsaacAgent.App.Views.MainWindow"
-        Title="IsaacAgent — Binding of Isaac Modding Assistant"
+        Title="IsaacAgent - Binding of Isaac Modding Assistant"
         Width="1200" Height="800"
         WindowState="Maximized"
         x:DataType="vm:MainViewModel">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <!-- Menu Bar -->
         <Menu Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltMediumBrush}">
             <MenuItem Header="File">
                 <MenuItem Header="New Project..." Command="{Binding NewProjectAsyncCommand}" />
                 <MenuItem Header="Open Project..." Command="{Binding OpenProjectAsyncCommand}" />
+                <Separator />
+                <MenuItem Header="Settings..." Click="OnSettings" />
                 <Separator />
                 <MenuItem Header="Exit" Click="OnExit" />
             </MenuItem>
@@ -25,10 +26,8 @@
             </MenuItem>
         </Menu>
 
-        <!-- Main Content: 3-column layout -->
         <Grid Grid.Row="1" ColumnDefinitions="250,*,300">
 
-            <!-- Left: Project Files -->
             <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,1,0">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Project Files"
@@ -39,7 +38,7 @@
                              Margin="0,8,0,0"
                              Background="Transparent">
                         <ListBox.ItemTemplate>
-                            <DataTemplate>
+                            <DataTemplate x:DataType="vm:FileTreeItem">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <TextBlock Text="Lua" Foreground="#569CD6"
                                                IsVisible="{Binding IsLua}"
@@ -55,10 +54,8 @@
                 </DockPanel>
             </Border>
 
-            <!-- Center: Chat -->
             <Border Grid.Column="1" Padding="8">
                 <DockPanel>
-                    <!-- Chat Messages -->
                     <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding Chat.Messages}" Padding="8">
                             <ItemsControl.ItemsPanel>
@@ -67,7 +64,7 @@
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate>
+                                <DataTemplate x:DataType="vm:ChatMessageViewModel">
                                     <Border CornerRadius="8" Padding="12,8"
                                             Background="{Binding BackgroundBrush}"
                                             HorizontalAlignment="{Binding HorizontalAlign}">
@@ -85,9 +82,8 @@
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <!-- Input -->
                     <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0">
-                        <Grid ColumnDefinitions="*,Auto">
+                        <Grid ColumnDefinitions="*,Auto,Auto">
                             <TextBox Grid.Column="0"
                                      Text="{Binding Chat.InputText}"
                                      Watermark="Ask about Isaac modding..."
@@ -100,12 +96,17 @@
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Stretch"
                                     IsEnabled="{Binding !Chat.IsGenerating}" />
+                            <Button Grid.Column="2"
+                                    Content="Cancel"
+                                    Command="{Binding Chat.CancelCommand}"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Stretch"
+                                    IsVisible="{Binding Chat.IsGenerating}" />
                         </Grid>
                     </Border>
                 </DockPanel>
             </Border>
 
-            <!-- Right: API Reference Quick Access -->
             <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1,0,0,0">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="Quick Reference"
@@ -140,7 +141,6 @@
             </Border>
         </Grid>
 
-        <!-- Status Bar -->
         <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltMediumBrush}" Padding="10,4">
             <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.7" />
         </Border>

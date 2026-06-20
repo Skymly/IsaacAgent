@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using Avalonia.Layout;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.Agent.Engine;
@@ -13,7 +15,8 @@ public sealed partial class ChatViewModel : ObservableObject
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<ChatViewModel> _logger;
-    private AgentSession? _session;
+    private AgentSession _session;
+    private CancellationTokenSource? _cts;
 
     [ObservableProperty]
     private string _inputText = "";
@@ -27,14 +30,7 @@ public sealed partial class ChatViewModel : ObservableObject
     {
         _services = services;
         _logger = logger;
-    }
-
-    public void InitializeSession(string? projectDir)
-    {
-        var chat = _services.GetRequiredService<IChatService>();
-        var tools = _services.GetRequiredService<ToolRegistry>();
-        _session = new AgentSession(chat, tools, projectDir,
-            _services.GetRequiredService<ILogger<AgentSession>>());
+        _session = services.GetRequiredService<AgentSession>();
 
         _session.OnToolCall += (name, args) =>
         {
@@ -42,7 +38,7 @@ public sealed partial class ChatViewModel : ObservableObject
                 Messages.Add(new ChatMessageViewModel
                 {
                     Role = "tool",
-                    Content = $"🔧 {name}: {args}",
+                    Content = $"\U0001f527 {name}: {args}",
                     IsToolCall = true
                 }));
         };
@@ -57,16 +53,33 @@ public sealed partial class ChatViewModel : ObservableObject
                     IsToolResult = true
                 }));
         };
+
+        _session.OnError += (err) =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                Messages.Add(new ChatMessageViewModel
+                {
+                    Role = "error",
+                    Content = $"Error: {err}"
+                }));
+        };
+    }
+
+    public void OnProjectChanged(string? projectDir)
+    {
+        _session.SetProjectDirectory(projectDir);
+        Messages.Clear();
     }
 
     [RelayCommand]
     private async Task SendAsync()
     {
         if (string.IsNullOrWhiteSpace(InputText) || IsGenerating) return;
-        if (_session is null) return;
 
         var userMsg = InputText.Trim();
         InputText = "";
+
+        _cts = new CancellationTokenSource();
         IsGenerating = true;
 
         Messages.Add(new ChatMessageViewModel { Role = "user", Content = userMsg });
@@ -76,10 +89,14 @@ public sealed partial class ChatViewModel : ObservableObject
             var assistantMsg = new ChatMessageViewModel { Role = "assistant", Content = "" };
             Messages.Add(assistantMsg);
 
-            await foreach (var chunk in _session.SendMessageAsync(userMsg))
+            await foreach (var chunk in _session.SendMessageAsync(userMsg, _cts.Token))
             {
                 assistantMsg.Content += chunk;
             }
+        }
+        catch (OperationCanceledException)
+        {
+            Messages.Add(new ChatMessageViewModel { Role = "system", Content = "(cancelled)" });
         }
         catch (Exception ex)
         {
@@ -93,13 +110,21 @@ public sealed partial class ChatViewModel : ObservableObject
         finally
         {
             IsGenerating = false;
+            _cts?.Dispose();
+            _cts = null;
         }
+    }
+
+    [RelayCommand]
+    private void Cancel()
+    {
+        _cts?.Cancel();
     }
 
     public void ClearMessages()
     {
         Messages.Clear();
-        _session?.ClearHistory();
+        _session.ClearHistory();
     }
 }
 
@@ -116,4 +141,29 @@ public sealed partial class ChatMessageViewModel : ObservableObject
     public bool IsToolCall { get; set; }
     public bool IsToolResult { get; set; }
     public bool IsError => Role == "error";
+    public bool IsSystem => Role == "system";
+
+    public string RoleLabel => Role switch
+    {
+        "user" => "You",
+        "assistant" => "IsaacAgent",
+        "tool" => "Tool Call",
+        "tool_result" => "Tool Result",
+        "error" => "Error",
+        "system" => "System",
+        _ => Role
+    };
+
+    public IBrush BackgroundBrush => Role switch
+    {
+        "user" => new SolidColorBrush(Color.Parse("#1e4d8b")),
+        "assistant" => new SolidColorBrush(Color.Parse("#2d2d30")),
+        "tool" => new SolidColorBrush(Color.Parse("#3d3520")),
+        "tool_result" => new SolidColorBrush(Color.Parse("#1a3a1a")),
+        "error" => new SolidColorBrush(Color.Parse("#5c1a1a")),
+        "system" => new SolidColorBrush(Color.Parse("#3a3a3a")),
+        _ => new SolidColorBrush(Color.Parse("#2d2d30"))
+    };
+
+    public HorizontalAlignment HorizontalAlign => Role == "user" ? HorizontalAlignment.Right : HorizontalAlignment.Left;
 }

@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using IsaacAgent.App.ViewModels;
+using IsaacAgent.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace IsaacAgent.App.Views;
@@ -32,6 +33,15 @@ public sealed partial class MainWindow : Window
     }
 
     private void OnExit(object? sender, RoutedEventArgs e) => Close();
+
+    private void OnSettings(object? sender, RoutedEventArgs e)
+    {
+        var dialog = new SettingsWindow
+        {
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        dialog.ShowDialog(this);
+    }
 
     private void OnAbout(object? sender, RoutedEventArgs e)
     {

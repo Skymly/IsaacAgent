@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
+using IsaacAgent.Tools.Implementations;
 using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.Agent.Engine;
@@ -12,6 +13,8 @@ public sealed class ToolRegistry
 
     public ToolRegistry(ILogger<ToolRegistry> logger) => _logger = logger;
 
+    public string? CurrentProjectDir { get; private set; }
+
     public void Register(ITool tool)
     {
         if (!_tools.TryAdd(tool.Name, tool))
@@ -22,6 +25,32 @@ public sealed class ToolRegistry
     {
         foreach (var tool in tools)
             Register(tool);
+    }
+
+    public void ReconfigureForProject(string? projectDir)
+    {
+        CurrentProjectDir = projectDir;
+        _tools.Clear();
+
+        RegisterAll([
+            new SearchApiTool(),
+            new GetCallbackInfoTool(),
+            new GetClassInfoTool()
+        ]);
+
+        if (!string.IsNullOrEmpty(projectDir))
+        {
+            Directory.CreateDirectory(projectDir);
+            RegisterAll([
+                new ReadFileTool(projectDir),
+                new WriteFileTool(projectDir),
+                new ListFilesTool(projectDir),
+                new DiagnoseLuaTool(projectDir),
+                new ScaffoldModTool(projectDir)
+            ]);
+        }
+
+        _logger.LogInformation("ToolRegistry reconfigured for project: {ProjectDir}", projectDir ?? "(none)");
     }
 
     public ITool? Get(string name) => _tools.TryGetValue(name, out var tool) ? tool : null;

@@ -28,20 +28,26 @@ public sealed partial class MainViewModel : ObservableObject
         _logger = logger;
         Chat = services.GetRequiredService<ChatViewModel>();
         Project = services.GetRequiredService<ProjectViewModel>();
+
+        Project.ProjectLoaded += path =>
+        {
+            Chat.OnProjectChanged(path);
+            StatusText = string.IsNullOrEmpty(path)
+                ? "No project"
+                : $"Project: {Project.ProjectName}";
+        };
     }
 
     [RelayCommand]
     private async Task NewProjectAsync()
     {
         await Project.CreateNewProjectCommand.ExecuteAsync(null);
-        StatusText = $"Project: {Project.ProjectName}";
     }
 
     [RelayCommand]
     private async Task OpenProjectAsync()
     {
         await Project.OpenProjectCommand.ExecuteAsync(null);
-        StatusText = $"Project: {Project.ProjectName}";
     }
 
     [RelayCommand]

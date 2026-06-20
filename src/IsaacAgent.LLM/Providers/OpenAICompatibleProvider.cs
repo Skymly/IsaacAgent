@@ -71,19 +71,31 @@ public sealed class OpenAICompatibleProvider : IChatService
             var delta = doc.RootElement.GetProperty("choices")[0].GetProperty("delta");
 
             var content = delta.TryGetProperty("content", out var c) ? c.GetString() : null;
+
             string? toolCallId = null;
             string? toolCallName = null;
+            string? toolCallArgs = null;
+            var toolCallIndex = -1;
+            var isToolCall = false;
 
             if (delta.TryGetProperty("tool_calls", out var tc) && tc.GetArrayLength() > 0)
             {
                 var first = tc[0];
+                isToolCall = true;
+                toolCallIndex = first.TryGetProperty("index", out var idx) ? idx.GetInt32() : 0;
                 toolCallId = first.TryGetProperty("id", out var id) ? id.GetString() : null;
-                if (first.TryGetProperty("function", out var fn) && fn.TryGetProperty("name", out var name))
-                    toolCallName = name.GetString();
+                if (first.TryGetProperty("function", out var fn))
+                {
+                    toolCallName = fn.TryGetProperty("name", out var name) ? name.GetString() : null;
+                    toolCallArgs = fn.TryGetProperty("arguments", out var args) ? args.GetString() : null;
+                }
             }
 
-            if (content is not null || toolCallName is not null)
-                yield return new ChatChunk(content ?? "", toolCallName is not null, toolCallId, toolCallName);
+            if (content is not null)
+                yield return new ChatChunk(content, false, -1, null, null, null);
+
+            if (isToolCall)
+                yield return new ChatChunk("", true, toolCallIndex, toolCallId, toolCallName, toolCallArgs);
         }
     }
 

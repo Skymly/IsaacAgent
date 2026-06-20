@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using IsaacAgent.Agent;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
@@ -43,12 +44,15 @@ public sealed class App : Application
         }));
 
         var config = AppConfiguration.Load();
+        services.AddSingleton(config);
         services.AddLlmProvider(new(
             config.ProviderType,
             config.Endpoint,
             config.Model,
             config.ApiKey
         ));
+
+        services.AddIsaacAgent();
 
         services.AddSingleton<MainWindow>();
         services.AddSingleton<MainViewModel>();

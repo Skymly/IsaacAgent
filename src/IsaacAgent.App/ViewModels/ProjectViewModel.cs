@@ -25,6 +25,8 @@ public sealed partial class ProjectViewModel : ObservableObject
 
     public Func<Task<IStorageFolder?>>? PickFolderAsync { get; set; }
 
+    public event Action<string?>? ProjectLoaded;
+
     public ProjectViewModel(ILogger<ProjectViewModel> logger, AppConfiguration config)
     {
         _logger = logger;
@@ -35,45 +37,34 @@ public sealed partial class ProjectViewModel : ObservableObject
     private async Task CreateNewProjectAsync()
     {
         if (PickFolderAsync is null) return;
-
         var folder = await PickFolderAsync();
         if (folder is null) return;
-
-        var path = folder.Path.LocalPath;
-        _logger.LogInformation("Creating new project in {Path}", path);
-
-        ProjectPath = path;
-        ProjectName = Path.GetFileName(path);
-        HasProject = true;
-        RefreshFiles();
+        LoadProject(folder.Path.LocalPath);
     }
 
     [RelayCommand]
     private async Task OpenProjectAsync()
     {
         if (PickFolderAsync is null) return;
-
         var folder = await PickFolderAsync();
         if (folder is null) return;
-
         LoadProject(folder.Path.LocalPath);
     }
 
     public void LoadProject(string path)
     {
         if (!Directory.Exists(path)) return;
-
         ProjectPath = path;
         ProjectName = Path.GetFileName(path);
         HasProject = true;
         RefreshFiles();
+        ProjectLoaded?.Invoke(path);
     }
 
     private void RefreshFiles()
     {
         Files.Clear();
         if (string.IsNullOrEmpty(ProjectPath)) return;
-
         try
         {
             var files = Directory.GetFiles(ProjectPath, "*", SearchOption.AllDirectories);
