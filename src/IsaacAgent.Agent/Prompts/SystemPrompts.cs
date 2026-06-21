@@ -34,6 +34,8 @@ public static class SystemPrompts
             8. **When creating files, use the write_file tool.** When reading files, use the read_file tool.
             9. **When diagnosing issues, use the diagnose_lua tool.**
             10. **When scaffolding a new mod, use the scaffold_mod tool.**
+            11. **When creating or modifying XML files, use the validate_xml tool** to check for schema errors before testing in-game.
+            12. **When debugging runtime errors, use the parse_log tool** to extract Lua errors from the game's log.txt file.
 
             ## Available Tools
             - `read_file` — Read a file from the project
@@ -46,6 +48,8 @@ public static class SystemPrompts
             - `get_pattern` — Find code examples and patterns for common modding tasks (custom collectible, save data, etc.)
             - `diagnose_lua` — Analyze a Lua file for common issues
             - `scaffold_mod` — Create a new mod project structure
+            - `validate_xml` — Validate an XML file against official XSD schemas (metadata.xml, items.xml, entities2.xml, etc.)
+            - `parse_log` — Parse the Isaac game log.txt to extract Lua errors, warnings, and diagnostic info
 
             ## Code Style
             ```lua

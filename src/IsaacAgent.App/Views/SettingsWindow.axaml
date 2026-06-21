@@ -1,9 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:IsaacAgent.App.ViewModels"
+        xmlns:conv="using:IsaacAgent.App.Converters"
         x:Class="IsaacAgent.App.Views.SettingsWindow"
         Title="Settings"
-        Width="500" Height="400"
+        Width="540" Height="640"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         x:DataType="vm:SettingsViewModel">
@@ -13,7 +14,8 @@
         <ScrollViewer Grid.Row="0">
             <StackPanel Spacing="12">
 
-                <TextBlock Text="LLM Provider" FontWeight="SemiBold" />
+                <!-- LLM Section -->
+                <TextBlock Text="LLM Provider" FontWeight="Bold" FontSize="14" />
                 <ComboBox SelectedItem="{Binding SelectedProviderType}"
                           ItemsSource="{Binding ProviderTypes}" />
 
@@ -26,7 +28,33 @@
                 <TextBlock Text="API Key" FontWeight="SemiBold" />
                 <TextBox Text="{Binding ApiKey}" Watermark="sk-..." PasswordChar="*" />
 
-                <TextBlock Text="Note: Changes require restarting the application to take effect."
+                <Separator Height="1" Margin="0,8" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+
+                <!-- RAG / Embedding Section -->
+                <TextBlock Text="Knowledge Base (RAG)" FontWeight="Bold" FontSize="14" />
+                <TextBlock Text="Embedding Source" FontWeight="SemiBold" />
+                <ComboBox SelectedItem="{Binding SelectedEmbeddingSource}"
+                          ItemsSource="{Binding EmbeddingSources}" />
+
+                <!-- Ollama embedding settings -->
+                <StackPanel Spacing="8" IsVisible="{Binding SelectedEmbeddingSource, Converter={x:Static conv:EmbeddingSourceVisibilityConverter.OllamaInstance}}">
+                    <TextBlock Text="Ollama Endpoint" FontWeight="SemiBold" />
+                    <TextBox Text="{Binding OllamaEmbeddingEndpoint}" Watermark="http://localhost:11434" />
+
+                    <TextBlock Text="Embedding Model" FontWeight="SemiBold" />
+                    <TextBox Text="{Binding OllamaEmbeddingModel}" Watermark="nomic-embed-text" />
+                </StackPanel>
+
+                <!-- ONNX embedding settings -->
+                <StackPanel Spacing="8" IsVisible="{Binding SelectedEmbeddingSource, Converter={x:Static conv:EmbeddingSourceVisibilityConverter.OnnxInstance}}">
+                    <TextBlock Text="ONNX Model Path" FontWeight="SemiBold" />
+                    <TextBox Text="{Binding OnnxEmbeddingModelPath}" Watermark="C:\path\to\model.onnx" />
+
+                    <TextBlock Text="Tokenizer Vocab Path" FontWeight="SemiBold" />
+                    <TextBox Text="{Binding OnnxEmbeddingVocabPath}" Watermark="C:\path\to\vocab.txt" />
+                </StackPanel>
+
+                <TextBlock Text="Note: Embedding changes require restarting the application to take effect."
                            FontSize="11" Opacity="0.5" TextWrapping="Wrap" />
             </StackPanel>
         </ScrollViewer>

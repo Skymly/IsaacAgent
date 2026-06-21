@@ -60,7 +60,9 @@ public sealed class ToolRegistry
                 new WriteFileTool(projectDir),
                 new ListFilesTool(projectDir),
                 new DiagnoseLuaTool(projectDir),
-                new ScaffoldModTool(projectDir)
+                new ScaffoldModTool(projectDir),
+                new ValidateXmlTool(projectDir),
+                new ParseLogTool(projectDir)
             ]);
         }
 

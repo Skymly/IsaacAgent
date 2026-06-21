@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\docs\**\*.md" />
+    <EmbeddedResource Include="Resources\schemas\**\*.xsd" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,90 @@
+<xs:schema elementFormDefault="qualified" xml:lang="EN" targetNamespace="https://wofsauge.github.io/isaac-xml-validator" version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <xs:simpleType name="pngFile">
+        <xs:annotation>
+            <xs:documentation>Filename or path required that needs to end with ".png"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(((.)*.png)|)" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="anm2File">
+        <xs:annotation>
+            <xs:documentation>Filename or path required that needs to end with ".anm2"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(((.)*.anm2)|)" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="anm2OrPngFile">
+        <xs:annotation>
+            <xs:documentation>Filename or path required that needs to end with ".anm2" or ".png"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(((.)*(.anm2|.png))|)" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="ogvFile">
+        <xs:annotation>
+            <xs:documentation>Filename or path required that needs to end with ".ogv"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(.)*.ogv" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="srtFile">
+        <xs:annotation>
+            <xs:documentation>Filename or path required that needs to end with ".srt"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(.)*.srt" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="xmlFile">
+        <xs:annotation>
+            <xs:documentation>Filename or path required that needs to end with ".xml"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(((.)*.xml)|)" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="soundFile">
+        <xs:annotation>
+            <xs:documentation>Filename or path required that needs to end with ".wav" or ".ogg"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(((.)*(.wav|.ogg))|)" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="gfxPath">
+        <xs:annotation>
+            <xs:documentation>Path needs to conform to format: "gfx/xxx/yyy/zzz/"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(gfx)(/[\w\d\s]+)*(/)" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="recipe">
+        <xs:annotation>
+            <xs:documentation>String needs to be 8 characters long and only contain the symbols: .oOQ$v^V_/|%hrsbBge1234({\[>?~</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(([.oOQ$v^V_/|%hrsbBge1234({\[>?~]){8})" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="bestiaryTransform">
+        <xs:annotation>
+            <xs:documentation>Bestiary transform definition needs to be in format: "([-.]*\d+,[-.]*\d+,[-.]*\d+)"</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="(\d*[-.]*\d+,\d*[-.]*\d+,\d*[-.]*\d+)" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="deprecated">
+        <xs:annotation>
+            <xs:documentation>Attribute is no longer used with Repentance</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="((.))*" />
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

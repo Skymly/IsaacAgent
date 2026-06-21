@@ -34,9 +34,21 @@ public sealed class OllamaEmbeddingProvider : IEmbeddingProvider
         var results = new float[texts.Count][];
         for (var i = 0; i < texts.Count; i++)
         {
-            var payload = new { model = _model, prompt = texts[i] };
+            var text = texts[i];
+            // Truncate to avoid exceeding model context length.
+            // nomic-embed-text has 8192 token context; ~2000 chars is safe for mixed content.
+            const int maxChars = 2000;
+            if (text.Length > maxChars)
+                text = text[..maxChars];
+
+            var payload = new { model = _model, prompt = text };
             using var resp = await _http.PostAsJsonAsync("/api/embeddings", payload, ct);
-            resp.EnsureSuccessStatusCode();
+            if (!resp.IsSuccessStatusCode)
+            {
+                var body = await resp.Content.ReadAsStringAsync(ct);
+                throw new HttpRequestException(
+                    $"Ollama embedding failed ({resp.StatusCode}) for text of length {text.Length}: {body}");
+            }
 
             using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
             var embedding = doc.RootElement.GetProperty("embedding");

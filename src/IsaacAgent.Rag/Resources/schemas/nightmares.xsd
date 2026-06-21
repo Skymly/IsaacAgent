@@ -1,0 +1,17 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsisaac="https://wofsauge.github.io/isaac-xml-validator">
+    <xs:import schemaLocation="https://wofsauge.github.io/isaac-xml-validator/xsd/isaacTypes.xsd" namespace="https://wofsauge.github.io/isaac-xml-validator" />
+    <xs:element name="nightmares">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" name="nightmare">
+                    <xs:complexType>
+                        <xs:attribute name="anm2" type="xsisaac:anm2File" use="required" />
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="root" type="xsisaac:gfxPath" use="required" />
+            <xs:attribute name="progressAnm2" type="xsisaac:anm2File" use="required" />
+            <xs:attribute name="backgroundAnm2" type="xsisaac:anm2File" use="optional" />
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

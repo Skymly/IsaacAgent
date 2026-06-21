@@ -1,0 +1,24 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsisaac="https://wofsauge.github.io/isaac-xml-validator">
+  <xs:import schemaLocation="https://wofsauge.github.io/isaac-xml-validator/xsd/isaacTypes.xsd" namespace="https://wofsauge.github.io/isaac-xml-validator" />
+  <xs:element name="sounds">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" name="sound">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="sample">
+                <xs:complexType>
+                  <xs:attribute name="weight" type="xs:float" use="required" />
+                  <xs:attribute name="path" type="xsisaac:soundFile" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:unsignedShort" use="optional" />
+            <xs:attribute name="name" type="xs:string" use="optional" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="root" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

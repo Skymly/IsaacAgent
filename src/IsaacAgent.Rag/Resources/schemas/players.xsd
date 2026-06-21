@@ -1,0 +1,74 @@
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsisaac="https://wofsauge.github.io/isaac-xml-validator">
+  <xs:import schemaLocation="https://wofsauge.github.io/isaac-xml-validator/xsd/isaacTypes.xsd" namespace="https://wofsauge.github.io/isaac-xml-validator" />
+  <xs:element name="players">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" name="player">
+          <xs:complexType>
+            <xs:sequence minOccurs="0">
+              <xs:element maxOccurs="unbounded" name="hair">
+                <xs:complexType>
+                  <xs:attribute name="gfx" type="xsisaac:pngFile" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="name" type="xs:string" use="required" />
+            <xs:attribute name="skin" type="xs:string" use="optional" />
+            <xs:attribute name="hp" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="bombs" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="nameimage" type="xsisaac:pngFile" use="optional" />
+            <xs:attribute name="portrait" type="xsisaac:pngFile" use="optional" />
+            <xs:attribute name="skinColor" type="xs:byte" use="optional" />
+            <xs:attribute name="birthright" type="xs:string" use="optional" />
+            <xs:attribute name="costume" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="items" type="xs:string" use="optional" />
+            <xs:attribute name="achievement" type="xs:string" use="optional" /> <!-- Vanilla only uses ints, Repentogon can use strings -->
+            <xs:attribute name="keys" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="coins" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="armor" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="trinket" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="costumeSuffix" type="xs:string" use="optional" />
+            <xs:attribute name="black" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="card" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="pill" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="canShoot" type="xs:boolean" use="optional" />
+            <xs:attribute name="broken" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="pocketActive" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="bSkinParent" type="xs:string" use="optional" />
+            <xs:attribute name="hidden" type="xs:boolean" use="optional" />
+            <xs:attribute name="extraportrait" type="xsisaac:anm2File" use="optional" />
+            <xs:attribute name="bigportrait" type="xsisaac:deprecated" use="optional" />
+            <!-- Repentogon -->
+            <xs:attribute name="heartcontainers" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="redhearts" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="soulhearts" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="blackhearts" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="goldenhearts" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="bonehearts" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="eternalheart" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="brokenhearts" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="rottenhearts" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="healthtype" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="healthlimit" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="speedmodifier" type="xs:float" use="optional" />
+            <xs:attribute name="firedelaymodifier" type="xs:float" use="optional" />
+            <xs:attribute name="damagemodifier" type="xs:float" use="optional" />
+            <xs:attribute name="rangemodifier" type="xs:float" use="optional" />
+            <xs:attribute name="shotspeedmodifier" type="xs:float" use="optional" />
+            <xs:attribute name="luckmodifier" type="xs:float" use="optional" />
+            <xs:attribute name="gigabombs" type="xs:unsignedInt" use="optional" />
+            <xs:attribute name="completionparent" type="xs:string" use="optional" />
+            <xs:attribute name="nomarks" type="xs:boolean" use="optional" />
+            <xs:attribute name="noshake" type="xs:boolean" use="optional" />
+            <xs:attribute name="modcostume" type="xs:unsignedInt" use="optional" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="root" type="xsisaac:gfxPath" use="required" />
+      <xs:attribute name="portraitroot" type="xsisaac:gfxPath" use="required" />
+      <xs:attribute name="nameimageroot" type="xsisaac:gfxPath" use="required" />
+      <xs:attribute name="bigportraitroot" type="xsisaac:deprecated" use="optional" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

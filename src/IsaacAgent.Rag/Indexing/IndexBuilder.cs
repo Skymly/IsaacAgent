@@ -56,7 +56,7 @@ public sealed class IndexBuilder
         _logger.LogInformation("Total chunks to embed: {Count}", chunks.Count);
 
         var entries = new List<VectorStoreEntry>(chunks.Count);
-        const int batchSize = 32;
+        const int batchSize = 16;
         for (var i = 0; i < chunks.Count; i += batchSize)
         {
             ct.ThrowIfCancellationRequested();
@@ -67,7 +67,9 @@ public sealed class IndexBuilder
             for (var j = 0; j < batch.Count; j++)
                 entries.Add(new VectorStoreEntry { Chunk = batch[j], Vector = vectors[j] });
 
-            _logger.LogDebug("Embedded {Done}/{Total}", Math.Min(i + batchSize, chunks.Count), chunks.Count);
+            var done = Math.Min(i + batchSize, chunks.Count);
+            if (done % 100 == 0 || done == chunks.Count)
+                _logger.LogInformation("Embedded {Done}/{Total} ({Pct:F1}%)", done, chunks.Count, 100.0 * done / chunks.Count);
         }
 
         _store.ReplaceAll(_embedding.ModelName, _embedding.Dimensions, entries);
