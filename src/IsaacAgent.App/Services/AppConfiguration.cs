@@ -1,4 +1,5 @@
 using IsaacAgent.LLM;
+using IsaacAgent.Rag.Embedding;
 
 namespace IsaacAgent.App.Services;
 
@@ -8,6 +9,21 @@ public sealed class AppConfiguration
     public string Endpoint { get; set; } = "https://api.minimax.chat/v1";
     public string Model { get; set; } = "abab6.5s-chat";
     public string? ApiKey { get; set; }
+
+    public EmbeddingSourceType EmbeddingSource { get; set; } = EmbeddingSourceType.Ollama;
+    public string OllamaEmbeddingEndpoint { get; set; } = "http://localhost:11434";
+    public string OllamaEmbeddingModel { get; set; } = "nomic-embed-text";
+    public string? OnnxEmbeddingModelPath { get; set; }
+    public string? OnnxEmbeddingVocabPath { get; set; }
+
+    public EmbeddingConfig ToEmbeddingConfig() => new()
+    {
+        Source = EmbeddingSource,
+        OllamaEndpoint = OllamaEmbeddingEndpoint,
+        OllamaModel = OllamaEmbeddingModel,
+        OnnxModelPath = OnnxEmbeddingModelPath ?? "",
+        OnnxTokenizerPath = OnnxEmbeddingVocabPath ?? "",
+    };
 
     public static AppConfiguration Load()
     {
@@ -34,7 +50,7 @@ public sealed class AppConfiguration
             };
         }
 
-        return new AppConfiguration();
+        return new();
     }
 
     public void Save()

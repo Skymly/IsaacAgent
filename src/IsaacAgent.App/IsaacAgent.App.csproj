@@ -23,6 +23,7 @@
     <ProjectReference Include="..\IsaacAgent.Agent\IsaacAgent.Agent.csproj" />
     <ProjectReference Include="..\IsaacAgent.Core\IsaacAgent.Core.csproj" />
     <ProjectReference Include="..\IsaacAgent.LLM\IsaacAgent.LLM.csproj" />
+    <ProjectReference Include="..\IsaacAgent.Rag\IsaacAgent.Rag.csproj" />
     <ProjectReference Include="..\IsaacAgent.Tools\IsaacAgent.Tools.csproj" />
   </ItemGroup>
 

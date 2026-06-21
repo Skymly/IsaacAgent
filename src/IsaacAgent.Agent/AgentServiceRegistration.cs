@@ -12,7 +12,8 @@ public static class AgentServiceRegistration
         services.AddSingleton<ToolRegistry>(sp =>
         {
             var logger = sp.GetRequiredService<ILogger<ToolRegistry>>();
-            var registry = new ToolRegistry(logger);
+            var retriever = sp.GetService<IRetriever>();
+            var registry = new ToolRegistry(logger, retriever);
             registry.ReconfigureForProject(null);
             return registry;
         });

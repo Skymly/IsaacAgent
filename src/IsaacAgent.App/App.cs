@@ -6,6 +6,7 @@ using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
 using IsaacAgent.LLM;
+using IsaacAgent.Rag;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -51,6 +52,8 @@ public sealed class App : Application
             config.Model,
             config.ApiKey
         ));
+
+        services.AddRag(config.ToEmbeddingConfig());
 
         services.AddIsaacAgent();
 

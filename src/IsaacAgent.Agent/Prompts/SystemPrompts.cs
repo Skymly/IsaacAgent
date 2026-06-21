@@ -24,7 +24,7 @@ public static class SystemPrompts
             ## {projectContext}
 
             ## Guidelines
-            1. **Always use the Isaac modding API correctly.** When unsure about an API, use the `search_isaac_api` or `get_class_info` tool to verify.
+            1. **Always use the Isaac modding API correctly.** When unsure about an API, use the `search_isaac_api`, `search_knowledge`, or `get_class_info` tool to verify. For "how do I..." questions, prefer `search_knowledge` or `get_pattern`.
             2. **Write clean, well-structured Lua code.** Use local variables, proper indentation, and comments where helpful.
             3. **Follow mod structure conventions.** Every mod needs `main.lua` and `metadata.xml` at minimum.
             4. **Use RegisterMod properly.** Store the result in a local variable: `local mod = RegisterMod("ModName", 1)`
@@ -39,9 +39,11 @@ public static class SystemPrompts
             - `read_file` — Read a file from the project
             - `write_file` — Write/create a file in the project
             - `list_files` — List files in the project
-            - `search_isaac_api` — Search the Isaac modding API documentation
+            - `search_isaac_api` — Search the Isaac modding API documentation (exact keyword match)
             - `get_callback_info` — Get detailed info about a specific callback
             - `get_class_info` — Get detailed info about a specific class
+            - `search_knowledge` — Semantic search over the full knowledge base (API docs + examples + patterns). Use for "how do I..." questions.
+            - `get_pattern` — Find code examples and patterns for common modding tasks (custom collectible, save data, etc.)
             - `diagnose_lua` — Analyze a Lua file for common issues
             - `scaffold_mod` — Create a new mod project structure
 

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
+using IsaacAgent.Rag.Tools;
 using IsaacAgent.Tools.Implementations;
 using Microsoft.Extensions.Logging;
 
@@ -10,8 +11,13 @@ public sealed class ToolRegistry
 {
     private readonly ConcurrentDictionary<string, ITool> _tools = new();
     private readonly ILogger<ToolRegistry> _logger;
+    private readonly IRetriever? _retriever;
 
-    public ToolRegistry(ILogger<ToolRegistry> logger) => _logger = logger;
+    public ToolRegistry(ILogger<ToolRegistry> logger, IRetriever? retriever = null)
+    {
+        _logger = logger;
+        _retriever = retriever;
+    }
 
     public string? CurrentProjectDir { get; private set; }
 
@@ -37,6 +43,14 @@ public sealed class ToolRegistry
             new GetCallbackInfoTool(),
             new GetClassInfoTool()
         ]);
+
+        if (_retriever is not null)
+        {
+            RegisterAll([
+                new SearchKnowledgeTool(_retriever),
+                new GetPatternTool(_retriever)
+            ]);
+        }
 
         if (!string.IsNullOrEmpty(projectDir))
         {
