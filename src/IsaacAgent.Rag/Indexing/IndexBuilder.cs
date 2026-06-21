@@ -1,3 +1,4 @@
+using System.Reflection;
 using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
 using IsaacAgent.Rag.Chunking;
@@ -12,6 +13,7 @@ public sealed class IndexBuilder
     private readonly InMemoryVectorStore _store;
     private readonly ILogger<IndexBuilder> _logger;
     private readonly string _examplesDir;
+    private readonly Assembly _assembly;
 
     public IndexBuilder(IEmbeddingProvider embedding, InMemoryVectorStore store, string examplesDir, ILogger<IndexBuilder> logger)
     {
@@ -19,6 +21,7 @@ public sealed class IndexBuilder
         _store = store;
         _examplesDir = examplesDir;
         _logger = logger;
+        _assembly = Assembly.GetExecutingAssembly();
     }
 
     public async Task BuildAsync(CancellationToken ct = default)
@@ -26,8 +29,23 @@ public sealed class IndexBuilder
         _logger.LogInformation("Building RAG index with model {Model} ({Dim}d)", _embedding.ModelName, _embedding.Dimensions);
 
         var chunks = new List<KnowledgeChunk>();
-        chunks.AddRange(ApiDocChunker.ChunkFromKnowledge());
 
+        // 1. Hardcoded API knowledge (callbacks/classes/enums from C# dictionaries)
+        chunks.AddRange(ApiDocChunker.ChunkFromKnowledge());
+        _logger.LogInformation("Loaded {Count} chunks from hardcoded API knowledge", chunks.Count);
+
+        // 2. Embedded MkDocs documentation (vanilla + REPENTOGON)
+        var vanillaChunks = MkDocsChunker.ChunkFromEmbeddedResources(
+            _assembly, "IsaacAgent.Rag.Resources.docs.vanilla", "vanilla");
+        chunks.AddRange(vanillaChunks);
+        _logger.LogInformation("Loaded {Count} chunks from embedded vanilla docs", vanillaChunks.Count);
+
+        var repentogonChunks = MkDocsChunker.ChunkFromEmbeddedResources(
+            _assembly, "IsaacAgent.Rag.Resources.docs.repentogon", "repentogon");
+        chunks.AddRange(repentogonChunks);
+        _logger.LogInformation("Loaded {Count} chunks from embedded REPENTOGON docs", repentogonChunks.Count);
+
+        // 3. User-provided examples from filesystem (if any)
         if (Directory.Exists(_examplesDir))
         {
             var exampleChunks = MarkdownChunker.ChunkDirectory(_examplesDir, "example");

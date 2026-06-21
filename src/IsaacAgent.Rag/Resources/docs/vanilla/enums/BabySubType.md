@@ -1,0 +1,80 @@
+---
+tags:
+  - Enum
+---
+# Enum "BabySubType"
+|DLC|Value|Enumerator|Comment|
+|:--|:--|:--|:--|
+|[ ](#){: .alldlc .tooltip .badge }|-1 |BABY_UNASSIGNED {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|0 |BABY_SPIDER {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|1 |BABY_LOVE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|2 |BABY_BLOAT {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|3 |BABY_WATER {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|4 |BABY_PSY {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|5 |BABY_CURSED {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|6 |BABY_TROLL {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|7 |BABY_YBAB {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|8 |BABY_COCKEYED {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|9 |BABY_HOST {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|10 |BABY_LOST {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|11 |BABY_CUTE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|12 |BABY_CROW {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|13 |BABY_SHADOW {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|14 |BABY_GLASS {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|15 |BABY_GOLD {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|16 |BABY_CY {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|17 |BABY_BEAN {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|18 |BABY_MAG {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|19 |BABY_WRATH {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|20 |BABY_WRAPPED {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|21 |BABY_BEGOTTEN {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|22 |BABY_DEAD {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|23 |BABY_FIGHTING {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|24 |BABY_0 {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|25 |BABY_GLITCH {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|26 |BABY_MAGNET {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|27 |BABY_BLACK {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|28 |BABY_RED {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|29 |BABY_WHITE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|30 |BABY_BLUE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|31 |BABY_RAGE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|32 |BABY_CRY {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|33 |BABY_YELLOW {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|34 |BABY_LONG {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|35 |BABY_GREEN {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|36 |BABY_LIL {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|37 |BABY_BIG {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|38 |BABY_BROWN {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|39 |BABY_NOOSE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|40 |BABY_HIVE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|41 |BABY_BUDDY {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|42 |BABY_COLORFUL {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|43 |BABY_WHORE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|44 |BABY_CRACKED {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|45 |BABY_DRIPPING {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|46 |BABY_BLINDING {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|47 |BABY_SUCKY {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|48 |BABY_DARK {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|49 |BABY_PICKY {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|50 |BABY_REVENGE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|51 |BABY_BELIAL {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|52 |BABY_SALE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|53 |BABY_GOAT {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|54 |BABY_SUPER_GREED {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|55 |BABY_MORT {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|56 |BABY_APOLLYON {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|57 |BABY_BONE {: .copyable } |  |
+|[ ](#){: .alldlc .tooltip .badge }|58 |BABY_BOUND {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|59 |BABY_FOUND_SOUL {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|60 |BABY_LOST_WHITE {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|61 |BABY_LOST_BLACK {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|62 |BABY_LOST_BLUE {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|63 |BABY_LOST_GREY {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|64 |BABY_WISP {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|65 |BABY_DOUBLE {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|66 |BABY_GLOWING {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|67 |BABY_ILLUSION {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|68 |BABY_HOPE {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|69 |BABY_SOLOMON_A {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|70 |BABY_SOLOMON_B {: .copyable } |  |
+|[ ](#){: .reporplus .tooltip .badge }|71 |BABY_BASIC {: .copyable } |  |

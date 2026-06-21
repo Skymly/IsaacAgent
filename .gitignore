@@ -9,6 +9,10 @@ obj/
 *.pidb
 *.swp
 
+## Test results
+[Tt]est[Rr]esults/
+*.trx
+
 ## Visual Studio
 .vs/
 *.vspscc
