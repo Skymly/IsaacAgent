@@ -34,9 +34,11 @@ public class DiagnoseLuaToolExtendedTests
     [Fact]
     public void Analyze_BuiltInGlobal_NoGlobalLeakWarning()
     {
+        // "Isaac = something" triggers the global-leak regex, but Isaac is a built-in
+        // global so it should be excluded.
         var code = """
             local mod = RegisterMod("TestMod", 1)
-            Isaac.ExecuteCommand("test")
+            Isaac = Isaac
             """;
         var diags = DiagnoseLuaTool.Analyze(code, "test.lua");
 
@@ -98,6 +100,16 @@ public class DiagnoseLuaToolExtendedTests
 
         Assert.DoesNotContain(diags, d => d.Severity == DiagnosticSeverity.Error
             && d.Message.Contains("Unbalanced"));
+    }
+
+    [Fact]
+    public void Analyze_RepentogonUsage_ReturnsInfo()
+    {
+        var code = "REPENTOGON.Include(\"main.lua\")\nlocal mod = RegisterMod(\"TestMod\", 1)\n";
+        var diags = DiagnoseLuaTool.Analyze(code, "test.lua");
+
+        Assert.Contains(diags, d => d.Severity == DiagnosticSeverity.Info
+            && d.Message.Contains("REPENTOGON"));
     }
 
     [Fact]

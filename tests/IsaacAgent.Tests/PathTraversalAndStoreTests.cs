@@ -71,6 +71,8 @@ public class PathTraversalTests
             var result = await tool.ExecuteAsync(args);
 
             Assert.DoesNotContain("Path traversal", result);
+            Assert.True(result.Contains("valid") || result.Contains("error") || result.Contains("Error"),
+                $"Unexpected result: {result}");
         }
         finally
         {
@@ -92,8 +94,18 @@ public class InMemoryVectorStoreLoadTests
     [Fact]
     public async Task LoadAsync_CorruptedFile_ReturnsFalse()
     {
+        // Write a valid header (correct version + model name) but claim 100 entries
+        // with no actual data, so reading entries hits EndOfStreamException.
         var tempFile = Path.Combine(Path.GetTempPath(), $"corrupt_{Guid.NewGuid():N}.bin");
-        await File.WriteAllBytesAsync(tempFile, [0xFF, 0xFE, 0x00, 0x01]);
+        await using (var fs = File.Create(tempFile))
+        await using (var writer = new BinaryWriter(fs))
+        {
+            writer.Write(1u);            // IndexFormatVersion
+            writer.Write("test-model");  // ModelName
+            writer.Write(768);           // Dimensions
+            writer.Write(0L);            // BuiltAt
+            writer.Write(100);           // Entries.Count = 100 but no data follows
+        }
         try
         {
             var store = new InMemoryVectorStore();

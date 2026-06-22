@@ -87,6 +87,18 @@ public class RetryChatServiceTests
     }
 
     [Fact]
+    public async Task CompleteAsync_SucceedsOnFirstAttempt_NoRetry()
+    {
+        var inner = new FailThenSucceedChatService(failCount: 0);
+        var svc = CreateService(inner, maxRetries: 3);
+
+        var result = await svc.CompleteAsync(new ChatRequest { Messages = [] });
+
+        Assert.Equal("recovered", result.Message.Content);
+        Assert.Equal(1, inner.CallCount);
+    }
+
+    [Fact]
     public async Task CompleteAsync_RetriesOnFailure_ThenSucceeds()
     {
         var inner = new FailThenSucceedChatService(failCount: 2);
