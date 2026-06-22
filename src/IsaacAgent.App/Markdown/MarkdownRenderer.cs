@@ -260,7 +260,7 @@ public static class MarkdownRenderer
                 inlines.Add(new Run(match.Groups[8].Value)
                 {
                     Foreground = LinkColor,
-                    Underline = true,
+                    TextDecorations = TextDecorations.Underline,
                 });
             }
 
