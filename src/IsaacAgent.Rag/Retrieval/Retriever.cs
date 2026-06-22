@@ -32,6 +32,8 @@ public sealed class Retriever : IRetriever
 
     public bool IsReady => Interlocked.CompareExchange(ref _isReady, 0, 0) == 1;
 
+    public void ResetReady() => Interlocked.Exchange(ref _isReady, 0);
+
     public async Task EnsureIndexAsync(CancellationToken ct = default)
     {
         if (IsReady) return;

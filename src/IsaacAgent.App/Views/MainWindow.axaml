@@ -101,7 +101,7 @@
                                             <SelectableTextBlock TextWrapping="Wrap"
                                                                  FontFamily="Cascadia Code,Consolas,monospace"
                                                                  FontSize="13"
-                                                                 md:MarkdownRenderer.Markdown="{Binding Content}" />
+                                                                 md:MarkdownRenderer.Markdown="{Binding DebouncedMarkdown}" />
                                         </StackPanel>
                                     </Border>
                                 </DataTemplate>

@@ -170,12 +170,48 @@ public sealed partial class ChatMessageViewModel : ObservableObject
     [ObservableProperty]
     private string _content = "";
 
+    private string _debouncedMarkdown = "";
+    private bool _markdownInitialized;
+    private readonly Avalonia.Threading.DispatcherTimer _renderTimer;
+
+    public string DebouncedMarkdown => _debouncedMarkdown;
+
+    partial void OnContentChanged(string value)
+    {
+        if (!_markdownInitialized)
+        {
+            _debouncedMarkdown = value;
+            _markdownInitialized = true;
+            OnPropertyChanged(nameof(DebouncedMarkdown));
+            return;
+        }
+
+        _renderTimer.Stop();
+        _renderTimer.Start();
+    }
+
+    private void OnRenderTick(object? sender, EventArgs e)
+    {
+        _renderTimer.Stop();
+        _debouncedMarkdown = Content;
+        OnPropertyChanged(nameof(DebouncedMarkdown));
+    }
+
     public bool IsUser => Role == "user";
     public bool IsAssistant => Role == "assistant";
     public bool IsToolCall { get; set; }
     public bool IsToolResult { get; set; }
     public bool IsError => Role == "error";
     public bool IsSystem => Role == "system";
+
+    public ChatMessageViewModel()
+    {
+        _renderTimer = new Avalonia.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(150)
+        };
+        _renderTimer.Tick += OnRenderTick;
+    }
 
     public string RoleLabel => Role switch
     {

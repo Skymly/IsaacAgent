@@ -8,6 +8,8 @@ using IsaacAgent.App.Views;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag;
 using IsaacAgent.Rag.Embedding;
+using IsaacAgent.Rag.Retrieval;
+using IsaacAgent.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -83,5 +85,21 @@ public sealed class App : Application
         var proxy = Services.GetRequiredService<EmbeddingProviderProxy>();
         var newProvider = RagServiceRegistration.BuildEmbeddingProvider(Services, config.ToEmbeddingConfig());
         proxy.Replace(newProvider);
+
+        if (Services.GetRequiredService<IRetriever>() is Retriever retriever)
+        {
+            retriever.ResetReady();
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await retriever.RebuildIndexAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Index rebuild failed: {ex.Message}");
+                }
+            });
+        }
     }
 }

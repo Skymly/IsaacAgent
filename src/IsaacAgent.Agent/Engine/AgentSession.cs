@@ -107,10 +107,20 @@ public sealed class AgentSession
             {
                 var toolTasks = toolCalls.Select(async toolCall =>
                 {
-                    OnToolCall?.Invoke(toolCall.Name, toolCall.Arguments);
-                    var result = await _tools.ExecuteAsync(toolCall.Name, toolCall.Arguments, ct);
-                    OnToolResult?.Invoke(result);
-                    return (toolCall, result);
+                    try
+                    {
+                        OnToolCall?.Invoke(toolCall.Name, toolCall.Arguments);
+                        var result = await _tools.ExecuteAsync(toolCall.Name, toolCall.Arguments, ct);
+                        OnToolResult?.Invoke(result);
+                        return (toolCall, result);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        _logger.LogError(ex, "Tool {ToolName} threw unexpectedly", toolCall.Name);
+                        var errMsg = $"Error: Tool '{toolCall.Name}' failed: {ex.Message}";
+                        OnToolResult?.Invoke(errMsg);
+                        return (toolCall, errMsg);
+                    }
                 }).ToList();
 
                 var results = await Task.WhenAll(toolTasks);

@@ -207,4 +207,27 @@ public class AgentSessionTests
         // Should still have just the system prompt
         Assert.Single(session.History);
     }
+
+    [Fact]
+    public async Task SendMessageAsync_ToolCallbackThrows_DoesNotCrash()
+    {
+        var chat = new StubChatService(
+            new ChatChunk("", true, 0, "call_1", "search_isaac_api", """{"query":"test"}"""),
+            new ChatChunk("", true, 0, null, null, null),
+            new ChatChunk("Recovered", false, -1, null, null, null));
+
+        var session = CreateSession(chat);
+        session.OnToolCall += (_, _) => throw new InvalidOperationException("UI dispatch failed");
+
+        var chunks = new List<string>();
+        await foreach (var c in session.SendMessageAsync("test"))
+            chunks.Add(c);
+
+        // Session should not crash — LLM should still get a tool result and continue
+        Assert.Contains("Recovered", chunks);
+        // History should contain a tool result with error message
+        var toolMsg = session.History.FirstOrDefault(h => h.Role == "tool");
+        Assert.NotNull(toolMsg);
+        Assert.Contains("failed", toolMsg!.Content);
+    }
 }
