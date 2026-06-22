@@ -40,11 +40,18 @@ public sealed class OllamaProvider : IChatService
             ToolCalls = toolCalls
         };
 
+        var inputTokens = 0;
+        var outputTokens = 0;
+        if (doc.RootElement.TryGetProperty("prompt_eval_count", out var pe))
+            inputTokens = pe.GetInt32();
+        if (doc.RootElement.TryGetProperty("eval_count", out var ec))
+            outputTokens = ec.GetInt32();
+
         return new ChatResponse
         {
             Message = chatMessage,
-            InputTokens = 0,
-            OutputTokens = 0
+            InputTokens = inputTokens,
+            OutputTokens = outputTokens
         };
     }
 

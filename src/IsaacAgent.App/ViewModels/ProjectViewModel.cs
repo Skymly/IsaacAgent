@@ -3,6 +3,7 @@ using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.App.Services;
+using IsaacAgent.Tools.Implementations;
 using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.App.ViewModels;
@@ -20,6 +21,15 @@ public sealed partial class ProjectViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _hasProject;
+
+    [ObservableProperty]
+    private string _filePreviewContent = "";
+
+    [ObservableProperty]
+    private string _filePreviewName = "";
+
+    [ObservableProperty]
+    private bool _hasFilePreview;
 
     public ObservableCollection<FileTreeItem> Files { get; } = [];
 
@@ -39,7 +49,23 @@ public sealed partial class ProjectViewModel : ObservableObject
         if (PickFolderAsync is null) return;
         var folder = await PickFolderAsync();
         if (folder is null) return;
-        LoadProject(folder.Path.LocalPath);
+
+        var projectDir = folder.Path.LocalPath;
+        var modName = Path.GetFileName(projectDir);
+
+        try
+        {
+            Directory.CreateDirectory(projectDir);
+            var scaffold = new ScaffoldModTool(projectDir);
+            var args = System.Text.Json.JsonSerializer.Serialize(new { name = modName });
+            await scaffold.ExecuteAsync(args);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to scaffold new project at {Path}", projectDir);
+        }
+
+        LoadProject(projectDir);
     }
 
     [RelayCommand]
@@ -51,12 +77,36 @@ public sealed partial class ProjectViewModel : ObservableObject
         LoadProject(folder.Path.LocalPath);
     }
 
+    [RelayCommand]
+    private async Task OpenFileAsync(FileTreeItem? item)
+    {
+        if (item is null || string.IsNullOrEmpty(ProjectPath)) return;
+
+        var fullPath = Path.Combine(ProjectPath, item.Path);
+        if (!File.Exists(fullPath)) return;
+
+        try
+        {
+            var content = await File.ReadAllTextAsync(fullPath);
+            FilePreviewName = item.Path;
+            FilePreviewContent = content;
+            HasFilePreview = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to read file {Path}", item.Path);
+        }
+    }
+
     public void LoadProject(string path)
     {
         if (!Directory.Exists(path)) return;
         ProjectPath = path;
         ProjectName = Path.GetFileName(path);
         HasProject = true;
+        HasFilePreview = false;
+        FilePreviewContent = "";
+        FilePreviewName = "";
         RefreshFiles();
         ProjectLoaded?.Invoke(path);
     }

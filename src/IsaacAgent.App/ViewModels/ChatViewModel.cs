@@ -17,6 +17,7 @@ public sealed partial class ChatViewModel : ObservableObject
     private readonly ILogger<ChatViewModel> _logger;
     private AgentSession _session;
     private CancellationTokenSource? _cts;
+    private string? _currentProjectDir;
 
     [ObservableProperty]
     private string _inputText = "";
@@ -67,8 +68,40 @@ public sealed partial class ChatViewModel : ObservableObject
 
     public void OnProjectChanged(string? projectDir)
     {
+        _currentProjectDir = projectDir;
         _session.SetProjectDirectory(projectDir);
         Messages.Clear();
+        _session.LoadHistory(GetHistoryPath(projectDir));
+        RestoreMessagesFromHistory();
+    }
+
+    private static string GetHistoryPath(string? projectDir)
+    {
+        var baseDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "IsaacAgent", "history");
+        if (string.IsNullOrEmpty(projectDir))
+            return Path.Combine(baseDir, "default.json");
+
+        // Use SHA256 instead of GetHashCode — GetHashCode is randomized per-process
+        // and would produce different file names across restarts.
+        var hashBytes = System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(projectDir.ToLowerInvariant()));
+        var hash = Convert.ToHexString(hashBytes)[..12];
+        return Path.Combine(baseDir, $"project_{hash}.json");
+    }
+
+    private void RestoreMessagesFromHistory()
+    {
+        foreach (var msg in _session.History)
+        {
+            if (msg.Role is "system" or "tool" or "tool_result") continue;
+            Messages.Add(new ChatMessageViewModel
+            {
+                Role = msg.Role,
+                Content = msg.Content
+            });
+        }
     }
 
     [RelayCommand]
@@ -112,6 +145,7 @@ public sealed partial class ChatViewModel : ObservableObject
             IsGenerating = false;
             _cts?.Dispose();
             _cts = null;
+            _session.SaveHistory(GetHistoryPath(_currentProjectDir));
         }
     }
 

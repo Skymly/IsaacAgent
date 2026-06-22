@@ -113,11 +113,14 @@ public sealed class InMemoryVectorStore
         }
     }
 
+    private const uint IndexFormatVersion = 1;
+
     public async Task SaveAsync(string path, CancellationToken ct = default)
     {
         var index = ExportIndex();
         await using var fs = File.Create(path);
         using var writer = new BinaryWriter(fs);
+        writer.Write(IndexFormatVersion);
         writer.Write(index.ModelName);
         writer.Write(index.Dimensions);
         writer.Write(index.BuiltAt.ToUnixTimeSeconds());
@@ -146,43 +149,56 @@ public sealed class InMemoryVectorStore
     {
         if (!File.Exists(path)) return false;
 
-        await using var fs = File.OpenRead(path);
-        using var reader = new BinaryReader(fs);
-        var index = new VectorStoreIndex
+        try
         {
-            ModelName = reader.ReadString(),
-            Dimensions = reader.ReadInt32(),
-            BuiltAt = DateTimeOffset.FromUnixTimeSeconds(reader.ReadInt64()),
-            Entries = []
-        };
+            await using var fs = File.OpenRead(path);
+            using var reader = new BinaryReader(fs);
 
-        var count = reader.ReadInt32();
-        var entries = new List<VectorStoreEntry>(count);
-        for (var i = 0; i < count; i++)
-        {
-            var chunk = new KnowledgeChunk
+            var version = reader.ReadUInt32();
+            if (version != IndexFormatVersion)
+                return false; // Incompatible format — will rebuild
+
+            var index = new VectorStoreIndex
             {
-                Id = reader.ReadString(),
-                Source = reader.ReadString(),
-                Category = reader.ReadString(),
-                Title = reader.ReadString(),
-                Content = reader.ReadString(),
-                Metadata = {}
+                ModelName = reader.ReadString(),
+                Dimensions = reader.ReadInt32(),
+                BuiltAt = DateTimeOffset.FromUnixTimeSeconds(reader.ReadInt64()),
+                Entries = []
             };
-            var metaCount = reader.ReadInt32();
-            for (var m = 0; m < metaCount; m++)
-                chunk.Metadata[reader.ReadString()] = reader.ReadString();
 
-            var vecLen = reader.ReadInt32();
-            var vector = new float[vecLen];
-            for (var v = 0; v < vecLen; v++)
-                vector[v] = reader.ReadSingle();
+            var count = reader.ReadInt32();
+            var entries = new List<VectorStoreEntry>(count);
+            for (var i = 0; i < count; i++)
+            {
+                var chunk = new KnowledgeChunk
+                {
+                    Id = reader.ReadString(),
+                    Source = reader.ReadString(),
+                    Category = reader.ReadString(),
+                    Title = reader.ReadString(),
+                    Content = reader.ReadString(),
+                    Metadata = {}
+                };
+                var metaCount = reader.ReadInt32();
+                for (var m = 0; m < metaCount; m++)
+                    chunk.Metadata[reader.ReadString()] = reader.ReadString();
 
-            entries.Add(new VectorStoreEntry { Chunk = chunk, Vector = vector });
+                var vecLen = reader.ReadInt32();
+                var vector = new float[vecLen];
+                for (var v = 0; v < vecLen; v++)
+                    vector[v] = reader.ReadSingle();
+
+                entries.Add(new VectorStoreEntry { Chunk = chunk, Vector = vector });
+            }
+            index.Entries = entries;
+
+            ImportIndex(index);
+            return true;
         }
-        index.Entries = entries;
-
-        ImportIndex(index);
-        return true;
+        catch (Exception ex) when (ex is IOException or EndOfStreamException or System.Text.Json.JsonException or ArgumentOutOfRangeException)
+        {
+            // Corrupted or incompatible index file — treat as missing.
+            return false;
+        }
     }
 }

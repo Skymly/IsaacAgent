@@ -95,7 +95,6 @@ public sealed class ParseLogTool : ITool
     {
         var entries = new List<LogEntry>();
         var lines = content.Split('\n');
-        var inLastSession = false;
         var sessionSeparatorLine = -1;
 
         // Find the last session separator (Isaac writes a separator on game launch)
@@ -112,9 +111,6 @@ public sealed class ParseLogTool : ITool
         {
             var line = lines[i].TrimEnd('\r');
             var trimmed = line.Trim();
-
-            if (IsSessionSeparator(trimmed))
-                inLastSession = true;
 
             if (filter == "last_run" && sessionSeparatorLine >= 0 && i < sessionSeparatorLine)
                 continue;

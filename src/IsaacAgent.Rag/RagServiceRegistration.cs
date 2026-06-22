@@ -25,22 +25,8 @@ public static class RagServiceRegistration
         services.AddSingleton(embeddingConfig);
         services.AddSingleton<InMemoryVectorStore>();
 
-        services.AddSingleton<IEmbeddingProvider>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<InMemoryVectorStore>>();
-            return embeddingConfig.Source switch
-            {
-                EmbeddingSourceType.Ollama => new OllamaEmbeddingProvider(
-                    new HttpClient { BaseAddress = new Uri(embeddingConfig.OllamaEndpoint) },
-                    embeddingConfig.OllamaModel,
-                    sp.GetRequiredService<ILogger<OllamaEmbeddingProvider>>()),
-                EmbeddingSourceType.Onnx => new OnnxEmbeddingProvider(
-                    embeddingConfig.OnnxModelPath,
-                    embeddingConfig.OnnxTokenizerPath,
-                    sp.GetRequiredService<ILogger<OnnxEmbeddingProvider>>()),
-                _ => throw new ArgumentException($"Unknown embedding source: {embeddingConfig.Source}")
-            };
-        });
+        services.AddSingleton<EmbeddingProviderProxy>(sp => new EmbeddingProviderProxy(BuildEmbeddingProvider(sp, embeddingConfig)));
+        services.AddSingleton<IEmbeddingProvider>(sp => sp.GetRequiredService<EmbeddingProviderProxy>());
 
         services.AddSingleton<IndexBuilder>(sp =>
         {
@@ -60,5 +46,21 @@ public static class RagServiceRegistration
         });
 
         return services;
+    }
+
+    public static IEmbeddingProvider BuildEmbeddingProvider(IServiceProvider sp, EmbeddingConfig config)
+    {
+        return config.Source switch
+        {
+            EmbeddingSourceType.Ollama => new OllamaEmbeddingProvider(
+                new HttpClient { BaseAddress = new Uri(config.OllamaEndpoint) },
+                config.OllamaModel,
+                sp.GetRequiredService<ILogger<OllamaEmbeddingProvider>>()),
+            EmbeddingSourceType.Onnx => new OnnxEmbeddingProvider(
+                config.OnnxModelPath,
+                config.OnnxTokenizerPath,
+                sp.GetRequiredService<ILogger<OnnxEmbeddingProvider>>()),
+            _ => throw new ArgumentException($"Unknown embedding source: {config.Source}")
+        };
     }
 }

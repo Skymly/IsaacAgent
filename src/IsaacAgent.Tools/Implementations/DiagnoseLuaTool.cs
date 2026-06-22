@@ -27,13 +27,19 @@ public sealed class DiagnoseLuaTool : ITool
 
     private readonly string _projectDir;
 
-    public DiagnoseLuaTool(string projectDir) => _projectDir = projectDir;
+    public DiagnoseLuaTool(string projectDir) => _projectDir = Path.GetFullPath(projectDir);
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken ct = default)
     {
         var args = JsonDocument.Parse(arguments).RootElement;
         var relPath = args.GetProperty("path").GetString()!;
         var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
+
+        var projectRoot = _projectDir.EndsWith(Path.DirectorySeparatorChar)
+            ? _projectDir
+            : _projectDir + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
+            return "Error: Path traversal detected.";
 
         if (!File.Exists(fullPath))
             return $"Error: File not found: {relPath}";
@@ -130,6 +136,62 @@ public sealed class DiagnoseLuaTool : ITool
                     Line = lineNum,
                     Column = 1
                 });
+
+            // Global variable leak: assignment without local
+            var globalMatch = Regex.Match(line, @"^\s*(\w+)\s*=\s*[^=]");
+            if (globalMatch.Success &&
+                !line.Contains("local ") &&
+                !line.Contains("function ") &&
+                !line.Contains("mod.") &&
+                !line.Contains("mod:") &&
+                !line.Contains("--") &&
+                !IsBuiltInGlobal(globalMatch.Groups[1].Value))
+            {
+                diags.Add(new Diagnostic
+                {
+                    Severity = DiagnosticSeverity.Warning,
+                    Message = $"Possible global variable '{globalMatch.Groups[1].Value}' — should be declared with 'local'",
+                    FilePath = filePath,
+                    Line = lineNum,
+                    Column = globalMatch.Index + 1,
+                    Suggestion = "Add 'local' keyword: local " + globalMatch.Value.Trim()
+                });
+            }
+
+            // Deprecated GetPlayerType
+            if (line.Contains("GetPlayerType") && !line.Contains("GetPlayerTypeOf"))
+                diags.Add(new Diagnostic
+                {
+                    Severity = DiagnosticSeverity.Warning,
+                    Message = "GetPlayerType is deprecated",
+                    FilePath = filePath,
+                    Line = lineNum,
+                    Column = 1,
+                    Suggestion = "Use GetPlayerTypeOf() instead"
+                });
+
+            // REPENTOGON API usage — remind to declare dependency
+            if (line.Contains("REPENTOGON") && lineNum == 1)
+                diags.Add(new Diagnostic
+                {
+                    Severity = DiagnosticSeverity.Info,
+                    Message = "REPENTOGON API used — ensure mod marks REPENTOGON as dependency in metadata.xml",
+                    FilePath = filePath,
+                    Line = lineNum,
+                    Column = 1
+                });
+
+            // Mismatched string quotes (simple check: odd number of quotes on a line)
+            var dqCount = line.Count(c => c == '"') - line.Split("--")[0].Count(c => c == '"');
+            if (dqCount % 2 != 0 && !line.TrimStart().StartsWith("--"))
+                diags.Add(new Diagnostic
+                {
+                    Severity = DiagnosticSeverity.Warning,
+                    Message = "Mismatched double quotes on this line",
+                    FilePath = filePath,
+                    Line = lineNum,
+                    Column = 1
+                });
         }
 
         if (!content.Contains("RegisterMod"))
@@ -154,6 +216,48 @@ public sealed class DiagnoseLuaTool : ITool
                 Column = 1
             });
 
+        var braceBalance = content.Count(c => c == '{') - content.Count(c => c == '}');
+        if (braceBalance != 0)
+            diags.Add(new Diagnostic
+            {
+                Severity = DiagnosticSeverity.Error,
+                Message = $"Unbalanced braces: {Math.Abs(braceBalance)} {'{' + (braceBalance > 0 ? "" : "}")} unmatched",
+                FilePath = filePath,
+                Line = lines.Length,
+                Column = 1
+            });
+
+        var bracketBalance = content.Count(c => c == '[') - content.Count(c => c == ']');
+        if (bracketBalance != 0)
+            diags.Add(new Diagnostic
+            {
+                Severity = DiagnosticSeverity.Error,
+                Message = $"Unbalanced brackets: {Math.Abs(bracketBalance)} {'[' + (bracketBalance > 0 ? "" : "]")} unmatched",
+                FilePath = filePath,
+                Line = lines.Length,
+                Column = 1
+            });
+
         return diags;
     }
+
+    private static bool IsBuiltInGlobal(string name) =>
+        name is "mod" or "Isaac" or "Game" or "Input" or "MusicManager" or "Options" or
+        "RegisterMod" or "Vector" or "Entity" or "EntityPlayer" or "EntityNPC" or
+        "Room" or "Level" or "GridEntity" or "Sprite" or "Font" or "SFX" or
+        "NullFrame" or "Color" or "KColor" or "Difficulty" or "LevelStage" or
+        "RoomType" or "BackdropType" or "GridEntityType" or "EntityType" or
+        "CollectibleType" or "TrinketType" or "CardType" or "PillCardType" or
+        "PlayerType" or "ModCallbacks" or "CacheFlag" or "EntityFlag" or
+        "EntityPartition" or "StbType" or "StbRouteType" or "NullItemID" or
+        "PickupVariant" or "TearVariant" or "EffectVariant" or "FamiliarVariant" or
+        "BombVariant" or "ProjectileVariant" or "KnifeVariant" or "LaserVariant" or
+        "PressurePlateVariant" or "PoofVariant" or "SuckerVariant" or
+        "DeliriumVisionType" or "EventsTable" or "EventCallback" or
+        "_" or "self" or "pairs" or "ipairs" or "print" or "tostring" or "tonumber" or
+        "type" or "error" or "assert" or "pcall" or "xpcall" or "select" or
+        "unpack" or "table" or "string" or "math" or "os" or "io" or "coroutine" or
+        "require" or "setmetatable" or "getmetatable" or "rawget" or "rawset" or
+        "rawequal" or "rawlen" or "next" or "load" or "loadfile" or "dofile" or
+        "collectgarbage" or "arg" or "package" or "_G" or "_VERSION";
 }

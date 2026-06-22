@@ -32,33 +32,51 @@ public sealed class OllamaEmbeddingProvider : IEmbeddingProvider
     public async Task<IReadOnlyList<float[]>> EmbedBatchAsync(IReadOnlyList<string> texts, CancellationToken ct = default)
     {
         var results = new float[texts.Count][];
+        const int maxConcurrency = 8;
+        using var semaphore = new SemaphoreSlim(maxConcurrency);
+        var tasks = new Task[texts.Count];
+
         for (var i = 0; i < texts.Count; i++)
         {
-            var text = texts[i];
+            var idx = i;
+            var text = texts[idx];
             // Truncate to avoid exceeding model context length.
             // nomic-embed-text has 8192 token context; ~2000 chars is safe for mixed content.
             const int maxChars = 2000;
             if (text.Length > maxChars)
                 text = text[..maxChars];
 
-            var payload = new { model = _model, prompt = text };
-            using var resp = await _http.PostAsJsonAsync("/api/embeddings", payload, ct);
-            if (!resp.IsSuccessStatusCode)
+            tasks[idx] = Task.Run(async () =>
             {
-                var body = await resp.Content.ReadAsStringAsync(ct);
-                throw new HttpRequestException(
-                    $"Ollama embedding failed ({resp.StatusCode}) for text of length {text.Length}: {body}");
-            }
+                await semaphore.WaitAsync(ct);
+                try
+                {
+                    var payload = new { model = _model, prompt = text };
+                    using var resp = await _http.PostAsJsonAsync("/api/embeddings", payload, ct);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        var body = await resp.Content.ReadAsStringAsync(ct);
+                        throw new HttpRequestException(
+                            $"Ollama embedding failed ({resp.StatusCode}) for text of length {text.Length}: {body}");
+                    }
 
-            using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
-            var embedding = doc.RootElement.GetProperty("embedding");
-            var arr = new float[embedding.GetArrayLength()];
-            var j = 0;
-            foreach (var v in embedding.EnumerateArray())
-                arr[j++] = v.GetSingle();
-            results[i] = arr;
-            _dimensions ??= arr.Length;
+                    using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
+                    var embedding = doc.RootElement.GetProperty("embedding");
+                    var arr = new float[embedding.GetArrayLength()];
+                    var j = 0;
+                    foreach (var v in embedding.EnumerateArray())
+                        arr[j++] = v.GetSingle();
+                    results[idx] = arr;
+                    _dimensions ??= arr.Length;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }, ct);
         }
+
+        await Task.WhenAll(tasks);
         return results;
     }
 }

@@ -22,7 +22,7 @@ public class XmlValidatorTests
 
         var errors = _validator.Validate(xml);
 
-        Assert.Empty(errors.Where(e => e.Severity == XmlValidationErrorSeverity.Error));
+        Assert.DoesNotContain(errors, e => e.Severity == XmlValidationErrorSeverity.Error);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class XmlValidatorTests
 
         var errors = _validator.Validate(xml);
 
-        Assert.Empty(errors.Where(e => e.Severity == XmlValidationErrorSeverity.Error));
+        Assert.DoesNotContain(errors, e => e.Severity == XmlValidationErrorSeverity.Error);
     }
 
     [Fact]

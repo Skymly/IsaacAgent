@@ -19,10 +19,3 @@ public enum DiagnosticSeverity
     Hint
 }
 
-public sealed class DiagnosticResult
-{
-    public List<Diagnostic> Diagnostics { get; init; } = [];
-    public int ErrorCount => Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error);
-    public int WarningCount => Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Warning);
-    public bool HasErrors => ErrorCount > 0;
-}

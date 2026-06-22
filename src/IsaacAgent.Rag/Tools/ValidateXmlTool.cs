@@ -11,7 +11,7 @@ public sealed class ValidateXmlTool : ITool
 
     public ValidateXmlTool(string projectDir)
     {
-        _projectDir = projectDir;
+        _projectDir = Path.GetFullPath(projectDir);
         _validator = new XmlValidator();
     }
 
@@ -37,7 +37,12 @@ public sealed class ValidateXmlTool : ITool
         var args = JsonDocument.Parse(arguments).RootElement;
         var relativePath = args.GetProperty("file_path").GetString()!;
 
-        var fullPath = Path.Combine(_projectDir, relativePath);
+        var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relativePath));
+        var projectRoot = _projectDir.EndsWith(Path.DirectorySeparatorChar)
+            ? _projectDir
+            : _projectDir + Path.DirectorySeparatorChar;
+        if (!fullPath.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
+            return Task.FromResult("Error: Path traversal detected.");
         var errors = _validator.ValidateFile(fullPath);
 
         if (errors.Count == 0)

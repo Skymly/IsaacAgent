@@ -15,6 +15,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     public ChatViewModel Chat { get; }
     public ProjectViewModel Project { get; }
+    public QuickReferenceViewModel QuickReference { get; }
 
     [ObservableProperty]
     private string _statusText = "Ready";
@@ -28,6 +29,7 @@ public sealed partial class MainViewModel : ObservableObject
         _logger = logger;
         Chat = services.GetRequiredService<ChatViewModel>();
         Project = services.GetRequiredService<ProjectViewModel>();
+        QuickReference = services.GetRequiredService<QuickReferenceViewModel>();
 
         Project.ProjectLoaded += path =>
         {

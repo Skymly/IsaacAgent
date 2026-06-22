@@ -14,6 +14,7 @@ public sealed class AgentSession
     private string? _projectDir;
     private readonly List<ChatMessage> _history = [];
     private readonly int _maxIterations = 10;
+    private const int MaxHistoryMessages = 50;
 
     public event Action<string>? OnTextGenerated;
     public event Action<string, string>? OnToolCall;
@@ -46,6 +47,8 @@ public sealed class AgentSession
 
         for (var iteration = 0; iteration < _maxIterations; iteration++)
         {
+            TrimHistory();
+
             var request = new ChatRequest
             {
                 Messages = _history.ToList(),
@@ -102,13 +105,17 @@ public sealed class AgentSession
 
             if (toolCalls.Count > 0)
             {
-                foreach (var toolCall in toolCalls)
+                var toolTasks = toolCalls.Select(async toolCall =>
                 {
                     OnToolCall?.Invoke(toolCall.Name, toolCall.Arguments);
                     var result = await _tools.ExecuteAsync(toolCall.Name, toolCall.Arguments, ct);
                     OnToolResult?.Invoke(result);
+                    return (toolCall, result);
+                }).ToList();
+
+                var results = await Task.WhenAll(toolTasks);
+                foreach (var (toolCall, result) in results)
                     _history.Add(ChatMessage.Tool(toolCall.Id, result));
-                }
                 continue;
             }
 
@@ -123,6 +130,64 @@ public sealed class AgentSession
     {
         _history.Clear();
         _history.Add(ChatMessage.System(SystemPrompts.BuildSystemPrompt(_projectDir)));
+    }
+
+    public void SaveHistory(string path)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (dir is not null) Directory.CreateDirectory(dir);
+            var json = System.Text.Json.JsonSerializer.Serialize(_history, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(path, json);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save chat history to {Path}", path);
+        }
+    }
+
+    public void LoadHistory(string path)
+    {
+        try
+        {
+            if (!File.Exists(path)) return;
+            var json = File.ReadAllText(path);
+            var loaded = System.Text.Json.JsonSerializer.Deserialize<List<ChatMessage>>(json);
+            if (loaded is not null && loaded.Count > 0)
+            {
+                _history.Clear();
+                _history.AddRange(loaded);
+                _logger.LogInformation("Loaded {Count} messages from history file", loaded.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load chat history from {Path}", path);
+        }
+    }
+
+    private void TrimHistory()
+    {
+        if (_history.Count <= MaxHistoryMessages)
+            return;
+
+        // Always keep the system prompt (index 0) and the most recent messages.
+        // Remove oldest non-system messages until we're under the limit.
+        var toRemove = _history.Count - MaxHistoryMessages;
+
+        // Don't cut in the middle of a tool call / tool result pair.
+        // If the message at index 1 is a "tool" result (orphaned without its
+        // preceding assistant tool_calls message), remove it too.
+        while (toRemove < _history.Count - 1 &&
+               _history[1].Role == "tool")
+        {
+            toRemove++;
+        }
+
+        // Remove from index 1 onward (preserve system prompt at 0)
+        _history.RemoveRange(1, toRemove);
+        _logger.LogInformation("Trimmed {Count} old messages from history", toRemove);
     }
 
     private sealed class StreamedToolCall

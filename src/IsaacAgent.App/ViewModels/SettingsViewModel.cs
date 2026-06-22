@@ -76,5 +76,7 @@ public sealed partial class SettingsViewModel : ObservableObject
             OnnxEmbeddingVocabPath = OnnxEmbeddingVocabPath,
         };
         config.Save();
+        App.ReloadLlmProvider();
+        App.ReloadEmbeddingProvider();
     }
 }

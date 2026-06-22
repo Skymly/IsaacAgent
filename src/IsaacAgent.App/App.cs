@@ -7,6 +7,7 @@ using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag;
+using IsaacAgent.Rag.Embedding;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -61,7 +62,26 @@ public sealed class App : Application
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<ChatViewModel>();
         services.AddSingleton<ProjectViewModel>();
+        services.AddSingleton<SettingsViewModel>();
+        services.AddSingleton<QuickReferenceViewModel>();
 
         return services.BuildServiceProvider();
+    }
+
+    public static void ReloadLlmProvider()
+    {
+        var config = AppConfiguration.Load();
+        var proxy = Services.GetRequiredService<ChatServiceProxy>();
+        var newProvider = LlmServiceRegistration.BuildProvider(Services, new ProviderConfig(
+            config.ProviderType, config.Endpoint, config.Model, config.ApiKey, 120));
+        proxy.Replace(newProvider);
+    }
+
+    public static void ReloadEmbeddingProvider()
+    {
+        var config = AppConfiguration.Load();
+        var proxy = Services.GetRequiredService<EmbeddingProviderProxy>();
+        var newProvider = RagServiceRegistration.BuildEmbeddingProvider(Services, config.ToEmbeddingConfig());
+        proxy.Replace(newProvider);
     }
 }

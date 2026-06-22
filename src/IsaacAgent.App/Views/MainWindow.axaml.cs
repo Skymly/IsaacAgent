@@ -2,9 +2,11 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Specialized;
 
 namespace IsaacAgent.App.Views;
 
@@ -25,11 +27,30 @@ public sealed partial class MainWindow : Window
             });
             return folders.Count > 0 ? folders[0] : null;
         };
+
+        vm.Chat.Messages.CollectionChanged += OnMessagesChanged;
     }
 
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    private void OnMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Add)
+        {
+            Dispatcher.UIThread.Post(() => ChatScrollViewer.ScrollToEnd(), DispatcherPriority.Background);
+        }
+    }
+
+    private void OnFileDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
+    {
+        if (sender is ListBox lb && lb.SelectedItem is FileTreeItem item)
+        {
+            var vm = DataContext as MainViewModel;
+            vm?.Project.OpenFileCommand.Execute(item);
+        }
     }
 
     private void OnExit(object? sender, RoutedEventArgs e) => Close();
