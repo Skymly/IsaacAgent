@@ -101,36 +101,48 @@ public sealed class OllamaProvider : IChatService
 
     private object BuildPayload(ChatRequest request, bool stream)
     {
-        var messages = request.Messages.Select(m => new
+        var messages = request.Messages.Select(m =>
         {
-            role = m.Role,
-            content = m.Content,
-            tool_calls = m.ToolCalls.Count > 0 ? m.ToolCalls.Select(tc => new
+            var msg = new Dictionary<string, object?>
             {
-                function = new { name = tc.Name, arguments = JsonSerializer.Deserialize<JsonElement>(tc.Arguments) }
-            }) : null,
-            tool_call_id = m.ToolCallId
+                ["role"] = m.Role,
+                ["content"] = m.Content,
+            };
+            if (m.ToolCalls.Count > 0)
+            {
+                msg["tool_calls"] = m.ToolCalls.Select(tc => new
+                {
+                    function = new { name = tc.Name, arguments = JsonSerializer.Deserialize<JsonElement>(tc.Arguments) }
+                }).ToArray();
+            }
+            if (m.ToolCallId is not null)
+                msg["tool_call_id"] = m.ToolCallId;
+            return (object)msg;
         }).ToArray();
 
-        var tools = request.Tools.Count > 0 ? request.Tools.Select(t => new
+        var payload = new Dictionary<string, object?>
         {
-            type = "function",
-            function = new
-            {
-                name = t.Name,
-                description = t.Description,
-                parameters = t.Parameters
-            }
-        }).ToArray() : null;
-
-        return new
-        {
-            model = request.Model ?? _model,
-            messages,
-            stream,
-            tools,
-            options = new { temperature = request.Temperature }
+            ["model"] = request.Model ?? _model,
+            ["messages"] = messages,
+            ["stream"] = stream,
+            ["options"] = new { temperature = request.Temperature }
         };
+
+        if (request.Tools.Count > 0)
+        {
+            payload["tools"] = request.Tools.Select(t => new
+            {
+                type = "function",
+                function = new
+                {
+                    name = t.Name,
+                    description = t.Description,
+                    parameters = t.Parameters
+                }
+            }).ToArray();
+        }
+
+        return payload;
     }
 
     private static List<ToolCall> ParseToolCalls(JsonElement message)

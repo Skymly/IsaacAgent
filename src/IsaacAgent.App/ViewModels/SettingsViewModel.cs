@@ -79,4 +79,22 @@ public sealed partial class SettingsViewModel : ObservableObject
         App.ReloadLlmProvider();
         App.ReloadEmbeddingProvider();
     }
+
+    /// <summary>
+    /// Called from <see cref="App.ReloadEmbeddingProvider"/> to reflect index
+    /// rebuild progress in the UI. Safe to call from any thread.
+    /// </summary>
+    public void SetIndexRebuilding(bool value)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => IsRebuildingIndex = value);
+    }
+
+    /// <summary>
+    /// Called from <see cref="App.ReloadEmbeddingProvider"/> to report index
+    /// rebuild success/failure. Safe to call from any thread.
+    /// </summary>
+    public void SetIndexStatus(string status)
+    {
+        Avalonia.Threading.Dispatcher.UIThread.Post(() => IndexStatus = status);
+    }
 }

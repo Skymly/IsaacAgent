@@ -34,6 +34,10 @@ public sealed class App : Application
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();
         }
 
+        // Pre-warm the RAG index in the background so the first search_knowledge
+        // call doesn't block the UI for tens of seconds (especially with ONNX).
+        _ = Task.Run(() => PrewarmRagIndexAsync());
+
         base.OnFrameworkInitializationCompleted();
     }
 
@@ -89,17 +93,42 @@ public sealed class App : Application
         if (Services.GetRequiredService<IRetriever>() is Retriever retriever)
         {
             retriever.ResetReady();
+            var settings = Services.GetService<SettingsViewModel>();
+            settings?.SetIndexRebuilding(true);
+
             _ = Task.Run(async () =>
             {
                 try
                 {
                     await retriever.RebuildIndexAsync();
+                    settings?.SetIndexStatus("Index rebuilt successfully.");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Index rebuild failed: {ex.Message}");
+                    var logger = Services.GetRequiredService<ILogger<App>>();
+                    logger.LogError(ex, "Index rebuild failed");
+                    settings?.SetIndexStatus($"Index rebuild failed: {ex.Message}");
+                }
+                finally
+                {
+                    settings?.SetIndexRebuilding(false);
                 }
             });
+        }
+    }
+
+    private static async Task PrewarmRagIndexAsync()
+    {
+        try
+        {
+            var retriever = Services.GetService<IRetriever>();
+            if (retriever is null) return;
+            await retriever.EnsureIndexAsync();
+        }
+        catch (Exception ex)
+        {
+            var logger = Services.GetRequiredService<ILogger<App>>();
+            logger.LogWarning(ex, "RAG index prewarm failed (will retry on first search)");
         }
     }
 }

@@ -72,68 +72,80 @@ public sealed class OpenAICompatibleProvider : IChatService
 
             var content = delta.TryGetProperty("content", out var c) ? c.GetString() : null;
 
-            string? toolCallId = null;
-            string? toolCallName = null;
-            string? toolCallArgs = null;
-            var toolCallIndex = -1;
-            var isToolCall = false;
-
             if (delta.TryGetProperty("tool_calls", out var tc) && tc.GetArrayLength() > 0)
             {
-                var first = tc[0];
-                isToolCall = true;
-                toolCallIndex = first.TryGetProperty("index", out var idx) ? idx.GetInt32() : 0;
-                toolCallId = first.TryGetProperty("id", out var id) ? id.GetString() : null;
-                if (first.TryGetProperty("function", out var fn))
+                // A single delta chunk may carry multiple tool calls (some OpenAI-compatible
+                // endpoints batch them). Emit one ChatChunk per tool call so AgentSession's
+                // index-keyed accumulator can capture all of them.
+                foreach (var item in tc.EnumerateArray())
                 {
-                    toolCallName = fn.TryGetProperty("name", out var name) ? name.GetString() : null;
-                    toolCallArgs = fn.TryGetProperty("arguments", out var args) ? args.GetString() : null;
+                    var idx = item.TryGetProperty("index", out var idxEl) ? idxEl.GetInt32() : 0;
+                    var id = item.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                    string? name = null;
+                    string? args = null;
+                    if (item.TryGetProperty("function", out var fn))
+                    {
+                        name = fn.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : null;
+                        args = fn.TryGetProperty("arguments", out var argsEl) ? argsEl.GetString() : null;
+                    }
+                    yield return new ChatChunk("", true, idx, id, name, args);
                 }
+                continue;
             }
 
             if (content is not null)
                 yield return new ChatChunk(content, false, -1, null, null, null);
-
-            if (isToolCall)
-                yield return new ChatChunk("", true, toolCallIndex, toolCallId, toolCallName, toolCallArgs);
         }
     }
 
     private object BuildPayload(ChatRequest request, bool stream)
     {
-        var messages = request.Messages.Select(m => new
+        var messages = request.Messages.Select(m =>
         {
-            role = m.Role,
-            content = m.Content,
-            tool_calls = m.ToolCalls.Count > 0 ? m.ToolCalls.Select(tc => new
+            object? toolCalls = null;
+            if (m.ToolCalls.Count > 0)
             {
-                id = tc.Id,
-                type = "function",
-                function = new { name = tc.Name, arguments = tc.Arguments }
-            }) : null,
-            tool_call_id = m.ToolCallId
+                toolCalls = m.ToolCalls.Select(tc => new
+                {
+                    id = tc.Id,
+                    type = "function",
+                    function = new { name = tc.Name, arguments = tc.Arguments }
+                }).ToArray();
+            }
+            var msg = new Dictionary<string, object?>
+            {
+                ["role"] = m.Role,
+                ["content"] = m.Content,
+            };
+            if (toolCalls is not null) msg["tool_calls"] = toolCalls;
+            if (m.ToolCallId is not null) msg["tool_call_id"] = m.ToolCallId;
+            return (object)msg;
         }).ToArray();
 
-        var tools = request.Tools.Count > 0 ? request.Tools.Select(t => new
+        var payload = new Dictionary<string, object?>
         {
-            type = "function",
-            function = new
-            {
-                name = t.Name,
-                description = t.Description,
-                parameters = t.Parameters
-            }
-        }).ToArray() : null;
-
-        return new
-        {
-            model = request.Model ?? _model,
-            messages,
-            temperature = request.Temperature,
-            max_tokens = request.MaxTokens,
-            stream,
-            tools
+            ["model"] = request.Model ?? _model,
+            ["messages"] = messages,
+            ["temperature"] = request.Temperature,
+            ["max_tokens"] = request.MaxTokens,
+            ["stream"] = stream,
         };
+
+        if (request.Tools.Count > 0)
+        {
+            payload["tools"] = request.Tools.Select(t => new
+            {
+                type = "function",
+                function = new
+                {
+                    name = t.Name,
+                    description = t.Description,
+                    parameters = t.Parameters
+                }
+            }).ToArray();
+        }
+
+        return payload;
     }
 
     private static List<ToolCall> ParseToolCalls(JsonElement choice)

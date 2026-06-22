@@ -10,7 +10,7 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
     private readonly InferenceSession _session;
     private readonly WordPieceTokenizer _tokenizer;
     private readonly ILogger<OnnxEmbeddingProvider> _logger;
-    private readonly int _dimensions;
+    private int _dimensions;
     private bool _disposed;
 
     public OnnxEmbeddingProvider(string modelPath, string vocabPath, ILogger<OnnxEmbeddingProvider> logger)
@@ -26,7 +26,9 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
         _session = new InferenceSession(modelPath, options);
         _tokenizer = new WordPieceTokenizer(vocabPath);
 
-        _dimensions = 384;
+        // Infer dimensions from the model's output metadata.
+        // Fallback to 384 (all-MiniLM-L6-v2 default) if metadata is unavailable.
+        _dimensions = InferDimensions();
     }
 
     public string ModelName => "onnx-minilm-l6-v2";
@@ -43,39 +45,98 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
     {
         return Task.Run<IReadOnlyList<float[]>>(() =>
         {
-            var results = new float[texts.Count][];
+            if (texts.Count == 0) return [];
+
+            // Tokenize all texts, then pad to the max sequence length in this batch
+            // so we can run a single forward pass through the ONNX model.
+            const int maxSeqLen = 512;
+            var encoded = new (long[] Ids, long[] Mask)[texts.Count];
+            var batchSeqLen = 0;
             for (var i = 0; i < texts.Count; i++)
             {
                 ct.ThrowIfCancellationRequested();
-                results[i] = EmbedSingle(texts[i]);
+                var (ids, mask) = _tokenizer.Encode(texts[i], maxLength: maxSeqLen);
+                encoded[i] = (ids, mask);
+                if (ids.Length > batchSeqLen) batchSeqLen = ids.Length;
             }
-            return results;
+
+            // Build padded tensors: [batch, batchSeqLen]
+            var inputIds = new DenseTensor<long>(new[] { texts.Count, batchSeqLen });
+            var attentionMaskTensor = new DenseTensor<long>(new[] { texts.Count, batchSeqLen });
+            var tokenTypeIdsTensor = new DenseTensor<long>(new[] { texts.Count, batchSeqLen });
+
+            for (var i = 0; i < texts.Count; i++)
+            {
+                var (ids, mask) = encoded[i];
+                for (var j = 0; j < ids.Length; j++)
+                {
+                    inputIds[i, j] = ids[j];
+                    attentionMaskTensor[i, j] = mask[j];
+                    // tokenTypeIds stay 0 (single-sentence model)
+                }
+                // Remaining positions are already 0 (padding)
+            }
+
+            var inputs = new List<NamedOnnxValue>
+            {
+                NamedOnnxValue.CreateFromTensor("input_ids", inputIds),
+                NamedOnnxValue.CreateFromTensor("attention_mask", attentionMaskTensor),
+                NamedOnnxValue.CreateFromTensor("token_type_ids", tokenTypeIdsTensor),
+            };
+
+            using var results = _session.Run(inputs);
+            var output = results.First().AsTensor<float>();
+
+            // Update dimensions from actual output if not yet set
+            if (_dimensions == 0 && output.Dimensions.Length >= 3)
+                _dimensions = output.Dimensions[2];
+
+            // Pool and normalize each sequence in the batch
+            var embeddings = new float[texts.Count][];
+            for (var i = 0; i < texts.Count; i++)
+            {
+                embeddings[i] = MeanPoolAndNormalize(output, encoded[i].Mask, i);
+            }
+            return embeddings;
         }, ct);
     }
 
-    private float[] EmbedSingle(string text)
+    private int InferDimensions()
     {
-        var (ids, attentionMask) = _tokenizer.Encode(text, maxLength: 512);
-        var tokenTypeIds = new long[ids.Length];
-
-        var inputIds = new DenseTensor<long>(ids, new[] { 1, ids.Length });
-        var attentionMaskTensor = new DenseTensor<long>(attentionMask, new[] { 1, attentionMask.Length });
-        var tokenTypeIdsTensor = new DenseTensor<long>(tokenTypeIds, new[] { 1, tokenTypeIds.Length });
-
-        var inputs = new List<NamedOnnxValue>
+        // Try to read from model output metadata
+        try
         {
-            NamedOnnxValue.CreateFromTensor("input_ids", inputIds),
-            NamedOnnxValue.CreateFromTensor("attention_mask", attentionMaskTensor),
-            NamedOnnxValue.CreateFromTensor("token_type_ids", tokenTypeIdsTensor),
-        };
+            var output = _session.OutputMetadata.FirstOrDefault();
+            if (output.Value?.Dimensions is { Length: >= 3 } dims && dims[2] > 0)
+                return dims[2];
+        }
+        catch { }
 
-        using var results = _session.Run(inputs);
-        var output = results.First().AsTensor<float>();
+        // Fallback: run a dummy forward pass to infer from actual output shape
+        try
+        {
+            var dummyIds = new DenseTensor<long>(new[] { 1, 1 });
+            var dummyMask = new DenseTensor<long>(new[] { 1, 1 });
+            dummyMask[0, 0] = 1;
+            var dummyType = new DenseTensor<long>(new[] { 1, 1 });
+            var inputs = new List<NamedOnnxValue>
+            {
+                NamedOnnxValue.CreateFromTensor("input_ids", dummyIds),
+                NamedOnnxValue.CreateFromTensor("attention_mask", dummyMask),
+                NamedOnnxValue.CreateFromTensor("token_type_ids", dummyType),
+            };
+            using var results = _session.Run(inputs);
+            var output = results.First().AsTensor<float>();
+            if (output.Dimensions.Length >= 3)
+                return output.Dimensions[2];
+        }
+        catch { }
 
-        return MeanPoolAndNormalize(output, attentionMask);
+        // Final fallback: all-MiniLM-L6-v2 default
+        return 384;
     }
 
-    private static float[] MeanPoolAndNormalize(Tensor<float> tokenEmbeddings, long[] attentionMask)
+    private static float[] MeanPoolAndNormalize(Tensor<float> tokenEmbeddings, long[] attentionMask, int batchIndex)
     {
         var seqLen = tokenEmbeddings.Dimensions[1];
         var dim = tokenEmbeddings.Dimensions[2];
@@ -84,10 +145,10 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
         var maskSum = 0;
         for (var s = 0; s < seqLen; s++)
         {
-            if (attentionMask[s] == 0) continue;
+            if (s >= attentionMask.Length || attentionMask[s] == 0) continue;
             maskSum++;
             for (var d = 0; d < dim; d++)
-                pooled[d] += tokenEmbeddings[0, s, d];
+                pooled[d] += tokenEmbeddings[batchIndex, s, d];
         }
 
         if (maskSum > 0)

@@ -186,13 +186,50 @@ public sealed class AgentSession
         // Remove oldest non-system messages until we're under the limit.
         var toRemove = _history.Count - MaxHistoryMessages;
 
-        // Don't cut in the middle of a tool call / tool result pair.
-        // If the message at index 1 is a "tool" result (orphaned without its
-        // preceding assistant tool_calls message), remove it too.
-        while (toRemove < _history.Count - 1 &&
-               _history[1].Role == "tool")
+        // Extend the removal window to avoid orphaned tool-related messages:
+        // 1. If the new first message (after removal) is a "tool" result without
+        //    its preceding assistant tool_calls message, remove it too.
+        // 2. If the new first message is an assistant message with tool_calls
+        //    but its corresponding tool results would be removed, keep removing
+        //    until we're past the entire tool_calls + tool_results group.
+        while (toRemove < _history.Count - 1)
         {
-            toRemove++;
+            var newFirst = _history[toRemove + 1];
+
+            // Case 1: orphaned tool result
+            if (newFirst.Role == "tool")
+            {
+                toRemove++;
+                continue;
+            }
+
+            // Case 2: assistant with tool_calls but no matching tool results
+            if (newFirst.Role == "assistant" && newFirst.ToolCalls.Count > 0)
+            {
+                // Count how many tool results follow this assistant message
+                var expectedResults = newFirst.ToolCalls.Count;
+                var availableResults = 0;
+                for (var i = toRemove + 2; i < _history.Count && availableResults < expectedResults; i++)
+                {
+                    if (_history[i].Role == "tool")
+                        availableResults++;
+                    else
+                        break;
+                }
+
+                // If not all tool results fit within the kept window, remove the
+                // entire group (assistant tool_calls + partial tool results).
+                if (availableResults < expectedResults)
+                {
+                    toRemove++;
+                    // Also skip the partial tool results that would be orphaned
+                    while (toRemove < _history.Count - 1 && _history[toRemove + 1].Role == "tool")
+                        toRemove++;
+                    continue;
+                }
+            }
+
+            break;
         }
 
         // Remove from index 1 onward (preserve system prompt at 0)

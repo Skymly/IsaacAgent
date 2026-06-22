@@ -60,7 +60,8 @@ public sealed class IndexBuilder
         for (var i = 0; i < chunks.Count; i += batchSize)
         {
             ct.ThrowIfCancellationRequested();
-            var batch = chunks.Skip(i).Take(batchSize).ToList();
+            var take = Math.Min(batchSize, chunks.Count - i);
+            var batch = chunks.GetRange(i, take);
             var texts = batch.Select(c => $"{c.Title}\n{c.Content}").ToList();
             var vectors = await _embedding.EmbedBatchAsync(texts, ct);
 
