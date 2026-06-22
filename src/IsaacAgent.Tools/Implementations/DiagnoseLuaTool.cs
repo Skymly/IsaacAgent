@@ -181,9 +181,10 @@ public sealed class DiagnoseLuaTool : ITool
                     Column = 1
                 });
 
-            // Mismatched string quotes (simple check: odd number of quotes on a line)
-            var dqCount = line.Count(c => c == '"') - line.Split("--")[0].Count(c => c == '"');
-            if (dqCount % 2 != 0 && !line.TrimStart().StartsWith("--"))
+            // Mismatched string quotes (simple check: odd number of quotes before any comment)
+            var codePart = line.Split("--")[0];
+            var dqCount = codePart.Count(c => c == '"');
+            if (dqCount % 2 != 0)
                 diags.Add(new Diagnostic
                 {
                     Severity = DiagnosticSeverity.Warning,
