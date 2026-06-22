@@ -154,7 +154,8 @@ public class ParseLogToolTests
         try
         {
             var tool = new ParseLogTool(tempDir);
-            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = @"C:\Windows\System32\drivers\etc\hosts" });
+            var absPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "some_abs_file.txt"));
+            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = absPath });
             var result = await tool.ExecuteAsync(args);
 
             Assert.Contains("Absolute paths are not allowed", result);

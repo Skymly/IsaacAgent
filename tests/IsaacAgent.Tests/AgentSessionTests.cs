@@ -119,7 +119,7 @@ public class AgentSessionTests
         var session = CreateSession(chat);
 
         session.History.Add(ChatMessage.User("before"));
-        session.SetProjectDirectory("/some/path");
+        session.SetProjectDirectory(Path.Combine(Path.GetTempPath(), $"isaac_test_{Guid.NewGuid():N}", "path"));
 
         Assert.Single(session.History);
         Assert.Equal("system", session.History[0].Role);
@@ -202,7 +202,7 @@ public class AgentSessionTests
         var chat = new StubChatService();
         var session = CreateSession(chat);
 
-        session.LoadHistory("/nonexistent/path/file.json");
+        session.LoadHistory(Path.Combine(Path.GetTempPath(), $"nonexistent_{Guid.NewGuid():N}", "file.json"));
 
         // Should still have just the system prompt
         Assert.Single(session.History);
