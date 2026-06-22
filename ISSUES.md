@@ -212,3 +212,5 @@
 | 2026-06-22 | P3-3 | - | ViewModel 测试：`Avalonia.Headless` + `ProjectViewModelTests`(6) + `ChatMessageViewModelTests`(10)；+16 测试，130 全过 |
 | 2026-06-22 | P3-5 | - | `IAgentSessionFactory` + `AgentSession` Transient + `ChatViewModel` IDisposable 正确取消订阅 |
 | 2026-06-22 | P3-6 | - | `DiagnoseLuaTool` `StripStringsAndComments` + 转义感知引号检测 + 精确 debug 7 匹配；+9 误报减少测试，139 全过 |
+| 2026-06-22 | N1 | - | README 头部残缺（首行即「- An LLM API endpoint」）→ 重写：补全标题/Features/Tech Stack/Prerequisites/Project Layout，保留原有 Configuration/Build 段落并补充 Tests/Publish 命令 |
+| 2026-06-22 | N3 | - | `ChatViewModel.SendAsync` 异常路径留下空 assistant 气泡 → `assistantMsg` 提到 try 外，catch（取消/异常）中若 `Content` 为空则 `Messages.Remove(assistantMsg)`，保留已流式的部分内容；139 测试全过 |

@@ -144,11 +144,11 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
 
         Messages.Add(new ChatMessageViewModel { Role = "user", Content = userMsg });
 
+        var assistantMsg = new ChatMessageViewModel { Role = "assistant", Content = "" };
+        Messages.Add(assistantMsg);
+
         try
         {
-            var assistantMsg = new ChatMessageViewModel { Role = "assistant", Content = "" };
-            Messages.Add(assistantMsg);
-
             await foreach (var chunk in _session.SendMessageAsync(userMsg, _cts.Token))
             {
                 assistantMsg.Content += chunk;
@@ -156,11 +156,20 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
         }
         catch (OperationCanceledException)
         {
+            // Keep any partial content the assistant streamed before cancel;
+            // drop the bubble only if nothing was produced, so the UI doesn't
+            // show an empty assistant message above the "(cancelled)" notice.
+            if (string.IsNullOrEmpty(assistantMsg.Content))
+                Messages.Remove(assistantMsg);
             Messages.Add(new ChatMessageViewModel { Role = "system", Content = "(cancelled)" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Send failed");
+            // Remove the empty assistant bubble so the error message stands
+            // alone instead of stacking a blank card on top of it.
+            if (string.IsNullOrEmpty(assistantMsg.Content))
+                Messages.Remove(assistantMsg);
             Messages.Add(new ChatMessageViewModel
             {
                 Role = "error",
