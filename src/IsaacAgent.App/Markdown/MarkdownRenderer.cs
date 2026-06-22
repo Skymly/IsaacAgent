@@ -19,44 +19,45 @@ public static class MarkdownRenderer
     public static string GetMarkdown(Avalonia.Controls.SelectableTextBlock element) => element.GetValue(MarkdownProperty);
     public static void SetMarkdown(Avalonia.Controls.SelectableTextBlock element, string value) => element.SetValue(MarkdownProperty, value);
 
+    private static readonly SolidColorBrush CodeColor = new(Color.Parse("#CE9178"));
+    private static readonly SolidColorBrush QuoteColor = new(Color.Parse("#808080"));
+    private static readonly SolidColorBrush LinkColor = new(Color.Parse("#569CD6"));
+    private static readonly SolidColorBrush HrBrush = new(Color.Parse("#404040"));
+    private static readonly FontFamily MonoFont = FontFamily.Parse("Cascadia Code,Consolas,monospace");
+
     private static void OnMarkdownChanged(Avalonia.Controls.SelectableTextBlock textBlock, AvaloniaPropertyChangedEventArgs e)
     {
         var markdown = e.NewValue as string ?? "";
-        textBlock.Inlines = ParseMarkdown(markdown, textBlock);
+        textBlock.Inlines = ParseMarkdown(markdown);
     }
 
-    private static InlineCollection ParseMarkdown(string markdown, Avalonia.Controls.SelectableTextBlock textBlock)
+    private static InlineCollection ParseMarkdown(string markdown)
     {
         var inlines = new InlineCollection();
         var lines = markdown.Split('\n');
         var inCodeBlock = false;
         var codeBlockContent = new System.Text.StringBuilder();
-
-        var monoFontFamily = FontFamily.Parse("Cascadia Code,Consolas,monospace");
+        var codeBlockLang = "";
 
         for (var i = 0; i < lines.Length; i++)
         {
             var line = lines[i];
 
+            // Code block fences
             if (line.TrimStart().StartsWith("```"))
             {
                 if (inCodeBlock)
                 {
-                    // End code block
-                    inlines.Add(new Run(codeBlockContent.ToString())
-                    {
-                        FontFamily = monoFontFamily,
-                        FontSize = 12,
-                        Foreground = new SolidColorBrush(Color.Parse("#CE9178")),
-                    });
+                    AddCodeBlock(inlines, codeBlockContent.ToString(), codeBlockLang);
                     codeBlockContent.Clear();
+                    codeBlockLang = "";
                     inCodeBlock = false;
                     inlines.Add(new Run("\n"));
                 }
                 else
                 {
-                    // Start code block
                     inCodeBlock = true;
+                    codeBlockLang = line.TrimStart()[3..].Trim();
                 }
                 continue;
             }
@@ -69,59 +70,168 @@ public static class MarkdownRenderer
                 continue;
             }
 
+            // Horizontal rule (--- , ***, ___ on a line by itself)
+            if (IsHorizontalRule(line))
+            {
+                inlines.Add(new Run("\n"));
+                inlines.Add(new Run(new string('\u2014', 40))
+                {
+                    Foreground = HrBrush,
+                    FontSize = 12,
+                });
+                inlines.Add(new Run("\n"));
+                continue;
+            }
+
             // Headers
+            if (line.StartsWith("#### "))
+            {
+                AddHeader(inlines, line[5..], 12);
+                continue;
+            }
             if (line.StartsWith("### "))
             {
-                inlines.Add(new Run(line[4..] + "\n")
-                {
-                    FontSize = 13,
-                    FontWeight = FontWeight.Bold,
-                });
+                AddHeader(inlines, line[4..], 13);
                 continue;
             }
             if (line.StartsWith("## "))
             {
-                inlines.Add(new Run(line[3..] + "\n")
-                {
-                    FontSize = 14,
-                    FontWeight = FontWeight.Bold,
-                });
+                AddHeader(inlines, line[3..], 14);
                 continue;
             }
             if (line.StartsWith("# "))
             {
-                inlines.Add(new Run(line[2..] + "\n")
-                {
-                    FontSize = 15,
-                    FontWeight = FontWeight.Bold,
-                });
+                AddHeader(inlines, line[2..], 15);
                 continue;
             }
 
-            // Parse inline formatting: **bold**, `code`, *italic*
-            ParseInlineFormatting(inlines, line, monoFontFamily);
+            // Blockquote
+            if (line.StartsWith("> "))
+            {
+                var quoteText = line[2..];
+                ParseInlineFormatting(inlines, quoteText);
+                StyleLastRun(inlines, r =>
+                {
+                    r.FontStyle = FontStyle.Italic;
+                    r.Foreground = QuoteColor;
+                });
+                inlines.Add(new Run("\n"));
+                continue;
+            }
+
+            // Unordered list (- / * / + followed by space)
+            if (IsUnorderedListItem(line, out var ulIndent))
+            {
+                inlines.Add(new Run(new string(' ', ulIndent * 2) + "\u2022 "));
+                ParseInlineFormatting(inlines, line[(ulIndent + 2)..]);
+                inlines.Add(new Run("\n"));
+                continue;
+            }
+
+            // Ordered list (1. / 2. etc.)
+            if (IsOrderedListItem(line, out var olNumber, out var olIndent))
+            {
+                var numStr = olNumber.ToString();
+                inlines.Add(new Run(new string(' ', olIndent * 2) + $"{numStr}. "));
+                ParseInlineFormatting(inlines, line[(olIndent + numStr.Length + 2)..]);
+                inlines.Add(new Run("\n"));
+                continue;
+            }
+
+            // Regular paragraph line
+            ParseInlineFormatting(inlines, line);
             if (i < lines.Length - 1)
                 inlines.Add(new Run("\n"));
         }
 
+        // Unterminated code block
         if (inCodeBlock && codeBlockContent.Length > 0)
-        {
-            inlines.Add(new Run(codeBlockContent.ToString())
-            {
-                FontFamily = monoFontFamily,
-                FontSize = 12,
-                Foreground = new SolidColorBrush(Color.Parse("#CE9178")),
-            });
-        }
+            AddCodeBlock(inlines, codeBlockContent.ToString(), codeBlockLang);
 
         return inlines;
     }
 
+    private static void AddHeader(InlineCollection inlines, string text, double fontSize)
+    {
+        ParseInlineFormatting(inlines, text);
+        StyleLastRun(inlines, r =>
+        {
+            r.FontSize = fontSize;
+            r.FontWeight = FontWeight.Bold;
+        });
+        inlines.Add(new Run("\n"));
+    }
+
+    private static void AddCodeBlock(InlineCollection inlines, string code, string lang)
+    {
+        if (!string.IsNullOrEmpty(lang))
+        {
+            inlines.Add(new Run($"{lang}\n")
+            {
+                FontFamily = MonoFont,
+                FontSize = 11,
+                Foreground = QuoteColor,
+                FontStyle = FontStyle.Italic,
+            });
+        }
+        inlines.Add(new Run(code)
+        {
+            FontFamily = MonoFont,
+            FontSize = 12,
+            Foreground = CodeColor,
+        });
+    }
+
+    private static void StyleLastRun(InlineCollection inlines, Action<Run> styler)
+    {
+        if (inlines.Count > 0 && inlines[^1] is Run run)
+            styler(run);
+    }
+
+    private static bool IsHorizontalRule(string line)
+    {
+        var trimmed = line.Trim();
+        if (trimmed.Length < 3) return false;
+        var c = trimmed[0];
+        if (c != '-' && c != '*' && c != '_') return false;
+        return trimmed.All(ch => ch == c);
+    }
+
+    private static bool IsUnorderedListItem(string line, out int indent)
+    {
+        indent = 0;
+        while (indent < line.Length && line[indent] == ' ')
+            indent++;
+        if (indent + 1 >= line.Length) return false;
+        var marker = line[indent];
+        if (marker != '-' && marker != '*' && marker != '+') return false;
+        return indent + 1 < line.Length && line[indent + 1] == ' ';
+    }
+
+    private static bool IsOrderedListItem(string line, out int number, out int indent)
+    {
+        number = 0;
+        indent = 0;
+        while (indent < line.Length && line[indent] == ' ')
+            indent++;
+        var start = indent;
+        while (indent < line.Length && char.IsDigit(line[indent]))
+        {
+            number = number * 10 + (line[indent] - '0');
+            indent++;
+        }
+        if (indent == start) return false;
+        if (indent >= line.Length || line[indent] != '.') return false;
+        indent++;
+        if (indent >= line.Length || line[indent] != ' ') return false;
+        return true;
+    }
+
     private static readonly Regex InlineFormatRegex = new(
-        @"(\*\*(.+?)\*\*)|(`(.+?)`)|(\*(.+?)\*)",
+        @"(\*\*(.+?)\*\*)|(`(.+?)`)|(\*(.+?)\*)|(\[([^\]]+)\]\(([^)]+)\))",
         RegexOptions.Compiled);
 
-    private static void ParseInlineFormatting(InlineCollection inlines, string text, FontFamily monoFont)
+    private static void ParseInlineFormatting(InlineCollection inlines, string text)
     {
         var pos = 0;
         foreach (Match match in InlineFormatRegex.Matches(text))
@@ -137,13 +247,21 @@ public static class MarkdownRenderer
             {
                 inlines.Add(new Run(match.Groups[4].Value)
                 {
-                    FontFamily = monoFont,
-                    Foreground = new SolidColorBrush(Color.Parse("#CE9178")),
+                    FontFamily = MonoFont,
+                    Foreground = CodeColor,
                 });
             }
             else if (match.Groups[6].Success) // *italic*
             {
                 inlines.Add(new Run(match.Groups[6].Value) { FontStyle = FontStyle.Italic });
+            }
+            else if (match.Groups[8].Success) // [text](url)
+            {
+                inlines.Add(new Run(match.Groups[8].Value)
+                {
+                    Foreground = LinkColor,
+                    Underline = true,
+                });
             }
 
             pos = match.Index + match.Length;
