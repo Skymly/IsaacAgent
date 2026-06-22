@@ -3,6 +3,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using IsaacAgent.Agent;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
@@ -11,13 +12,19 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.App.ViewModels;
 
-public sealed partial class ChatViewModel : ObservableObject
+public sealed partial class ChatViewModel : ObservableObject, IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<ChatViewModel> _logger;
+    private readonly IAgentSessionFactory _sessionFactory;
     private AgentSession _session;
     private CancellationTokenSource? _cts;
     private string? _currentProjectDir;
+
+    // Track event handlers so we can unsubscribe when swapping sessions.
+    private Action<string, string>? _onToolCall;
+    private Action<string>? _onToolResult;
+    private Action<string>? _onError;
 
     [ObservableProperty]
     private string _inputText = "";
@@ -31,9 +38,14 @@ public sealed partial class ChatViewModel : ObservableObject
     {
         _services = services;
         _logger = logger;
-        _session = services.GetRequiredService<AgentSession>();
+        _sessionFactory = services.GetRequiredService<IAgentSessionFactory>();
+        _session = _sessionFactory.Create();
+        SubscribeSessionEvents(_session);
+    }
 
-        _session.OnToolCall += (name, args) =>
+    private void SubscribeSessionEvents(AgentSession session)
+    {
+        _onToolCall = (name, args) =>
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 Messages.Add(new ChatMessageViewModel
@@ -43,8 +55,7 @@ public sealed partial class ChatViewModel : ObservableObject
                     IsToolCall = true
                 }));
         };
-
-        _session.OnToolResult += (result) =>
+        _onToolResult = (result) =>
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 Messages.Add(new ChatMessageViewModel
@@ -54,8 +65,7 @@ public sealed partial class ChatViewModel : ObservableObject
                     IsToolResult = true
                 }));
         };
-
-        _session.OnError += (err) =>
+        _onError = (err) =>
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 Messages.Add(new ChatMessageViewModel
@@ -64,12 +74,29 @@ public sealed partial class ChatViewModel : ObservableObject
                     Content = $"Error: {err}"
                 }));
         };
+
+        session.OnToolCall += _onToolCall;
+        session.OnToolResult += _onToolResult;
+        session.OnError += _onError;
+    }
+
+    private void UnsubscribeSessionEvents(AgentSession session)
+    {
+        if (_onToolCall is not null) session.OnToolCall -= _onToolCall;
+        if (_onToolResult is not null) session.OnToolResult -= _onToolResult;
+        if (_onError is not null) session.OnError -= _onError;
     }
 
     public void OnProjectChanged(string? projectDir)
     {
         _currentProjectDir = projectDir;
-        _session.SetProjectDirectory(projectDir);
+
+        // Swap to a new session for the new project, properly unsubscribing
+        // from the old one to avoid leaked event handlers.
+        UnsubscribeSessionEvents(_session);
+        _session = _sessionFactory.Create(projectDir);
+        SubscribeSessionEvents(_session);
+
         Messages.Clear();
         _session.LoadHistory(GetHistoryPath(projectDir));
         RestoreMessagesFromHistory();
@@ -159,6 +186,13 @@ public sealed partial class ChatViewModel : ObservableObject
     {
         Messages.Clear();
         _session.ClearHistory();
+    }
+
+    public void Dispose()
+    {
+        UnsubscribeSessionEvents(_session);
+        _cts?.Dispose();
+        _cts = null;
     }
 }
 

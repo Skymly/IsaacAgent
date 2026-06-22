@@ -18,7 +18,9 @@ public static class AgentServiceRegistration
             return registry;
         });
 
-        services.AddSingleton<AgentSession>(sp =>
+        // AgentSession is created per-session via the factory, not as a singleton,
+        // so multiple windows/projects can have independent sessions.
+        services.AddTransient<AgentSession>(sp =>
         {
             var chat = sp.GetRequiredService<IChatService>();
             var tools = sp.GetRequiredService<ToolRegistry>();
@@ -26,6 +28,35 @@ public static class AgentServiceRegistration
             return new AgentSession(chat, tools, null, logger);
         });
 
+        services.AddSingleton<IAgentSessionFactory, AgentSessionFactory>();
+
         return services;
+    }
+}
+
+/// <summary>
+/// Factory for creating independent <see cref="AgentSession"/> instances.
+/// Each call returns a new session with its own history and project context.
+/// </summary>
+public interface IAgentSessionFactory
+{
+    AgentSession Create(string? projectDir = null);
+}
+
+internal sealed class AgentSessionFactory : IAgentSessionFactory
+{
+    private readonly IServiceProvider _services;
+
+    public AgentSessionFactory(IServiceProvider services)
+    {
+        _services = services;
+    }
+
+    public AgentSession Create(string? projectDir = null)
+    {
+        var chat = _services.GetRequiredService<IChatService>();
+        var tools = _services.GetRequiredService<ToolRegistry>();
+        var logger = _services.GetRequiredService<ILogger<AgentSession>>();
+        return new AgentSession(chat, tools, projectDir, logger);
     }
 }

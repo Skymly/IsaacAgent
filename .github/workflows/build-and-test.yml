@@ -8,7 +8,12 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
@@ -21,8 +26,49 @@ jobs:
       - name: Restore
         run: dotnet restore IsaacAgent.sln
 
-      - name: Build
-        run: dotnet build IsaacAgent.sln --no-restore --configuration Release
+      - name: Build (Debug)
+        run: dotnet build IsaacAgent.sln --no-restore --configuration Debug
 
       - name: Test
-        run: dotnet test IsaacAgent.sln --no-build --configuration Release --verbosity normal
+        run: dotnet test IsaacAgent.sln --no-build --configuration Debug --verbosity normal
+
+  format-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Format check
+        run: dotnet format IsaacAgent.sln --verify-no-changes --verbosity diagnostic
+
+  release-build:
+    runs-on: windows-latest
+    needs: build-and-test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore IsaacAgent.sln
+
+      - name: Build (Release)
+        run: dotnet build IsaacAgent.sln --no-restore --configuration Release
+
+      - name: Publish single-file
+        run: dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IsaacAgent-win-x64
+          path: publish/

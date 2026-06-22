@@ -3,6 +3,10 @@ using System.Text.Json;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
 
+// AppConfiguration uses DPAPI (ProtectedData) which is Windows-only.
+// The App project targets WinExe on Windows, so CA1416 is expected here.
+#pragma warning disable CA1416
+
 namespace IsaacAgent.App.Services;
 
 public sealed class AppConfiguration

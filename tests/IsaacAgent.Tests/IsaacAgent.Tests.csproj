@@ -1,14 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <LangVersion>12</LangVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Avalonia.Headless" Version="11.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="Moq" Version="4.20.70" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -21,6 +18,7 @@
     <ProjectReference Include="..\..\src\IsaacAgent.Tools\IsaacAgent.Tools.csproj" />
     <ProjectReference Include="..\..\src\IsaacAgent.Agent\IsaacAgent.Agent.csproj" />
     <ProjectReference Include="..\..\src\IsaacAgent.Rag\IsaacAgent.Rag.csproj" />
+    <ProjectReference Include="..\..\src\IsaacAgent.App\IsaacAgent.App.csproj" />
   </ItemGroup>
 
 </Project>
