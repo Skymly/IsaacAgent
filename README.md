@@ -74,14 +74,22 @@ key via environment variable or the Settings dialog.
 
 ### Build & Run
 
-```bash
+```powershell
+# Via Nuke (CI-authoritative)
+./build.ps1 --target Ci --configuration Release
+
+# Or traditional dotnet
 dotnet build IsaacAgent.sln -c Release
 dotnet run --project src/IsaacAgent.App/IsaacAgent.App.csproj -c Release
 ```
 
 ### Tests
 
-```bash
+```powershell
+# Via Nuke
+./build.ps1 --target Ci --configuration Release
+
+# Or traditional dotnet
 dotnet test IsaacAgent.sln
 ```
 

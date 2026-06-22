@@ -50,3 +50,9 @@ Desktop.ini
 appsettings.local.json
 *.secret.json
 .env
+
+## Nuke
+.nuke/temp/
+
+## Publish output
+publish/

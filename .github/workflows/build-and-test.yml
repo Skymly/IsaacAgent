@@ -5,70 +5,41 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-
-    runs-on: ${{ matrix.os }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Restore
-        run: dotnet restore IsaacAgent.sln
-
-      - name: Build (Debug)
-        run: dotnet build IsaacAgent.sln --no-restore --configuration Debug
-
-      - name: Test
-        run: dotnet test IsaacAgent.sln --no-build --configuration Debug --verbosity normal
-
-  format-check:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Format check
-        run: dotnet format IsaacAgent.sln --verify-no-changes --verbosity diagnostic
-
-  release-build:
+  ci:
     runs-on: windows-latest
-    needs: build-and-test
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup .NET
+      - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore
-        run: dotnet restore IsaacAgent.sln
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
 
-      - name: Build (Release)
-        run: dotnet build IsaacAgent.sln --no-restore --configuration Release
+      - name: Run CI via Nuke (Format + Ci)
+        run: dotnet run --project build/_build.csproj -- --root . --target CiAll --configuration Release
 
-      - name: Publish single-file
-        run: dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
-
-      - name: Upload artifact
+      - name: Upload test results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: IsaacAgent-win-x64
-          path: publish/
+          name: test-results
+          path: TestResults/
+          if-no-files-found: warn
