@@ -74,7 +74,7 @@ public sealed class ParseLogTool : ITool
         return Task.FromResult(sb.ToString());
     }
 
-    internal (string? Path, string? Error) ResolveLogPath(JsonElement args)
+    internal (string? FilePath, string? ErrorMessage) ResolveLogPath(JsonElement args)
     {
         if (args.TryGetProperty("file_path", out var fp) && fp.ValueKind == JsonValueKind.String)
         {

@@ -4,7 +4,8 @@ using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
 
 // AppConfiguration uses DPAPI (ProtectedData) which is Windows-only.
-// The App project targets WinExe on Windows, so CA1416 is expected here.
+// The App project targets WinExe on Windows with SupportedOSPlatform=windows,
+// so CA1416 is expected and suppressed here.
 #pragma warning disable CA1416
 
 namespace IsaacAgent.App.Services;
@@ -58,22 +59,11 @@ public sealed class AppConfiguration
             var json = File.ReadAllText(configPath);
             var config = JsonSerializer.Deserialize<AppConfiguration>(json) ?? new();
 
-            // Decrypt the API key from DPAPI-protected storage
             if (!string.IsNullOrEmpty(config.EncryptedApiKey))
             {
-                try
-                {
-                    var cipherBytes = Convert.FromBase64String(config.EncryptedApiKey);
-                    var plainBytes = ProtectedData.Unprotect(cipherBytes, null, DataProtectionScope.CurrentUser);
-                    config.ApiKey = System.Text.Encoding.UTF8.GetString(plainBytes);
-                }
-                catch
-                {
-                    // Decryption failed (e.g. different user account, corrupted data)
-                    // — fall back to empty key, user will need to re-enter it.
-                    config.ApiKey = null;
+                config.ApiKey = TryDecryptApiKey(config.EncryptedApiKey);
+                if (config.ApiKey is null)
                     config.EncryptedApiKey = null;
-                }
             }
 
             return config;
@@ -101,15 +91,12 @@ public sealed class AppConfiguration
         );
         Directory.CreateDirectory(configDir);
 
-        // Encrypt the API key with DPAPI before writing to disk.
-        // We create a temporary copy so the in-memory ApiKey stays plaintext
-        // for the current session, but only the encrypted form is persisted.
         var toSave = new AppConfiguration
         {
             ProviderType = ProviderType,
             Endpoint = Endpoint,
             Model = Model,
-            ApiKey = null, // Never serialize plaintext
+            ApiKey = null,
             EmbeddingSource = EmbeddingSource,
             OllamaEmbeddingEndpoint = OllamaEmbeddingEndpoint,
             OllamaEmbeddingModel = OllamaEmbeddingModel,
@@ -119,16 +106,13 @@ public sealed class AppConfiguration
 
         if (!string.IsNullOrEmpty(ApiKey))
         {
-            try
+            var encrypted = TryEncryptApiKey(ApiKey);
+            if (encrypted is not null)
             {
-                var plainBytes = System.Text.Encoding.UTF8.GetBytes(ApiKey);
-                var cipherBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
-                toSave.EncryptedApiKey = Convert.ToBase64String(cipherBytes);
+                toSave.EncryptedApiKey = encrypted;
             }
-            catch
+            else
             {
-                // DPAPI unavailable (e.g. non-Windows) — store plaintext as
-                // a last resort. Better than losing the key silently.
                 toSave.EncryptedApiKey = null;
                 toSave.ApiKey = ApiKey;
             }
@@ -137,5 +121,41 @@ public sealed class AppConfiguration
         var configPath = Path.Combine(configDir, "config.json");
         var json = JsonSerializer.Serialize(toSave, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(configPath, json);
+    }
+
+    /// <summary>
+    /// Encrypt the API key using DPAPI. Returns base64 ciphertext,
+    /// or null if DPAPI is unavailable.
+    /// </summary>
+    private static string? TryEncryptApiKey(string plaintext)
+    {
+        try
+        {
+            var plainBytes = System.Text.Encoding.UTF8.GetBytes(plaintext);
+            var cipherBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
+            return Convert.ToBase64String(cipherBytes);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Decrypt the API key using DPAPI. Returns plaintext key,
+    /// or null if decryption fails.
+    /// </summary>
+    private static string? TryDecryptApiKey(string encryptedBase64)
+    {
+        try
+        {
+            var cipherBytes = Convert.FromBase64String(encryptedBase64);
+            var plainBytes = ProtectedData.Unprotect(cipherBytes, null, DataProtectionScope.CurrentUser);
+            return System.Text.Encoding.UTF8.GetString(plainBytes);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

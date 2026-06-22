@@ -10,7 +10,7 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
     private readonly InferenceSession _session;
     private readonly WordPieceTokenizer _tokenizer;
     private readonly ILogger<OnnxEmbeddingProvider> _logger;
-    private int _dimensions;
+    private readonly int _dimensions;
     private bool _disposed;
 
     public OnnxEmbeddingProvider(string modelPath, string vocabPath, ILogger<OnnxEmbeddingProvider> logger)
@@ -86,10 +86,6 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
 
             using var results = _session.Run(inputs);
             var output = results.First().AsTensor<float>();
-
-            // Update dimensions from actual output if not yet set
-            if (_dimensions == 0 && output.Dimensions.Length >= 3)
-                _dimensions = output.Dimensions[2];
 
             // Pool and normalize each sequence in the batch
             var embeddings = new float[texts.Count][];

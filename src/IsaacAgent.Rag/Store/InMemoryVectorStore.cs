@@ -177,7 +177,7 @@ public sealed class InMemoryVectorStore
                     Category = reader.ReadString(),
                     Title = reader.ReadString(),
                     Content = reader.ReadString(),
-                    Metadata = {}
+                    Metadata = { }
                 };
                 var metaCount = reader.ReadInt32();
                 for (var m = 0; m < metaCount; m++)

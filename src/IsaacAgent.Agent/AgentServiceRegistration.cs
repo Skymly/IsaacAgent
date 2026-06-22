@@ -18,16 +18,8 @@ public static class AgentServiceRegistration
             return registry;
         });
 
-        // AgentSession is created per-session via the factory, not as a singleton,
-        // so multiple windows/projects can have independent sessions.
-        services.AddTransient<AgentSession>(sp =>
-        {
-            var chat = sp.GetRequiredService<IChatService>();
-            var tools = sp.GetRequiredService<ToolRegistry>();
-            var logger = sp.GetRequiredService<ILogger<AgentSession>>();
-            return new AgentSession(chat, tools, null, logger);
-        });
-
+        // AgentSession is created per-session via the factory, not registered
+        // in DI directly, so multiple windows/projects can have independent sessions.
         services.AddSingleton<IAgentSessionFactory, AgentSessionFactory>();
 
         return services;

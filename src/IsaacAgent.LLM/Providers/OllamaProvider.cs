@@ -110,9 +110,26 @@ public sealed class OllamaProvider : IChatService
             };
             if (m.ToolCalls.Count > 0)
             {
-                msg["tool_calls"] = m.ToolCalls.Select(tc => new
+                msg["tool_calls"] = m.ToolCalls.Select(tc =>
                 {
-                    function = new { name = tc.Name, arguments = JsonSerializer.Deserialize<JsonElement>(tc.Arguments) }
+                    // Ollama expects arguments as a JSON object, not a string.
+                    // If the arguments string is empty or invalid JSON, fall back
+                    // to an empty object to avoid deserialization exceptions.
+                    JsonElement argsJson;
+                    try
+                    {
+                        argsJson = string.IsNullOrWhiteSpace(tc.Arguments)
+                            ? JsonSerializer.Deserialize<JsonElement>("{}")!
+                            : JsonSerializer.Deserialize<JsonElement>(tc.Arguments);
+                    }
+                    catch (JsonException)
+                    {
+                        argsJson = JsonSerializer.Deserialize<JsonElement>("{}")!;
+                    }
+                    return (object)new
+                    {
+                        function = new { name = tc.Name, arguments = argsJson }
+                    };
                 }).ToArray();
             }
             if (m.ToolCallId is not null)
