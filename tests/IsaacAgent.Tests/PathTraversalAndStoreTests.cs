@@ -1,5 +1,6 @@
 using IsaacAgent.Rag.Store;
 using IsaacAgent.Rag.Tools;
+using IsaacAgent.Tools.Implementations;
 using Xunit;
 
 namespace IsaacAgent.Tests;
@@ -73,6 +74,151 @@ public class PathTraversalTests
             Assert.DoesNotContain("Path traversal", result);
             Assert.True(result.Contains("valid") || result.Contains("error") || result.Contains("Error"),
                 $"Unexpected result: {result}");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ReadFileTool_SiblingDirectoryPrefix_ReturnsError()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_read_prefix_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var evilDir = Path.Combine(baseDir, "myproject_evil");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(evilDir);
+        try
+        {
+            var evilFile = Path.Combine(evilDir, "secret.lua");
+            await File.WriteAllTextAsync(evilFile, "local x = 1");
+
+            var tool = new ReadFileTool(safeDir);
+            var args = """{"path":"../myproject_evil/secret.lua"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ReadFileTool_ValidRelativePath_Works()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_read_valid_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var file = Path.Combine(tempDir, "main.lua");
+            await File.WriteAllTextAsync(file, "local mod = RegisterMod('Test', 1)");
+
+            var tool = new ReadFileTool(tempDir);
+            var args = """{"path":"main.lua"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.DoesNotContain("Path traversal", result);
+            Assert.Contains("RegisterMod", result);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task WriteFileTool_SiblingDirectoryPrefix_ReturnsError()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_write_prefix_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var evilDir = Path.Combine(baseDir, "myproject_evil");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(evilDir);
+        try
+        {
+            var tool = new WriteFileTool(safeDir);
+            var args = """{"path":"../myproject_evil/evil.lua","content":"print('pwned')"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+            Assert.False(File.Exists(Path.Combine(evilDir, "evil.lua")));
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task WriteFileTool_ValidRelativePath_Works()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_write_valid_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var tool = new WriteFileTool(tempDir);
+            var args = """{"path":"scripts/init.lua","content":"print('hi')"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.DoesNotContain("Path traversal", result);
+            Assert.True(File.Exists(Path.Combine(tempDir, "scripts", "init.lua")));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ListFilesTool_SiblingDirectoryPrefix_ReturnsError()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_list_prefix_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var evilDir = Path.Combine(baseDir, "myproject_evil");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(evilDir);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(evilDir, "secret.lua"), "local x = 1");
+
+            var tool = new ListFilesTool(safeDir);
+            var args = """{"subdir":"../myproject_evil"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ListFilesTool_ValidRelativePath_Works()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_list_valid_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(tempDir, "main.lua"), "");
+            await File.WriteAllTextAsync(Path.Combine(tempDir, "metadata.xml"), "");
+
+            var tool = new ListFilesTool(tempDir);
+            var args = """{}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.DoesNotContain("Path traversal", result);
+            Assert.Contains("main.lua", result);
+            Assert.Contains("metadata.xml", result);
         }
         finally
         {

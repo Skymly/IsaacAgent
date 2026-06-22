@@ -25,7 +25,7 @@ public sealed class ReadFileTool : ITool
 
     private readonly string _projectDir;
 
-    public ReadFileTool(string projectDir) => _projectDir = projectDir;
+    public ReadFileTool(string projectDir) => _projectDir = Path.GetFullPath(projectDir);
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken ct = default)
     {
@@ -33,7 +33,7 @@ public sealed class ReadFileTool : ITool
         var relPath = args.GetProperty("path").GetString()!;
         var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
 
-        if (!fullPath.StartsWith(_projectDir, StringComparison.OrdinalIgnoreCase))
+        if (!FileToolPathSafety.IsWithinProject(fullPath, _projectDir))
             return "Error: Path traversal detected.";
 
         if (!File.Exists(fullPath))
@@ -65,7 +65,7 @@ public sealed class WriteFileTool : ITool
 
     private readonly string _projectDir;
 
-    public WriteFileTool(string projectDir) => _projectDir = projectDir;
+    public WriteFileTool(string projectDir) => _projectDir = Path.GetFullPath(projectDir);
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken ct = default)
     {
@@ -74,7 +74,7 @@ public sealed class WriteFileTool : ITool
         var content = args.GetProperty("content").GetString()!;
         var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
 
-        if (!fullPath.StartsWith(_projectDir, StringComparison.OrdinalIgnoreCase))
+        if (!FileToolPathSafety.IsWithinProject(fullPath, _projectDir))
             return "Error: Path traversal detected.";
 
         var dir = Path.GetDirectoryName(fullPath);
@@ -106,7 +106,7 @@ public sealed class ListFilesTool : ITool
 
     private readonly string _projectDir;
 
-    public ListFilesTool(string projectDir) => _projectDir = projectDir;
+    public ListFilesTool(string projectDir) => _projectDir = Path.GetFullPath(projectDir);
 
     public Task<string> ExecuteAsync(string arguments, CancellationToken ct = default)
     {
@@ -122,7 +122,7 @@ public sealed class ListFilesTool : ITool
             ? _projectDir
             : Path.GetFullPath(Path.Combine(_projectDir, subdir));
 
-        if (!targetDir.StartsWith(_projectDir, StringComparison.OrdinalIgnoreCase))
+        if (!FileToolPathSafety.IsWithinProject(targetDir, _projectDir))
             return Task.FromResult("Error: Path traversal detected.");
 
         if (!Directory.Exists(targetDir))
@@ -135,5 +135,17 @@ public sealed class ListFilesTool : ITool
         return Task.FromResult(files.Count > 0
             ? string.Join('\n', files)
             : "No files found.");
+    }
+}
+
+file static class FileToolPathSafety
+{
+    public static bool IsWithinProject(string fullPath, string projectDir)
+    {
+        var projectRoot = projectDir.EndsWith(Path.DirectorySeparatorChar)
+            ? projectDir
+            : projectDir + Path.DirectorySeparatorChar;
+        return fullPath.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fullPath, projectDir, StringComparison.OrdinalIgnoreCase);
     }
 }

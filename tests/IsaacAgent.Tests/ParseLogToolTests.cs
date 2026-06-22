@@ -145,4 +145,71 @@ public class ParseLogToolTests
             Directory.Delete(tempDir, true);
         }
     }
+
+    [Fact]
+    public async Task ParseLogTool_AbsolutePath_Rejected()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_log_abs_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var tool = new ParseLogTool(tempDir);
+            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = @"C:\Windows\System32\drivers\etc\hosts" });
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Absolute paths are not allowed", result);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ParseLogTool_PathTraversal_ReturnsError()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_log_traversal_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var evilDir = Path.Combine(baseDir, "myproject_evil");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(evilDir);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(evilDir, "log.txt"), "secret log content");
+
+            var tool = new ParseLogTool(safeDir);
+            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = "../myproject_evil/log.txt" });
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ParseLogTool_SiblingPrefix_ReturnsError()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_log_prefix_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var evilDir = Path.Combine(baseDir, "myproject_evil");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(evilDir);
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(evilDir, "log.txt"), "secret");
+
+            var tool = new ParseLogTool(safeDir);
+            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = "../myproject_evil/log.txt" });
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            Directory.Delete(baseDir, true);
+        }
+    }
 }

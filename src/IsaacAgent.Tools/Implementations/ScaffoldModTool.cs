@@ -1,3 +1,4 @@
+using System.Security;
 using System.Text.Json;
 using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
@@ -42,10 +43,16 @@ public sealed class ScaffoldModTool : ITool
         var includeTrinkets = args.TryGetProperty("include_trinkets", out var t) && t.GetBoolean();
         var includeEntity = args.TryGetProperty("include_entity", out var e) && e.GetBoolean();
 
+        // Escape user input for safe insertion into generated files.
+        var luaName = EscapeLuaString(name);
+        var xmlName = SecurityElement.Escape(name) ?? "";
+        var xmlDesc = SecurityElement.Escape(description) ?? "";
+        var xmlAuthor = SecurityElement.Escape(author) ?? "";
+
         var created = new List<string>();
 
         var mainLua = $"""
-            local mod = RegisterMod("{name}", 1)
+            local mod = RegisterMod("{luaName}", 1)
 
             function mod:onGameStart(isSave)
                 -- Called when a new game starts or is continued
@@ -57,7 +64,7 @@ public sealed class ScaffoldModTool : ITool
 
             -- Add your callbacks here
 
-            print("{name} loaded!")
+            print("{luaName} loaded!")
             """;
         await File.WriteAllTextAsync(Path.Combine(_projectDir, "main.lua"), mainLua, ct);
         created.Add("main.lua");
@@ -65,9 +72,9 @@ public sealed class ScaffoldModTool : ITool
         var metadata = $""""
             <?xml version="1.0" encoding="UTF-8"?>
             <metadata>
-                <name>{name}</name>
-                <description>{description}</description>
-                <author>{author}</author>
+                <name>{xmlName}</name>
+                <description>{xmlDesc}</description>
+                <author>{xmlAuthor}</author>
                 <version>1.0</version>
                 <apiVersion>1</apiVersion>
             </metadata>
@@ -142,5 +149,27 @@ public sealed class ScaffoldModTool : ITool
         created.Add("resources/scripts/");
 
         return $"Mod '{name}' scaffolded successfully!\nCreated files:\n" + string.Join('\n', created.Select(f => $"  - {f}"));
+    }
+
+    /// <summary>
+    /// Escape a string for safe embedding in a Lua double-quoted string literal.
+    /// Escapes backslash, double quote, newline, carriage return, and tab.
+    /// </summary>
+    private static string EscapeLuaString(string s)
+    {
+        var sb = new System.Text.StringBuilder(s.Length);
+        foreach (var c in s)
+        {
+            switch (c)
+            {
+                case '\\': sb.Append("\\\\"); break;
+                case '"': sb.Append("\\\""); break;
+                case '\n': sb.Append("\\n"); break;
+                case '\r': sb.Append("\\r"); break;
+                case '\t': sb.Append("\\t"); break;
+                default: sb.Append(c); break;
+            }
+        }
+        return sb.ToString();
     }
 }

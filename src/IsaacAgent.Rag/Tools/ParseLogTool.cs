@@ -11,11 +11,11 @@ public sealed class ParseLogTool : ITool
 
     public ParseLogTool(string projectDir)
     {
-        _projectDir = projectDir;
+        _projectDir = Path.GetFullPath(projectDir);
     }
 
     public string Name => "parse_log";
-    public string Description => "Parse the Isaac game log.txt file to extract Lua errors, warnings, and useful diagnostic information. Can read from the default Isaac log location or a custom path. Identifies error lines, file names, line numbers, and callback context.";
+    public string Description => "Parse the Isaac game log.txt file to extract Lua errors, warnings, and useful diagnostic information. Can read from the default Isaac log location or a relative path within the project. Identifies error lines, file names, line numbers, and callback context.";
 
     public ToolDefinition Definition => new()
     {
@@ -25,7 +25,7 @@ public sealed class ParseLogTool : ITool
         {
             Properties = new()
             {
-                ["file_path"] = new() { Type = "string", Description = "Path to log.txt. If relative, resolves from project dir. If omitted, tries the default Isaac log location (Documents/My Games/Binding of Isaac Repentance/log.txt)." },
+                ["file_path"] = new() { Type = "string", Description = "Path to log.txt. If relative, resolves from project dir (must stay within project). If omitted, tries the default Isaac log location (Documents/My Games/Binding of Isaac Repentance/log.txt)." },
                 ["filter"] = new() { Type = "string", Description = "Filter results: 'errors' (default), 'warnings', 'all', or 'last_run' (only lines from the most recent game session)." }
             }
         }
@@ -36,7 +36,9 @@ public sealed class ParseLogTool : ITool
         var args = JsonDocument.Parse(arguments).RootElement;
         var filter = args.TryGetProperty("filter", out var f) ? f.GetString() ?? "errors" : "errors";
 
-        var filePath = ResolveLogPath(args);
+        var (filePath, error) = ResolveLogPath(args);
+        if (error is not null)
+            return Task.FromResult(error);
         if (filePath is null || !File.Exists(filePath))
         {
             return Task.FromResult(
@@ -72,16 +74,30 @@ public sealed class ParseLogTool : ITool
         return Task.FromResult(sb.ToString());
     }
 
-    private string? ResolveLogPath(JsonElement args)
+    internal (string? Path, string? Error) ResolveLogPath(JsonElement args)
     {
         if (args.TryGetProperty("file_path", out var fp) && fp.ValueKind == JsonValueKind.String)
         {
             var path = fp.GetString()!;
-            if (!Path.IsPathRooted(path))
-                path = Path.Combine(_projectDir, path);
-            return path;
+            if (Path.IsPathRooted(path))
+            {
+                // Absolute paths: only allow the default Isaac log location.
+                var defaultLog = GetDefaultLogPath();
+                if (defaultLog is not null && string.Equals(path, defaultLog, StringComparison.OrdinalIgnoreCase))
+                    return (path, null);
+                return (null, "Error: Absolute paths are not allowed. Use a relative path within the project, or omit 'file_path' to use the default Isaac log location.");
+            }
+
+            // Relative path: resolve within project dir and check for traversal.
+            var fullPath = Path.GetFullPath(Path.Combine(_projectDir, path));
+            var projectRoot = _projectDir.EndsWith(Path.DirectorySeparatorChar)
+                ? _projectDir
+                : _projectDir + Path.DirectorySeparatorChar;
+            if (!fullPath.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
+                return (null, "Error: Path traversal detected.");
+            return (fullPath, null);
         }
-        return GetDefaultLogPath();
+        return (GetDefaultLogPath(), null);
     }
 
     private static string? GetDefaultLogPath()
