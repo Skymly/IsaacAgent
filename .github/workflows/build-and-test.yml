@@ -3,6 +3,7 @@ name: Build and Test
 on:
   push:
     branches: [main, master]
+    tags: ['v*']
   pull_request:
     branches: [main, master]
   workflow_dispatch:
@@ -15,7 +16,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  # Cross-platform library tests (Linux, macOS).
+  # The App project is WinExe + SupportedOSPlatform(windows), so only the
+  # library projects (Core/LLM/Tools/Agent/Rag) and tests are built here.
+  ci-lib:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Run library CI via Nuke (CiLib)
+        run: dotnet run --project build/_build.csproj -- --root . --target CiLib --configuration Release
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: TestResults/
+          if-no-files-found: warn
+
+  # Full CI on Windows: format check + full solution build (incl. App) + tests.
+  ci-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,13 +71,61 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Run CI via Nuke (Format + Ci)
+      - name: Run full CI via Nuke (CiAll)
         run: dotnet run --project build/_build.csproj -- --root . --target CiAll --configuration Release
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: test-results-windows
           path: TestResults/
           if-no-files-found: warn
+
+  # Release build: publish self-contained Windows executable on tag pushes.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [ci-lib, ci-windows]
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Publish self-contained executable
+        run: |
+          $tag = ${env:GITHUB_REF}.Replace('refs/tags/', '')
+          dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o publish
+
+      - name: Upload publish artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: IsaacAgent-win-x64
+          path: publish/
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: publish/IsaacAgent.exe
+          draft: true
+          generate_release_notes: true

@@ -26,12 +26,14 @@
       "enum": [
         "Ci",
         "CiAll",
+        "CiLib",
         "Clean",
         "Compile",
         "Format",
         "FormatFix",
         "Restore",
-        "UnitTest"
+        "UnitTest",
+        "UnitTestLib"
       ]
     },
     "Verbosity": {

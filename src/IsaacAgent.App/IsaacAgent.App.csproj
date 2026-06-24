@@ -5,6 +5,13 @@
     <SupportedOSPlatform>windows</SupportedOSPlatform>
   </PropertyGroup>
 
+  <!-- On non-Windows, suppress CA1416 (platform compatibility) so the
+       App project can still build for test purposes. The app itself is
+       only published for win-x64 (see CI release job). -->
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.2.0" />
     <PackageReference Include="Avalonia.Desktop" Version="11.2.0" />
