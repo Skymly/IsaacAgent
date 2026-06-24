@@ -230,4 +230,72 @@ public class AgentSessionTests
         Assert.NotNull(toolMsg);
         Assert.Contains("failed", toolMsg!.Content);
     }
+
+    [Fact]
+    public async Task SendMessageAsync_TrimsHistory_WhenLargeToolResultsExceedCharBudget()
+    {
+        // Each tool result is ~10k chars. With 20+ exchanges the char budget
+        // (120k) will be exceeded even though message count stays well under 50.
+        var bigResult = new string('x', 10_000);
+        var chat = new StubChatService(
+            new ChatChunk("", true, 0, "call_1", "search_isaac_api", """{"query":"test"}"""),
+            new ChatChunk("", true, 0, null, null, null),
+            new ChatChunk("done", false, -1, null, null, null));
+
+        var session = CreateSession(chat);
+
+        // Send 20 messages, each producing a tool call with a 10k result
+        for (var i = 0; i < 20; i++)
+        {
+            await foreach (var _ in session.SendMessageAsync($"msg {i}")) { }
+        }
+
+        // History should be well under the char budget after trimming.
+        // System prompt + recent messages should remain.
+        var totalChars = session.History
+            .Where(m => m.Role != "system")
+            .Sum(m => (m.Content?.Length ?? 0) + m.ToolCalls.Sum(tc => (tc.Name?.Length ?? 0) + (tc.Arguments?.Length ?? 0)));
+
+        Assert.True(totalChars <= 120_000 + 50_000,
+            $"History char count {totalChars} should be roughly within budget after trimming");
+        Assert.Equal("system", session.History[0].Role);
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_CharBudgetTrim_PreservesToolCallPairs()
+    {
+        // Tool call + tool result pair must not be split by char-budget trimming.
+        var bigResult = new string('y', 15_000);
+        var chat = new StubChatService(
+            new ChatChunk("", true, 0, "call_1", "search_isaac_api", """{"query":"test"}"""),
+            new ChatChunk("", true, 0, null, null, null),
+            new ChatChunk("ok", false, -1, null, null, null));
+
+        var session = CreateSession(chat);
+
+        for (var i = 0; i < 15; i++)
+        {
+            await foreach (var _ in session.SendMessageAsync($"msg {i}")) { }
+        }
+
+        // After trimming, verify no orphaned tool results at the start
+        // (first non-system message should not be a "tool" role message)
+        Assert.True(session.History.Count > 1);
+        var firstNonSystem = session.History[1];
+        Assert.NotEqual("tool", firstNonSystem.Role);
+
+        // If first non-system is an assistant with tool_calls, all its
+        // tool results must be present
+        if (firstNonSystem.Role == "assistant" && firstNonSystem.ToolCalls.Count > 0)
+        {
+            var expected = firstNonSystem.ToolCalls.Count;
+            var actual = 0;
+            for (var i = 2; i < session.History.Count && actual < expected; i++)
+            {
+                if (session.History[i].Role == "tool") actual++;
+                else break;
+            }
+            Assert.Equal(expected, actual);
+        }
+    }
 }

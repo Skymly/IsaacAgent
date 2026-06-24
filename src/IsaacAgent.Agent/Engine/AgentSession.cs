@@ -16,6 +16,15 @@ public sealed class AgentSession
     private readonly int _maxIterations = 10;
     private const int MaxHistoryMessages = 50;
 
+    /// <summary>
+    /// Soft character budget for the conversation history (excluding the
+    /// system prompt). When exceeded, oldest non-system messages are
+    /// trimmed. Uses a rough ~4 chars ≈ 1 token heuristic, so 120k chars
+    /// ≈ 30k tokens — leaving headroom for the response in typical
+    /// 32k–128k context windows.
+    /// </summary>
+    private const int MaxContextChars = 120_000;
+
     public event Action<string>? OnTextGenerated;
     public event Action<string, string>? OnToolCall;
     public event Action<string>? OnToolResult;
@@ -179,12 +188,19 @@ public sealed class AgentSession
 
     private void TrimHistory()
     {
-        if (_history.Count <= MaxHistoryMessages)
+        // Two independent budgets:
+        //  - MaxHistoryMessages: prevents unbounded message count (memory)
+        //  - MaxContextChars: prevents context-window overflow from large
+        //    tool results (e.g., list_files returning thousands of lines)
+        // Trim if EITHER budget is exceeded.
+        var charCount = EstimateHistoryChars();
+        if (_history.Count <= MaxHistoryMessages && charCount <= MaxContextChars)
             return;
 
         // Always keep the system prompt (index 0) and the most recent messages.
-        // Remove oldest non-system messages until we're under the limit.
+        // Remove oldest non-system messages until we're under both limits.
         var toRemove = _history.Count - MaxHistoryMessages;
+        if (toRemove < 1) toRemove = 1; // at least 1 if char budget exceeded
 
         // Extend the removal window to avoid orphaned tool-related messages:
         // 1. If the new first message (after removal) is a "tool" result without
@@ -232,9 +248,62 @@ public sealed class AgentSession
             break;
         }
 
+        // If we're still over the char budget after the orphan-safe removal,
+        // keep removing oldest messages (still respecting orphan rules) until
+        // we're under budget or only the system prompt + last message remain.
+        while (toRemove < _history.Count - 2 && EstimateHistoryChars(toRemove) > MaxContextChars)
+        {
+            var newFirst = _history[toRemove + 1];
+            if (newFirst.Role == "tool")
+            {
+                toRemove++;
+                continue;
+            }
+            if (newFirst.Role == "assistant" && newFirst.ToolCalls.Count > 0)
+            {
+                var expected = newFirst.ToolCalls.Count;
+                var available = 0;
+                for (var i = toRemove + 2; i < _history.Count && available < expected; i++)
+                {
+                    if (_history[i].Role == "tool") available++;
+                    else break;
+                }
+                if (available < expected)
+                {
+                    toRemove++;
+                    while (toRemove < _history.Count - 1 && _history[toRemove + 1].Role == "tool")
+                        toRemove++;
+                    continue;
+                }
+            }
+            toRemove++;
+        }
+
         // Remove from index 1 onward (preserve system prompt at 0)
         _history.RemoveRange(1, toRemove);
-        _logger.LogInformation("Trimmed {Count} old messages from history", toRemove);
+        _logger.LogInformation("Trimmed {Count} old messages from history ({Chars}→{Remaining} chars est.)",
+            toRemove, charCount, EstimateHistoryChars());
+    }
+
+    /// <summary>
+    /// Estimates total character count of all history messages (excluding
+    /// the system prompt at index 0). Uses content + tool call names/args
+    /// as a rough proxy for token consumption (~4 chars ≈ 1 token).
+    /// </summary>
+    private int EstimateHistoryChars(int skipCount = 0)
+    {
+        var total = 0;
+        for (var i = 1 + skipCount; i < _history.Count; i++)
+        {
+            var msg = _history[i];
+            total += msg.Content?.Length ?? 0;
+            foreach (var tc in msg.ToolCalls)
+            {
+                total += tc.Name?.Length ?? 0;
+                total += tc.Arguments?.Length ?? 0;
+            }
+        }
+        return total;
     }
 
     private sealed class StreamedToolCall
