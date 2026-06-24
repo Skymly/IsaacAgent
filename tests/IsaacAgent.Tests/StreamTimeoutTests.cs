@@ -103,9 +103,9 @@ public class StreamTimeoutTests
         }
     }
 
-    private static OpenAICompatibleProvider CreateOpenAIProvider(HttpClient http) =>
+    private static OpenAICompatibleProvider CreateOpenAIProvider(HttpClient http, TimeSpan? timeout = null) =>
         new(http, "test-model", Mock.Of<ILogger<OpenAICompatibleProvider>>(),
-            streamReadTimeout: TimeSpan.FromMilliseconds(100));
+            streamReadTimeout: timeout ?? TimeSpan.FromMilliseconds(100));
 
     private static OllamaProvider CreateOllamaProvider(HttpClient http) =>
         new(http, "test-model", Mock.Of<ILogger<OllamaProvider>>(),
@@ -163,10 +163,14 @@ public class StreamTimeoutTests
     public async Task OpenAI_Stream_UserCancellation_PropagatesNotTimeout()
     {
         using var http = new HttpClient(new StalledStreamHandler()) { BaseAddress = new Uri("http://localhost") };
-        var provider = CreateOpenAIProvider(http);
+        // Use a long StreamReadTimeout (5s) so the user's CTS (200ms) always
+        // fires first, even on slow CI runners. This tests that user
+        // cancellation propagates as OperationCanceledException, not
+        // TimeoutException.
+        var provider = CreateOpenAIProvider(http, TimeSpan.FromSeconds(5));
 
         var request = new ChatRequest { Messages = [ChatMessage.User("test")] };
-        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
 
         // User cancellation should throw OperationCanceledException (or its
         // subclass TaskCanceledException), not TimeoutException
