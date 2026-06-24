@@ -55,17 +55,11 @@ jobs:
   # Full CI on Windows: format check + full solution build (incl. App) + tests.
   ci-windows:
     runs-on: windows-latest
-    env:
-      # dotnet format internally spawns a new dotnet process to load the
-      # workspace; on runners with multiple .NET runtimes pre-installed
-      # (e.g. .NET 10 runtime alongside the .NET 8 SDK we install), it can
-      # fail to locate the correct SDK. Setting DOTNET_ROOT ensures the
-      # child process finds the right SDK.
-      DOTNET_ROOT: ${{ github.workspace }}/.dotnet
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup .NET SDK
+        id: setup-dotnet
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -78,11 +72,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Set DOTNET_ROOT
-        shell: bash
-        run: echo "DOTNET_ROOT=$(dirname $(which dotnet))" >> $GITHUB_ENV
-
       - name: Run full CI via Nuke (CiAll)
+        env:
+          # dotnet format internally spawns a child process to load the
+          # workspace; on runners with multiple .NET runtimes pre-installed
+          # (e.g. .NET 10 runtime alongside the .NET 8 SDK), the child
+          # process can fail to locate the correct SDK. DOTNET_ROOT ensures
+          # it finds the right one.
+          DOTNET_ROOT: ${{ steps.setup-dotnet.outputs.dotnet-path }}
         run: dotnet run --project build/_build.csproj -- --root . --target CiAll --configuration Release
 
       - name: Upload test results
