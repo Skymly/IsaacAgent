@@ -7,8 +7,8 @@ knowledge, tools, and workflows built in.
 ## Features
 
 - **Chat-driven mod development** — streaming assistant responses with
-  tool-calling (read/write files, scaffold mods, diagnose Lua, validate XML,
-  parse game logs).
+  tool-calling for file operations, scaffolding, diagnostics, API lookup,
+  and semantic knowledge search.
 - **Isaac API knowledge base** — built-in enums, classes, and callbacks for
   the vanilla API plus REPENTOGON extensions.
 - **Local RAG search** — semantic search over embedded modding documentation
@@ -17,16 +17,36 @@ knowledge, tools, and workflows built in.
   local servers) or Ollama.
 - **Project-aware tools** — file operations are sandboxed to the opened
   project directory; XML/Lua escaping and path-traversal guards are built in.
-- **Isaac-specific diagnostics** — `diagnose_lua` catches common pitfalls
-  (missing `local`, unbalanced braces, unescaped strings, `debug 7` litter).
-- **Schema validation** — `validate_xml` checks `metadata.xml`, `items.xml`,
-  `entities2.xml`, etc. against official XSD schemas.
-- **Log parsing** — `parse_log` extracts Lua errors and warnings from the
-  game's `log.txt`.
 - **Encrypted credential storage** — API keys are protected with DPAPI
   (CurrentUser scope) on Windows.
 - **Persistent chat history** — per-project history is saved and restored
   across restarts.
+
+### Agent Tools
+
+The agent has access to 12 tools across two modules:
+
+**IsaacAgent.Tools** (file operations, scaffolding, API knowledge):
+
+| Tool | Description |
+|------|-------------|
+| `read_file` | Read a file from the project directory |
+| `write_file` | Write a file (creates parent dirs) |
+| `list_files` | List all files in the project directory |
+| `scaffold_mod` | Create a new mod project structure |
+| `diagnose_lua` | Analyze Lua for common Isaac modding pitfalls |
+| `search_isaac_api` | Search API docs (classes, callbacks, enums) |
+| `get_callback_info` | Detailed info on a specific callback |
+| `get_class_info` | Detailed info on a specific API class |
+
+**IsaacAgent.Rag** (semantic search, validation, log parsing):
+
+| Tool | Description |
+|------|-------------|
+| `search_knowledge` | Semantic search over the knowledge base |
+| `get_pattern` | Find code patterns for common tasks |
+| `validate_xml` | Validate XML against official XSD schemas |
+| `parse_log` | Extract errors/warnings from `log.txt` |
 
 ## Tech Stack
 
@@ -106,9 +126,12 @@ src/
   IsaacAgent.App/       Avalonia UI (Views, ViewModels, DI)
   IsaacAgent.Core/      Domain models, interfaces, knowledge base
   IsaacAgent.LLM/       LLM provider abstraction (OpenAI-compatible, Ollama)
-  IsaacAgent.Tools/     Agent tools (file ops, scaffolding, diagnostics)
-  IsaacAgent.Rag/       RAG pipeline (chunking, embedding, retrieval)
+  IsaacAgent.Tools/     Agent tools (file ops, scaffolding, diagnostics, API search)
+  IsaacAgent.Rag/       RAG pipeline (chunking, embedding, retrieval, XML validation)
   IsaacAgent.Agent/     Agent engine (orchestration, tool routing, prompts)
 tests/
   IsaacAgent.Tests/     Unit and integration tests
+tools/
+  e2e-test/             Standalone E2E test for RAG pipeline (not in .sln)
+build/                  Nuke build script
 ```

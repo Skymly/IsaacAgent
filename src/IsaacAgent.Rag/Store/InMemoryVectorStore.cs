@@ -49,9 +49,11 @@ public sealed class InMemoryVectorStore
 
     public IReadOnlyList<RetrievalResult> Search(float[] queryVector, int topK, string? categoryFilter = null)
     {
+        // Take a defensive copy so concurrent AddRange/ReplaceAll calls
+        // don't mutate the list while we iterate it outside the lock.
         List<VectorStoreEntry> snapshot;
         lock (_lock)
-            snapshot = _entries;
+            snapshot = _entries.ToList();
 
         if (snapshot.Count == 0 || queryVector.Length != _dimensions)
             return [];

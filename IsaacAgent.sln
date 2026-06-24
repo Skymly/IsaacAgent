@@ -16,6 +16,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IsaacAgent.Tests", "tests\I
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IsaacAgent.Rag", "src\IsaacAgent.Rag\IsaacAgent.Rag.csproj", "{A1B2C3D4-7777-7777-7777-777777777777}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IsaacAgent.E2ETest", "tools\e2e-test\IsaacAgent.E2ETest.csproj", "{A1B2C3D4-8888-8888-8888-888888888888}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -50,5 +52,9 @@ Global
 		{A1B2C3D4-7777-7777-7777-777777777777}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B2C3D4-7777-7777-7777-777777777777}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-7777-7777-7777-777777777777}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-8888-8888-8888-888888888888}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-8888-8888-8888-888888888888}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-8888-8888-8888-888888888888}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-8888-8888-8888-888888888888}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
