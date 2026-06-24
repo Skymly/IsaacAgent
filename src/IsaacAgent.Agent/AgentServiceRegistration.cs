@@ -9,17 +9,9 @@ public static class AgentServiceRegistration
 {
     public static IServiceCollection AddIsaacAgent(this IServiceCollection services)
     {
-        services.AddSingleton<ToolRegistry>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILogger<ToolRegistry>>();
-            var retriever = sp.GetService<IRetriever>();
-            var registry = new ToolRegistry(logger, retriever);
-            registry.ReconfigureForProject(null);
-            return registry;
-        });
-
-        // AgentSession is created per-session via the factory, not registered
-        // in DI directly, so multiple windows/projects can have independent sessions.
+        // ToolRegistry is NOT registered as a singleton — each AgentSession
+        // gets its own instance via the factory so multiple tabs don't share
+        // (and clobber) the same tool set when switching projects.
         services.AddSingleton<IAgentSessionFactory, AgentSessionFactory>();
 
         return services;
@@ -47,7 +39,9 @@ internal sealed class AgentSessionFactory : IAgentSessionFactory
     public AgentSession Create(string? projectDir = null)
     {
         var chat = _services.GetRequiredService<IChatService>();
-        var tools = _services.GetRequiredService<ToolRegistry>();
+        var toolLogger = _services.GetRequiredService<ILogger<ToolRegistry>>();
+        var retriever = _services.GetService<IRetriever>();
+        var tools = new ToolRegistry(toolLogger, retriever);
         var logger = _services.GetRequiredService<ILogger<AgentSession>>();
         return new AgentSession(chat, tools, projectDir, logger);
     }

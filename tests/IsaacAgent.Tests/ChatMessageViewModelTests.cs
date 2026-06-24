@@ -115,6 +115,53 @@ public class ChatMessageViewModelTests
         // First set should update DebouncedMarkdown immediately
         Assert.Equal("Hello world", vm.DebouncedMarkdown);
     }
+
+    [Fact]
+    public void ToolDurationLabel_MillisecondsFormat_WhenUnderOneSecond()
+    {
+        var vm = new ChatMessageViewModel { ToolDuration = TimeSpan.FromMilliseconds(500) };
+        Assert.Equal("500ms", vm.ToolDurationLabel);
+    }
+
+    [Fact]
+    public void ToolDurationLabel_SecondsFormat_WhenOverOneSecond()
+    {
+        var vm = new ChatMessageViewModel { ToolDuration = TimeSpan.FromSeconds(2.5) };
+        Assert.Equal("2.5s", vm.ToolDurationLabel);
+    }
+
+    [Fact]
+    public void ToolArgsPreview_TruncatesAt80Chars()
+    {
+        var vm = new ChatMessageViewModel { Content = new string('x', 100) };
+        Assert.EndsWith("...", vm.ToolArgsPreview);
+        Assert.Equal(83, vm.ToolArgsPreview.Length); // 80 + "..."
+    }
+
+    [Fact]
+    public void ToolArgsPreview_EmptyContent_ReturnsEmpty()
+    {
+        var vm = new ChatMessageViewModel { Content = "" };
+        Assert.Equal("", vm.ToolArgsPreview);
+    }
+
+    [Fact]
+    public void ToolArgsPreview_Exactly80Chars_NoTruncation()
+    {
+        var vm = new ChatMessageViewModel { Content = new string('x', 80) };
+        Assert.Equal(80, vm.ToolArgsPreview.Length);
+        Assert.DoesNotContain("...", vm.ToolArgsPreview);
+    }
+
+    [Fact]
+    public void IsExpanded_TogglesCorrectly()
+    {
+        var vm = new ChatMessageViewModel { IsExpanded = false };
+        vm.IsExpanded = true;
+        Assert.True(vm.IsExpanded);
+        vm.IsExpanded = false;
+        Assert.False(vm.IsExpanded);
+    }
 }
 
 /// <summary>

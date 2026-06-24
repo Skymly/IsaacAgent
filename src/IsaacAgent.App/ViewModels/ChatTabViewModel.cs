@@ -20,6 +20,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     private readonly IServiceProvider _services;
     private readonly ILogger<ChatTabViewModel> _logger;
     private readonly IAgentSessionFactory _sessionFactory;
+    private readonly string _tabId = Guid.NewGuid().ToString("N")[..8];
     private AgentSession _session;
     private CancellationTokenSource? _cts;
     private string? _currentProjectDir;
@@ -31,6 +32,9 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private string _title = "Chat";
+
+    [ObservableProperty]
+    private bool _isActive;
 
     [ObservableProperty]
     private string _inputText = "";
@@ -126,18 +130,18 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         RestoreMessagesFromHistory();
     }
 
-    private static string GetHistoryPath(string? projectDir)
+    private string GetHistoryPath(string? projectDir)
     {
         var baseDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
             "IsaacAgent", "history");
         if (string.IsNullOrEmpty(projectDir))
-            return Path.Combine(baseDir, "default.json");
+            return Path.Combine(baseDir, $"default_{_tabId}.json");
 
         var hashBytes = System.Security.Cryptography.SHA256.HashData(
             System.Text.Encoding.UTF8.GetBytes(projectDir.ToLowerInvariant()));
         var hash = Convert.ToHexString(hashBytes)[..12];
-        return Path.Combine(baseDir, $"project_{hash}.json");
+        return Path.Combine(baseDir, $"project_{hash}_{_tabId}.json");
     }
 
     private void RestoreMessagesFromHistory()
@@ -224,6 +228,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
     public void Dispose()
     {
+        _cts?.Cancel();
         UnsubscribeSessionEvents(_session);
         _cts?.Dispose();
         _cts = null;

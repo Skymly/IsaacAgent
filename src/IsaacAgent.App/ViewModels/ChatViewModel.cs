@@ -42,7 +42,7 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
             _currentProjectDir);
         tab.Title = $"Chat {Tabs.Count + 1}";
         Tabs.Add(tab);
-        ActiveTab = tab;
+        SetActiveTab(tab);
     }
 
     [RelayCommand]
@@ -51,21 +51,31 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
         if (tab is null || Tabs.Count <= 1) return; // Keep at least one tab
 
         var idx = Tabs.IndexOf(tab);
+        if (idx < 0) return;
         tab.Dispose();
         Tabs.Remove(tab);
 
         if (ActiveTab == tab)
         {
             var newIdx = Math.Min(idx, Tabs.Count - 1);
-            ActiveTab = Tabs[newIdx];
+            SetActiveTab(Tabs[newIdx]);
         }
     }
 
     [RelayCommand]
     private void SelectTab(ChatTabViewModel? tab)
     {
-        if (tab is not null) ActiveTab = tab;
+        if (tab is not null) SetActiveTab(tab);
     }
+
+    private void SetActiveTab(ChatTabViewModel tab)
+    {
+        if (ActiveTab is not null) ActiveTab.IsActive = false;
+        ActiveTab = tab;
+        tab.IsActive = true;
+    }
+
+    public bool CanCloseTabs => Tabs.Count > 1;
 
     public void OnProjectChanged(string? projectDir)
     {

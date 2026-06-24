@@ -12,6 +12,8 @@ namespace IsaacAgent.App.Views;
 
 public sealed partial class MainWindow : Window
 {
+    private ChatTabViewModel? _scrollTab;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -29,16 +31,19 @@ public sealed partial class MainWindow : Window
         };
 
         // Subscribe to active tab message changes for auto-scroll.
-        // When the active tab changes, re-subscribe to the new tab's messages.
+        // Unsubscribe from the previous tab to avoid handler accumulation.
         vm.Chat.PropertyChanged += (s, e) =>
         {
-            if (e.PropertyName == nameof(ChatViewModel.ActiveTab) && vm.Chat.ActiveTab is { } tab)
-            {
-                tab.Messages.CollectionChanged += OnMessagesChanged;
-            }
+            if (e.PropertyName != nameof(ChatViewModel.ActiveTab)) return;
+            if (_scrollTab is not null)
+                _scrollTab.Messages.CollectionChanged -= OnMessagesChanged;
+            _scrollTab = vm.Chat.ActiveTab;
+            if (_scrollTab is not null)
+                _scrollTab.Messages.CollectionChanged += OnMessagesChanged;
         };
-        if (vm.Chat.ActiveTab is { } initialTab)
-            initialTab.Messages.CollectionChanged += OnMessagesChanged;
+        _scrollTab = vm.Chat.ActiveTab;
+        if (_scrollTab is not null)
+            _scrollTab.Messages.CollectionChanged += OnMessagesChanged;
     }
 
     private void InitializeComponent()
