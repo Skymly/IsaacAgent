@@ -13,11 +13,15 @@ public sealed class OllamaProvider : IChatService
     private readonly string _model;
     private readonly ILogger<OllamaProvider> _logger;
 
-    public OllamaProvider(HttpClient http, string model, ILogger<OllamaProvider> logger)
+    internal TimeSpan StreamReadTimeout { get; } = TimeSpan.FromSeconds(90);
+
+    public OllamaProvider(HttpClient http, string model, ILogger<OllamaProvider> logger,
+        TimeSpan? streamReadTimeout = null)
     {
         _http = http;
         _model = model;
         _logger = logger;
+        if (streamReadTimeout is { } t) StreamReadTimeout = t;
     }
 
     public async Task<ChatResponse> CompleteAsync(ChatRequest request, CancellationToken ct = default)
@@ -69,11 +73,26 @@ public sealed class OllamaProvider : IChatService
         using var stream = await resp.Content.ReadAsStreamAsync(ct);
         using var reader = new StreamReader(stream);
 
-        while (!reader.EndOfStream)
+        // NDJSON streaming: same stall protection as OpenAI-compatible provider.
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCts.CancelAfter(StreamReadTimeout);
+
+        while (true)
         {
             ct.ThrowIfCancellationRequested();
-            var line = await reader.ReadLineAsync(ct);
-            if (line is null) continue;
+            string? line;
+            try
+            {
+                line = await reader.ReadLineAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+            {
+                _logger.LogWarning("Stream read timed out after {Seconds}s with no data", StreamReadTimeout.TotalSeconds);
+                throw new TimeoutException($"Ollama stream stalled: no data received within {StreamReadTimeout.TotalSeconds:F0}s.");
+            }
+            timeoutCts.CancelAfter(StreamReadTimeout);
+
+            if (line is null) break; // EOF
 
             using var doc = JsonDocument.Parse(line);
             if (doc.RootElement.TryGetProperty("message", out var msg))

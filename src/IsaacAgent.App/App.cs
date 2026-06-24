@@ -129,6 +129,11 @@ public sealed class App : Application
         {
             var logger = Services.GetRequiredService<ILogger<App>>();
             logger.LogWarning(ex, "RAG index prewarm failed (will retry on first search)");
+
+            // Surface the failure in the Settings UI so the user understands
+            // why search_knowledge may be slow or unavailable on first use.
+            var settings = Services.GetService<SettingsViewModel>();
+            settings?.SetIndexStatus($"Knowledge index build failed: {ex.Message}. Will retry on first search.");
         }
     }
 }

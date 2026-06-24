@@ -14,11 +14,20 @@ public sealed class OpenAICompatibleProvider : IChatService
     private readonly ILogger<OpenAICompatibleProvider> _logger;
     private readonly string _model;
 
-    public OpenAICompatibleProvider(HttpClient http, string model, ILogger<OpenAICompatibleProvider> logger)
+    /// <summary>
+    /// Idle timeout for SSE stream reads. If no data arrives within this
+    /// window, the stream is considered stalled and a TimeoutException is
+    /// thrown. Defaults to 90s; can be overridden via constructor for testing.
+    /// </summary>
+    internal TimeSpan StreamReadTimeout { get; } = TimeSpan.FromSeconds(90);
+
+    public OpenAICompatibleProvider(HttpClient http, string model, ILogger<OpenAICompatibleProvider> logger,
+        TimeSpan? streamReadTimeout = null)
     {
         _http = http;
         _model = model;
         _logger = logger;
+        if (streamReadTimeout is { } t) StreamReadTimeout = t;
     }
 
     public async Task<ChatResponse> CompleteAsync(ChatRequest request, CancellationToken ct = default)
@@ -59,11 +68,31 @@ public sealed class OpenAICompatibleProvider : IChatService
         using var stream = await resp.Content.ReadAsStreamAsync(ct);
         using var reader = new StreamReader(stream);
 
-        while (!reader.EndOfStream)
+        // SSE streaming: HttpClient.Timeout may not reliably cancel a stalled
+        // stream after headers are received. Use a linked CTS that resets on
+        // each successful line read so a hung server doesn't leave the UI
+        // spinning indefinitely.
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeoutCts.CancelAfter(StreamReadTimeout);
+
+        while (true)
         {
             ct.ThrowIfCancellationRequested();
-            var line = await reader.ReadLineAsync(ct);
-            if (line is null || !line.StartsWith("data: ")) continue;
+            string? line;
+            try
+            {
+                line = await reader.ReadLineAsync(timeoutCts.Token);
+            }
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+            {
+                _logger.LogWarning("Stream read timed out after {Seconds}s with no data", StreamReadTimeout.TotalSeconds);
+                throw new TimeoutException($"LLM stream stalled: no data received within {StreamReadTimeout.TotalSeconds:F0}s.");
+            }
+            // Reset the idle timeout for the next line
+            timeoutCts.CancelAfter(StreamReadTimeout);
+
+            if (line is null) break; // EOF
+            if (!line.StartsWith("data: ")) continue;
             var data = line[6..];
             if (data == "[DONE]") break;
 
