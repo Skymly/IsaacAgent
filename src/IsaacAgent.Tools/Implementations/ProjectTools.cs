@@ -27,7 +27,8 @@ public sealed class GitStatusTool : ITool
                 ["mode"] = new()
                 {
                     Type = "string",
-                    Description = "What to show: 'status' (default, working tree status + recent log), 'diff' (unstaged diff), 'diff_staged' (staged diff)"
+                    Description = "What to show",
+                    Enum = ["status", "diff", "diff_staged"]
                 }
             },
             Required = []
@@ -75,6 +76,13 @@ public sealed class GitStatusTool : ITool
             CreateNoWindow = true
         };
 
+        // Disable git features that could execute arbitrary code via
+        // malicious .git/config, hooks, or environment variables.
+        psi.Environment["GIT_PAGER"] = "cat";
+        psi.Environment["GIT_EDITOR"] = "true";
+        psi.Environment["GIT_HOOKS"] = "0";
+        psi.Environment["GIT_CONFIG_NOSYSTEM"] = "1";
+
         try
         {
             using var proc = Process.Start(psi);
@@ -82,8 +90,8 @@ public sealed class GitStatusTool : ITool
             await proc.WaitForExitAsync(ct);
             var stdout = await proc.StandardOutput.ReadToEndAsync(ct);
             var stderr = await proc.StandardError.ReadToEndAsync(ct);
-            if (proc.ExitCode != 0 && !string.IsNullOrWhiteSpace(stderr))
-                return $"Error: {stderr.Trim()}";
+            if (proc.ExitCode != 0)
+                return $"Error: {(string.IsNullOrWhiteSpace(stderr) ? $"git exited with code {proc.ExitCode}" : stderr.Trim())}";
             return stdout.TrimEnd();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -148,8 +156,15 @@ public sealed class DiffApplyTool : ITool
 
     private static List<string> ApplyPatch(string[] originalLines, string patch)
     {
-        var patchLines = patch.Split('\n');
+        // Handle both \n and \r\n line endings in the patch
+        var patchLines = patch.Split(["\r\n", "\r", "\n"], StringSplitOptions.None);
         var result = new List<string>(originalLines);
+
+        // Track the cumulative offset caused by previous hunks (lines added
+        // minus lines removed). Each hunk's oldStart references the original
+        // file, so we must adjust by this offset to find the right position
+        // in the result list.
+        var lineOffset = 0;
 
         int i = 0;
         while (i < patchLines.Length)
@@ -171,8 +186,8 @@ public sealed class DiffApplyTool : ITool
                     throw new FormatException($"Invalid hunk header: {line}");
 
                 var oldStart = int.Parse(match.Groups[1].Value);
-                // Convert to 0-based index; @@ lines are 1-based, but if oldStart is 0 it means the file is empty
-                var oldIndex = oldStart == 0 ? 0 : oldStart - 1;
+                // Convert to 0-based index and adjust for previous hunk offsets
+                var oldIndex = (oldStart == 0 ? 0 : oldStart - 1) + lineOffset;
 
                 i++;
 
@@ -185,8 +200,9 @@ public sealed class DiffApplyTool : ITool
                         break;
                     if (hl.Length == 0)
                     {
-                        // Empty line in patch could be a context line with no prefix
-                        hunkLines.Add((' ', ""));
+                        // Skip empty lines (artifacts of splitting, not real
+                        // patch content). A true empty context line in unified
+                        // diff format has a space prefix (" ").
                         i++;
                         continue;
                     }
@@ -201,6 +217,8 @@ public sealed class DiffApplyTool : ITool
 
                 // Apply hunk
                 var resultIndex = oldIndex;
+                var added = 0;
+                var removed = 0;
                 foreach (var (prefix, content) in hunkLines)
                 {
                     if (prefix == ' ')
@@ -222,6 +240,7 @@ public sealed class DiffApplyTool : ITool
                         if (resultIndex < result.Count && result[resultIndex] == content)
                         {
                             result.RemoveAt(resultIndex);
+                            removed++;
                         }
                         else
                         {
@@ -234,8 +253,11 @@ public sealed class DiffApplyTool : ITool
                         // Add line
                         result.Insert(resultIndex, content);
                         resultIndex++;
+                        added++;
                     }
                 }
+
+                lineOffset += added - removed;
             }
             else
             {
@@ -254,7 +276,7 @@ public sealed class DiffApplyTool : ITool
 public sealed class BatchEditTool : ITool
 {
     public string Name => "batch_edit";
-    public string Description => "Apply multiple find-and-replace edits across one or more files in a single call. Each edit replaces the first occurrence of 'find' with 'replace' in the specified file. Reduces round-trips when making changes to several files at once.";
+    public string Description => "Apply multiple find-and-replace edits across one or more files in a single call. Each edit replaces the first occurrence of 'find' with 'replace' in the specified file. Reduces round-trips when making changes to several files at once. Set replace_all to true to replace every occurrence instead.";
 
     public ToolDefinition Definition => new()
     {
@@ -267,7 +289,7 @@ public sealed class BatchEditTool : ITool
                 ["edits"] = new()
                 {
                     Type = "array",
-                    Description = "Array of edit objects, each with: path (file relative path), find (exact text to find), replace (replacement text)"
+                    Description = "Array of edit objects, each with: path (file relative path), find (exact text to find), replace (replacement text), replace_all (optional, default false)"
                 }
             },
             Required = ["edits"]
@@ -290,7 +312,14 @@ public sealed class BatchEditTool : ITool
             var relPath = edit.GetProperty("path").GetString()!;
             var find = edit.GetProperty("find").GetString()!;
             var replace = edit.GetProperty("replace").GetString()!;
+            var replaceAll = edit.TryGetProperty("replace_all", out var ra) && ra.GetBoolean();
             var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
+
+            if (string.IsNullOrEmpty(find))
+            {
+                results.Add($"  {relPath}: Error: find string is empty");
+                continue;
+            }
 
             if (!FileToolPathSafety.IsWithinProject(fullPath, _projectDir))
             {
@@ -311,14 +340,22 @@ public sealed class BatchEditTool : ITool
                 continue;
             }
 
-            var newContent = content.Replace(find, replace);
+            var newContent = replaceAll
+                ? content.Replace(find, replace)
+                : ReplaceFirst(content, find, replace);
             File.WriteAllText(fullPath, newContent);
             filesChanged.Add(relPath);
-            results.Add($"  {relPath}: Applied ({find.Length} → {replace.Length} chars)");
+            results.Add($"  {relPath}: Applied ({find.Length} → {replace.Length} chars{(replaceAll ? ", all" : "")})");
         }
 
         var summary = $"Batch edit complete: {filesChanged.Count} file(s) changed, {edits.Count - filesChanged.Count} skipped/failed.\n{string.Join('\n', results)}";
         return Task.FromResult(summary);
+    }
+
+    private static string ReplaceFirst(string text, string search, string replacement)
+    {
+        var index = text.IndexOf(search, StringComparison.Ordinal);
+        return index < 0 ? text : text[..index] + replacement + text[(index + search.Length)..];
     }
 }
 
@@ -380,7 +417,17 @@ public sealed class RunCommandTool : ITool
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromSeconds(timeoutSec));
 
-            await proc.WaitForExitAsync(cts.Token);
+            try
+            {
+                await proc.WaitForExitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                // Kill the process tree to prevent zombie processes
+                try { proc.Kill(entireProcessTree: true); } catch { }
+                return $"Error: Command timed out after {timeoutSec}s.";
+            }
+
             var stdout = await proc.StandardOutput.ReadToEndAsync(ct);
             var stderr = await proc.StandardError.ReadToEndAsync(ct);
 
@@ -393,28 +440,37 @@ public sealed class RunCommandTool : ITool
 
             return output.ToString().TrimEnd();
         }
-        catch (OperationCanceledException)
-        {
-            return $"Error: Command timed out after {timeoutSec}s.";
-        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             return $"Error: {ex.Message}";
         }
     }
 
+    private static readonly Regex[] DangerousPatterns =
+    [
+        Compile(@"\brm\s+-rf\b"),
+        Compile(@"\brmdir\s+/s\b"),
+        Compile(@"\bformat\s+[a-z]:"),
+        Compile(@"\bdel\s+/f\s+/s\b"),
+        Compile(@"\bmkfs\b"),
+        Compile(@"\bdd\s+if="),
+        Compile(@"\b(shutdown|reboot|halt)\b"),
+        Compile(@":\(\)\s*\{"),
+        Compile(@"\bfork\s+bomb\b"),
+        Compile(@"\bgit\s+push\s+(-f|--force)\b"),
+        Compile(@"\b(drop\s+table|drop\s+database|truncate)\b"),
+        Compile(@"\bchmod\s+777\s+/"),
+        Compile(@"\bsudo\b"),
+        Compile(@"\bcurl\s+.*\|\s*(bash|sh)\b"),
+        Compile(@"\bwget\s+.*\|\s*(bash|sh)\b"),
+    ];
+
+    private static Regex Compile(string pattern) => new(pattern, RegexOptions.IgnoreCase);
+
     private static bool IsDangerousCommand(string command)
     {
-        var lower = command.ToLowerInvariant();
-        // Block commands that could cause irreversible damage
-        var dangerousPatterns = new[]
-        {
-            "rm -rf", "rmdir /s", "format ", "del /f /s /q", "mkfs",
-            "dd if=", "shutdown", "reboot", "halt",
-            ":(){", "fork bomb",
-            "git push --force", "git push -f",
-            "drop table", "drop database", "truncate "
-        };
-        return dangerousPatterns.Any(p => lower.Contains(p));
+        // Normalize whitespace to prevent bypass via double spaces or tabs
+        var normalized = System.Text.RegularExpressions.Regex.Replace(command, @"\s+", " ").Trim().ToLowerInvariant();
+        return DangerousPatterns.Any(p => p.IsMatch(normalized));
     }
 }
