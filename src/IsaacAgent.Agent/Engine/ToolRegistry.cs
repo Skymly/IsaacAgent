@@ -13,6 +13,12 @@ public sealed class ToolRegistry
     private readonly ILogger<ToolRegistry> _logger;
     private readonly IRetriever? _retriever;
 
+    /// <summary>
+    /// Fired when a knowledge retrieval tool returns results, carrying the
+    /// query and the retrieval results for UI visualization.
+    /// </summary>
+    public event Action<string, IReadOnlyList<RetrievalResult>>? OnRetrievalResults;
+
     public ToolRegistry(ILogger<ToolRegistry> logger, IRetriever? retriever = null)
     {
         _logger = logger;
@@ -46,10 +52,11 @@ public sealed class ToolRegistry
 
         if (_retriever is not null)
         {
-            RegisterAll([
-                new SearchKnowledgeTool(_retriever),
-                new GetPatternTool(_retriever)
-            ]);
+            var searchTool = new SearchKnowledgeTool(_retriever);
+            var patternTool = new GetPatternTool(_retriever);
+            searchTool.OnRetrievalResults = (q, r) => OnRetrievalResults?.Invoke(q, r);
+            patternTool.OnRetrievalResults = (q, r) => OnRetrievalResults?.Invoke(q, r);
+            RegisterAll([searchTool, patternTool]);
         }
 
         if (!string.IsNullOrEmpty(projectDir))

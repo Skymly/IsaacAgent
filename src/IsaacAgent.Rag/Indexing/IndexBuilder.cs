@@ -45,13 +45,21 @@ public sealed class IndexBuilder
         chunks.AddRange(repentogonChunks);
         _logger.LogInformation("Loaded {Count} chunks from embedded REPENTOGON docs", repentogonChunks.Count);
 
-        // 3. User-provided examples from filesystem (if any)
+        // 3. User-provided examples from filesystem (if any) — uses SmartMarkdownChunker
+        //    for code-block-safe splitting with overlap
         if (Directory.Exists(_examplesDir))
         {
-            var exampleChunks = MarkdownChunker.ChunkDirectory(_examplesDir, "example");
+            var exampleChunks = SmartMarkdownChunker.ChunkDirectory(_examplesDir, "example");
             chunks.AddRange(exampleChunks);
             _logger.LogInformation("Loaded {Count} example chunks from {Dir}", exampleChunks.Count, _examplesDir);
         }
+
+        // 4. Built-in pattern examples (embedded resources)
+        var builtinChunks = SmartMarkdownChunker.ChunkFromEmbeddedResources(
+            _assembly, "IsaacAgent.Rag.Resources.patterns", "pattern");
+        chunks.AddRange(builtinChunks);
+        if (builtinChunks.Count > 0)
+            _logger.LogInformation("Loaded {Count} built-in pattern chunks", builtinChunks.Count);
 
         _logger.LogInformation("Total chunks to embed: {Count}", chunks.Count);
 

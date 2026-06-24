@@ -30,6 +30,7 @@ public sealed class AgentSession
     public event Action<string, string, TimeSpan>? OnToolResult;
     public event Action<string>? OnError;
     public event Action<int, int>? OnTokenUsage;
+    public event Action<string, IReadOnlyList<RetrievalResult>>? OnRetrievalResults;
 
     public AgentSession(IChatService chat, ToolRegistry tools, string? projectDir, ILogger<AgentSession> logger)
     {
@@ -38,6 +39,7 @@ public sealed class AgentSession
         _projectDir = projectDir;
         _logger = logger;
 
+        _tools.OnRetrievalResults += OnRetrievalResults;
         _tools.ReconfigureForProject(projectDir);
         _history.Add(ChatMessage.System(SystemPrompts.BuildSystemPrompt(projectDir)));
     }

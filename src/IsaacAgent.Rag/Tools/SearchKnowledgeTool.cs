@@ -8,6 +8,9 @@ public sealed class SearchKnowledgeTool : ITool
 {
     private readonly IRetriever _retriever;
 
+    /// <summary>Optional callback to report retrieval results for UI visualization.</summary>
+    public Action<string, IReadOnlyList<RetrievalResult>>? OnRetrievalResults { get; set; }
+
     public SearchKnowledgeTool(IRetriever retriever) => _retriever = retriever;
 
     public string Name => "search_knowledge";
@@ -39,6 +42,8 @@ public sealed class SearchKnowledgeTool : ITool
 
         var results = await _retriever.SearchAsync(query, topK, category, ct);
 
+        OnRetrievalResults?.Invoke(query, results);
+
         if (results.Count == 0)
             return $"No knowledge base results for '{query}'. The index may not be built yet.";
 
@@ -58,6 +63,9 @@ public sealed class SearchKnowledgeTool : ITool
 public sealed class GetPatternTool : ITool
 {
     private readonly IRetriever _retriever;
+
+    /// <summary>Optional callback to report retrieval results for UI visualization.</summary>
+    public Action<string, IReadOnlyList<RetrievalResult>>? OnRetrievalResults { get; set; }
 
     public GetPatternTool(IRetriever retriever) => _retriever = retriever;
 
@@ -87,6 +95,8 @@ public sealed class GetPatternTool : ITool
         topK = Math.Clamp(topK, 1, 5);
 
         var results = await _retriever.SearchAsync(task, topK, "example", ct);
+
+        OnRetrievalResults?.Invoke(task, results);
 
         if (results.Count == 0)
             return $"No example patterns found for '{task}'. Try using search_knowledge for API documentation.";

@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Resources\docs\**\*.md" />
+    <EmbeddedResource Include="Resources\patterns\**\*.md" />
     <EmbeddedResource Include="Resources\schemas\**\*.xsd" />
   </ItemGroup>
 

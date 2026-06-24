@@ -29,6 +29,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     private Action<string, string, TimeSpan>? _onToolResult;
     private Action<string>? _onError;
     private Action<int, int>? _onTokenUsage;
+    private Action<string, IReadOnlyList<RetrievalResult>>? _onRetrievalResults;
 
     [ObservableProperty]
     private string _title = "Chat";
@@ -102,11 +103,31 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
                 TotalOutputTokens += output;
             });
         };
+        _onRetrievalResults = (query, results) =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (results.Count == 0) return;
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"**Knowledge retrieved for:** {query}\n");
+                for (var i = 0; i < results.Count; i++)
+                {
+                    var r = results[i];
+                    sb.AppendLine($"- **{r.Chunk.Title}** [{r.Chunk.Source}/{r.Chunk.Category}] — score: {r.Score:F3}");
+                }
+                Messages.Add(new ChatMessageViewModel
+                {
+                    Role = "retrieval",
+                    Content = sb.ToString()
+                });
+            });
+        };
 
         session.OnToolCall += _onToolCall;
         session.OnToolResult += _onToolResult;
         session.OnError += _onError;
         session.OnTokenUsage += _onTokenUsage;
+        session.OnRetrievalResults += _onRetrievalResults;
     }
 
     private void UnsubscribeSessionEvents(AgentSession session)
@@ -115,6 +136,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         if (_onToolResult is not null) session.OnToolResult -= _onToolResult;
         if (_onError is not null) session.OnError -= _onError;
         if (_onTokenUsage is not null) session.OnTokenUsage -= _onTokenUsage;
+        if (_onRetrievalResults is not null) session.OnRetrievalResults -= _onRetrievalResults;
     }
 
     public void OnProjectChanged(string? projectDir)

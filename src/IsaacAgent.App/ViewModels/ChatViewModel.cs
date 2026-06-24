@@ -148,6 +148,8 @@ public sealed partial class ChatMessageViewModel : ObservableObject
     public bool IsError => Role == "error";
     public bool IsSystem => Role == "system";
     public bool IsTool => Role is "tool" or "tool_result";
+    public bool IsRetrieval => Role == "retrieval";
+    public bool IsRegular => !IsTool && !IsRetrieval;
 
     public string ToolDurationLabel =>
         ToolDuration.TotalSeconds < 1 ? $"{ToolDuration.TotalMilliseconds:F0}ms" : $"{ToolDuration.TotalSeconds:F1}s";
@@ -171,6 +173,7 @@ public sealed partial class ChatMessageViewModel : ObservableObject
         "assistant" => "IsaacAgent",
         "tool" => $"🔧 {ToolName}",
         "tool_result" => $"✅ {ToolName} ({ToolDurationLabel})",
+        "retrieval" => "📚 Knowledge",
         "error" => "Error",
         "system" => "System",
         _ => Role
@@ -182,6 +185,7 @@ public sealed partial class ChatMessageViewModel : ObservableObject
         "assistant" => new SolidColorBrush(Color.Parse("#2d2d30")),
         "tool" => new SolidColorBrush(Color.Parse("#3d3520")),
         "tool_result" => new SolidColorBrush(Color.Parse("#1a3a1a")),
+        "retrieval" => new SolidColorBrush(Color.Parse("#1a2a3a")),
         "error" => new SolidColorBrush(Color.Parse("#5c1a1a")),
         "system" => new SolidColorBrush(Color.Parse("#3a3a3a")),
         _ => new SolidColorBrush(Color.Parse("#2d2d30"))

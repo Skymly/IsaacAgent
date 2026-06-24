@@ -17,6 +17,12 @@ public static class MkDocsChunker
     private static readonly Regex AdmonitionRegex = new(@"^\?\?\?[-+]?\s+(\w+)\s+[""'](.+?)[""']\s*$", RegexOptions.Multiline);
     private static readonly Regex AttrAnnotationRegex = new(@"\{:\s+[^}]+\}", RegexOptions.Compiled);
     private static readonly Regex H1TitleRegex = new(@"^#\s+""?([^""]+)""?\s*$", RegexOptions.Multiline);
+    private static readonly Regex CodeBlockRegex = new(@"^```", RegexOptions.Multiline);
+
+    /// <summary>Maximum chunk size in characters.</summary>
+    private const int MaxChunkSize = 2000;
+    /// <summary>Overlap between adjacent chunks to preserve context.</summary>
+    private const int OverlapChars = 200;
 
     private static readonly Dictionary<string, string> TagToCategory = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -101,7 +107,21 @@ public static class MkDocsChunker
             var section = sections[i];
             if (string.IsNullOrWhiteSpace(section.Content)) continue;
             var title = section.Heading is null ? docTitle : $"{docTitle} — {section.Heading}";
-            chunks.Add(CreateChunk($"{source}:{fileName}:{i}", source, category, title, section.Content.Trim(), metadata));
+
+            // Split large sections with overlap to preserve context
+            if (section.Content.Length > MaxChunkSize)
+            {
+                var subChunks = SplitWithOverlap(section.Content, MaxChunkSize, OverlapChars);
+                for (var j = 0; j < subChunks.Count; j++)
+                {
+                    var subTitle = subChunks.Count > 1 ? $"{title} (part {j + 1}/{subChunks.Count})" : title;
+                    chunks.Add(CreateChunk($"{source}:{fileName}:{i}:{j}", source, category, subTitle, subChunks[j].Trim(), metadata));
+                }
+            }
+            else
+            {
+                chunks.Add(CreateChunk($"{source}:{fileName}:{i}", source, category, title, section.Content.Trim(), metadata));
+            }
         }
         return chunks;
     }
@@ -177,24 +197,40 @@ public static class MkDocsChunker
     private static List<(string? Heading, string Content)> SplitByHeadings(string body)
     {
         var sections = new List<(string? Heading, string Content)>();
-        var matches = HeadingRegex.Matches(body);
-        if (matches.Count == 0)
+        var lines = body.Split('\n');
+        var inCodeBlock = false;
+        var sectionLines = new List<string>();
+        string? currentHeading = null;
+
+        for (var i = 0; i < lines.Length; i++)
         {
-            sections.Add((null, body));
-            return sections;
+            var line = lines[i];
+
+            // Track code block state — don't split on headings inside code blocks
+            if (CodeBlockRegex.IsMatch(line))
+                inCodeBlock = !inCodeBlock;
+
+            if (!inCodeBlock)
+            {
+                var headingMatch = HeadingRegex.Match(line);
+                if (headingMatch.Success && sectionLines.Count > 0)
+                {
+                    sections.Add((currentHeading, string.Join('\n', sectionLines)));
+                    sectionLines.Clear();
+                    currentHeading = headingMatch.Groups[2].Value.Trim();
+                }
+                else if (sectionLines.Count == 0 && headingMatch.Success)
+                {
+                    currentHeading = headingMatch.Groups[2].Value.Trim();
+                }
+            }
+
+            sectionLines.Add(line);
         }
 
-        if (matches[0].Index > 0)
-            sections.Add((null, body[..matches[0].Index]));
+        if (sectionLines.Count > 0)
+            sections.Add((currentHeading, string.Join('\n', sectionLines)));
 
-        for (var i = 0; i < matches.Count; i++)
-        {
-            var match = matches[i];
-            var heading = match.Groups[2].Value.Trim();
-            var start = match.Index;
-            var end = i + 1 < matches.Count ? matches[i + 1].Index : body.Length;
-            sections.Add((heading, body[start..end]));
-        }
         return sections;
     }
 
@@ -209,5 +245,55 @@ public static class MkDocsChunker
             Content = content,
             Metadata = metadata
         };
+    }
+
+    /// <summary>
+    /// Split text into chunks of maxChars with overlapChars overlap.
+    /// Respects code block boundaries — never splits inside fenced code.
+    /// </summary>
+    private static List<string> SplitWithOverlap(string text, int maxChars, int overlapChars)
+    {
+        var chunks = new List<string>();
+        if (text.Length <= maxChars)
+        {
+            chunks.Add(text);
+            return chunks;
+        }
+
+        var pos = 0;
+        while (pos < text.Length)
+        {
+            var end = Math.Min(pos + maxChars, text.Length);
+
+            // Don't split inside a code block
+            var subText = text[pos..end];
+            var fenceCount = CodeBlockRegex.Matches(subText).Count;
+            if (fenceCount % 2 == 1)
+            {
+                var nextFence = CodeBlockRegex.Match(text, end);
+                if (nextFence.Success)
+                {
+                    var lineEnd = text.IndexOf('\n', nextFence.Index);
+                    end = lineEnd >= 0 ? lineEnd : text.Length;
+                }
+                else
+                {
+                    end = text.Length;
+                }
+            }
+            else
+            {
+                // Snap to line boundary
+                var searchEnd = Math.Min(end, text.Length - 1);
+                var lineBreak = text.LastIndexOf('\n', searchEnd);
+                if (lineBreak > pos + 100) end = lineBreak + 1;
+            }
+
+            chunks.Add(text[pos..end]);
+            if (end >= text.Length) break;
+            pos = Math.Max(pos + 1, end - overlapChars);
+        }
+
+        return chunks;
     }
 }
