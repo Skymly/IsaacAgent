@@ -24,9 +24,9 @@ knowledge, tools, and workflows built in.
 
 ### Agent Tools
 
-The agent has access to 12 tools across two modules:
+The agent has access to 16 tools across two modules:
 
-**IsaacAgent.Tools** (file operations, scaffolding, API knowledge):
+**IsaacAgent.Tools** (file operations, scaffolding, API knowledge, project commands, 12 tools):
 
 | Tool | Description |
 |------|-------------|
@@ -38,6 +38,10 @@ The agent has access to 12 tools across two modules:
 | `search_isaac_api` | Search API docs (classes, callbacks, enums) |
 | `get_callback_info` | Detailed info on a specific callback |
 | `get_class_info` | Detailed info on a specific API class |
+| `git_status` | Show git status, recent commits, and diff |
+| `diff_apply` | Apply a unified diff patch to a file |
+| `batch_edit` | Apply multiple find-and-replace edits across files |
+| `run_command` | Run a shell command in the project directory |
 
 **IsaacAgent.Rag** (semantic search, validation, log parsing):
 

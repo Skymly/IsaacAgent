@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Four new agent tools for enhanced project interaction:
+  - `git_status` — shows git status, recent commits, and uncommitted diff
+  - `diff_apply` — applies unified diff patches to files (more precise than
+    write_file for large files with small changes)
+  - `batch_edit` — applies multiple find-and-replace edits across files in
+    a single call, reducing round-trips
+  - `run_command` — runs shell commands in the project directory with
+    timeout (30s default, max 120s) and dangerous-command blocking
+- 13 new tests covering all four tools (diff apply add/remove/modify,
+  path traversal, batch edit, run command echo/block/timeout, git status).
 - Cross-platform CI matrix: `ci-lib` (ubuntu-latest, macos-latest) for
   library tests, `ci-windows` for full solution build + format check.
 - Release build job: publishes self-contained win-x64 single-file
@@ -29,7 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Version properties (`VersionPrefix`, `AssemblyVersion`, `FileVersion`)
   in `Directory.Build.props`.
 - E2E test project (`IsaacAgent.E2ETest`) added to the solution.
-- Comprehensive agent tools table in README with module attribution.
+- Comprehensive agent tools table in README with module attribution
+  (expanded to 16 tools across Tools and Rag modules).
 
 ### Fixed
 - `ModCallbacks.cs` ID mapping: all 74 vanilla callback IDs (0-73)
@@ -53,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `QuickReferenceViewModel` lists REPENTOGON callbacks alongside vanilla.
 
 ### Changed
+- `FileToolPathSafety` changed from `file static class` to `internal static
+  class` so it can be shared across tool implementation files.
 - CI workflow restructured from single windows-latest job to three jobs:
   `ci-lib`, `ci-windows`, `release`.
 - `OpenAICompatibleProvider` and `OllamaProvider` stream loops changed

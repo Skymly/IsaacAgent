@@ -138,7 +138,7 @@ public sealed class ListFilesTool : ITool
     }
 }
 
-file static class FileToolPathSafety
+internal static class FileToolPathSafety
 {
     public static bool IsWithinProject(string fullPath, string projectDir)
     {

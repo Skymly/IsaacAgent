@@ -62,7 +62,11 @@ public sealed class ToolRegistry
                 new DiagnoseLuaTool(projectDir),
                 new ScaffoldModTool(projectDir),
                 new ValidateXmlTool(projectDir),
-                new ParseLogTool(projectDir)
+                new ParseLogTool(projectDir),
+                new GitStatusTool(projectDir),
+                new DiffApplyTool(projectDir),
+                new BatchEditTool(projectDir),
+                new RunCommandTool(projectDir)
             ]);
         }
 
