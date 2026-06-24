@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using IsaacAgent.Core.Knowledge;
 using IsaacAgent.Core.Models;
@@ -114,12 +115,32 @@ public sealed class GetCallbackInfoTool : ITool
         var args = JsonDocument.Parse(arguments).RootElement;
         var name = args.GetProperty("name").GetString()!;
 
-        if (ModCallbacks.Callbacks.TryGetValue(name, out var info))
+        var info = ModCallbacks.Lookup(name);
+        if (info is not null)
         {
-            return Task.FromResult($"Callback: {name}\nID: {info.Id}\nArguments: {info.Args}\nOptionalArgs: {info.OptionalArgs}\nDescription: {info.Description}\n\nExample:\n```lua\nlocal mod = RegisterMod(\"MyMod\", 1)\nmod:AddCallback(ModCallbacks.{name}, function(_)\n    -- Your code here\nend)\n```");
+            var sb = new StringBuilder();
+            sb.AppendLine($"Callback: {name}");
+            sb.AppendLine($"ID: {info.Id}");
+            sb.AppendLine($"Arguments: {info.Args}");
+            sb.AppendLine($"OptionalArgs: {info.OptionalArgs}");
+            sb.AppendLine($"Description: {info.Description}");
+
+            if (ModCallbacks.GetRepentogonId(name) is { } rgId)
+                sb.AppendLine($"REPENTOGON Override ID: {rgId} (enhanced behavior, see REPENTOGON docs)");
+
+            sb.AppendLine();
+            sb.AppendLine("Example:");
+            sb.AppendLine("```lua");
+            sb.AppendLine("local mod = RegisterMod(\"MyMod\", 1)");
+            sb.AppendLine($"mod:AddCallback(ModCallbacks.{name}, function(_)");
+            sb.AppendLine("    -- Your code here");
+            sb.AppendLine("end)");
+            sb.AppendLine("```");
+            return Task.FromResult(sb.ToString());
         }
 
         var suggestions = ModCallbacks.Callbacks.Keys
+            .Concat(ModCallbacks.RepentogonCallbacks.Keys)
             .Where(k => k.Contains(name, StringComparison.OrdinalIgnoreCase))
             .ToList();
 

@@ -85,7 +85,9 @@ public sealed class DiagnoseLuaTool : ITool
             {
                 var callbackName = callbackMatch.Groups[2].Value;
                 if (!ModCallbacks.Callbacks.ContainsKey(callbackName) &&
-                    !ModCallbacks.Callbacks.ContainsKey("MC_" + callbackName))
+                    !ModCallbacks.Callbacks.ContainsKey("MC_" + callbackName) &&
+                    !ModCallbacks.RepentogonCallbacks.ContainsKey(callbackName) &&
+                    !ModCallbacks.RepentogonCallbacks.ContainsKey("MC_" + callbackName))
                 {
                     diags.Add(new Diagnostic
                     {

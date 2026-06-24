@@ -20,7 +20,7 @@ public class SearchApiTests
     {
         var result = await _tool.ExecuteAsync("""{"query": "MC_POST_UPDATE", "category": "callback"}""");
         Assert.Contains("MC_POST_UPDATE", result);
-        Assert.Contains("update frame", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("game update", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

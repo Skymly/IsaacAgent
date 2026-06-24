@@ -33,8 +33,15 @@ public sealed partial class QuickReferenceViewModel : ObservableObject
                 Callbacks.Add(cb);
         }
 
-        // Add any remaining callbacks (sorted)
+        // Add any remaining vanilla callbacks (sorted)
         foreach (var cb in ModCallbacks.Callbacks.Keys.OrderBy(k => k))
+        {
+            if (!Callbacks.Contains(cb))
+                Callbacks.Add(cb);
+        }
+
+        // Add REPENTOGON-only callbacks (sorted, prefixed for clarity)
+        foreach (var cb in ModCallbacks.RepentogonCallbacks.Keys.OrderBy(k => k))
         {
             if (!Callbacks.Contains(cb))
                 Callbacks.Add(cb);

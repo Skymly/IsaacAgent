@@ -22,6 +22,19 @@ public static class ApiDocChunker
             });
         }
 
+        foreach (var (name, info) in ModCallbacks.RepentogonCallbacks)
+        {
+            chunks.Add(new KnowledgeChunk
+            {
+                Id = $"callback:repentogon:{name}",
+                Source = "repentogon",
+                Category = "callback",
+                Title = name,
+                Content = $"Callback: {name} (REPENTOGON ID: {info.Id})\nArguments: {info.Args}\nOptionalArgs: {info.OptionalArgs}\nDescription: {info.Description}",
+                Metadata = { ["id"] = info.Id.ToString() }
+            });
+        }
+
         foreach (var (name, info) in IsaacClasses.Classes)
         {
             var methodsText = string.Join('\n', info.Methods.Select(m => $"  - {m}"));
