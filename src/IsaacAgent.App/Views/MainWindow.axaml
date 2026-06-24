@@ -83,8 +83,42 @@
 
             <Border Grid.Column="1" Padding="8">
                 <DockPanel>
-                    <ScrollViewer x:Name="ChatScrollViewer" DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Chat.Messages}" Padding="8">
+                    <!-- Tab bar -->
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
+                        <Button DockPanel.Dock="Right" Content="+" Padding="8,2"
+                                Command="{Binding Chat.AddTabCommand}"
+                                FontSize="14" Margin="4,0,0,0" />
+                        <ItemsControl ItemsSource="{Binding Chat.Tabs}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ChatTabViewModel">
+                                    <Border Padding="8,4" CornerRadius="4,4,0,0"
+                                            Background="{DynamicResource SystemControlBackgroundAltMediumBrush}">
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <Button Background="Transparent" BorderThickness="0" Padding="0"
+                                                    Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).SelectTabCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <TextBlock Text="{Binding Title}" FontSize="12" />
+                                            </Button>
+                                            <Button Background="Transparent" BorderThickness="0" Padding="0"
+                                                    Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).CloseTabCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    FontSize="10" Opacity="0.5" Content="✕" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </DockPanel>
+
+                    <!-- Chat content for active tab -->
+                    <ScrollViewer x:Name="ChatScrollViewer" DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto"
+                                  IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <ItemsControl ItemsSource="{Binding Chat.ActiveTab.Messages}" Padding="8">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <StackPanel Spacing="8" />
@@ -94,41 +128,75 @@
                                 <DataTemplate x:DataType="vm:ChatMessageViewModel">
                                     <Border CornerRadius="8" Padding="12,8"
                                             Background="{Binding BackgroundBrush}"
-                                            HorizontalAlignment="{Binding HorizontalAlign}">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="{Binding RoleLabel}"
-                                                       FontSize="11" Opacity="0.5" />
-                                            <SelectableTextBlock TextWrapping="Wrap"
-                                                                 FontFamily="Cascadia Code,Consolas,monospace"
-                                                                 FontSize="13"
-                                                                 md:MarkdownRenderer.Markdown="{Binding DebouncedMarkdown}" />
-                                        </StackPanel>
+                                            HorizontalAlignment="{Binding HorizontalAlign}"
+                                            MaxWidth="600">
+                                        <Grid>
+                                            <!-- Tool call/result: collapsible card -->
+                                            <StackPanel Spacing="4" IsVisible="{Binding IsTool}">
+                                                <Button Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).ActiveTab.ToggleExpandCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="0"
+                                                        HorizontalAlignment="Left">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <TextBlock Text="{Binding RoleLabel}"
+                                                                   FontSize="11" Opacity="0.7"
+                                                                   FontFamily="Cascadia Code,Consolas,monospace" />
+                                                        <TextBlock Text="▼" FontSize="9" Opacity="0.4"
+                                                                   IsVisible="{Binding IsExpanded}" />
+                                                        <TextBlock Text="▶" FontSize="9" Opacity="0.4"
+                                                                   IsVisible="{Binding !IsExpanded}" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <TextBlock Text="{Binding ToolArgsPreview}"
+                                                           FontSize="11" Opacity="0.5"
+                                                           FontFamily="Cascadia Code,Consolas,monospace"
+                                                           IsVisible="{Binding !IsExpanded}"
+                                                           TextWrapping="Wrap" />
+                                                <SelectableTextBlock TextWrapping="Wrap"
+                                                                     FontFamily="Cascadia Code,Consolas,monospace"
+                                                                     FontSize="12"
+                                                                     IsVisible="{Binding IsExpanded}"
+                                                                     md:MarkdownRenderer.Markdown="{Binding DebouncedMarkdown}" />
+                                            </StackPanel>
+
+                                            <!-- Regular message -->
+                                            <StackPanel Spacing="4" IsVisible="{Binding !IsTool}">
+                                                <TextBlock Text="{Binding RoleLabel}"
+                                                           FontSize="11" Opacity="0.5" />
+                                                <SelectableTextBlock TextWrapping="Wrap"
+                                                                     FontFamily="Cascadia Code,Consolas,monospace"
+                                                                     FontSize="13"
+                                                                     md:MarkdownRenderer.Markdown="{Binding DebouncedMarkdown}" />
+                                            </StackPanel>
+                                        </Grid>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
 
-                    <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0">
+                    <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0"
+                            IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
                         <Grid ColumnDefinitions="*,Auto,Auto">
-                            <TextBox Grid.Column="0"
-                                     Text="{Binding Chat.InputText}"
-                                     Watermark="Ask about Isaac modding..."
+                            <TextBox x:Name="ChatInputBox" Grid.Column="0"
+                                     Text="{Binding Chat.ActiveTab.InputText}"
+                                     Watermark="Ask about Isaac modding... (Ctrl+Enter to send)"
                                      AcceptsReturn="True"
                                      MinHeight="40"
-                                     IsEnabled="{Binding !Chat.IsGenerating}" />
+                                     IsEnabled="{Binding !Chat.ActiveTab.IsGenerating}"
+                                     KeyDown="OnInputKeyDown" />
                             <Button Grid.Column="1"
                                     Content="Send"
-                                    Command="{Binding Chat.SendCommand}"
+                                    Command="{Binding Chat.ActiveTab.SendCommand}"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Stretch"
-                                    IsEnabled="{Binding !Chat.IsGenerating}" />
+                                    IsEnabled="{Binding !Chat.ActiveTab.IsGenerating}" />
                             <Button Grid.Column="2"
                                     Content="Cancel"
-                                    Command="{Binding Chat.CancelCommand}"
+                                    Command="{Binding Chat.ActiveTab.CancelCommand}"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Stretch"
-                                    IsVisible="{Binding Chat.IsGenerating}" />
+                                    IsVisible="{Binding Chat.ActiveTab.IsGenerating}" />
                         </Grid>
                     </Border>
                 </DockPanel>
@@ -173,7 +241,19 @@
         </Grid>
 
         <Border Grid.Row="2" Background="{DynamicResource SystemControlBackgroundAltMediumBrush}" Padding="10,4">
-            <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.7" />
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.6"
+                           FontFamily="Cascadia Code,Consolas,monospace"
+                           IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="↑{0} ↓{1} tokens">
+                            <Binding Path="Chat.ActiveTab.TotalInputTokens" />
+                            <Binding Path="Chat.ActiveTab.TotalOutputTokens" />
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.7" />
+            </DockPanel>
         </Border>
     </Grid>
 </Window>

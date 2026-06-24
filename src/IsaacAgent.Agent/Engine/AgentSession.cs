@@ -27,8 +27,9 @@ public sealed class AgentSession
 
     public event Action<string>? OnTextGenerated;
     public event Action<string, string>? OnToolCall;
-    public event Action<string>? OnToolResult;
+    public event Action<string, string, TimeSpan>? OnToolResult;
     public event Action<string>? OnError;
+    public event Action<int, int>? OnTokenUsage;
 
     public AgentSession(IChatService chat, ToolRegistry tools, string? projectDir, ILogger<AgentSession> logger)
     {
@@ -105,6 +106,13 @@ public sealed class AgentSession
                 }).ToList();
 
             var content = contentBuilder.ToString();
+
+            // Estimate token usage (~4 chars ≈ 1 token heuristic) since
+            // streaming responses don't include usage metadata from the API.
+            var inputChars = _history.Sum(m => (m.Content?.Length ?? 0) + m.ToolCalls.Sum(tc => tc.Arguments.Length));
+            var outputChars = content.Length + toolCalls.Sum(tc => tc.Arguments.Length);
+            OnTokenUsage?.Invoke(inputChars / 4, outputChars / 4);
+
             _history.Add(new ChatMessage
             {
                 Role = "assistant",
@@ -119,15 +127,17 @@ public sealed class AgentSession
                     try
                     {
                         OnToolCall?.Invoke(toolCall.Name, toolCall.Arguments);
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
                         var result = await _tools.ExecuteAsync(toolCall.Name, toolCall.Arguments, ct);
-                        OnToolResult?.Invoke(result);
+                        sw.Stop();
+                        OnToolResult?.Invoke(result, toolCall.Name, sw.Elapsed);
                         return (toolCall, result);
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
                     {
                         _logger.LogError(ex, "Tool {ToolName} threw unexpectedly", toolCall.Name);
                         var errMsg = $"Error: Tool '{toolCall.Name}' failed: {ex.Message}";
-                        OnToolResult?.Invoke(errMsg);
+                        OnToolResult?.Invoke(errMsg, toolCall.Name, TimeSpan.Zero);
                         return (toolCall, errMsg);
                     }
                 }).ToList();

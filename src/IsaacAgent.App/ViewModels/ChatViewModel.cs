@@ -12,196 +12,78 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.App.ViewModels;
 
+/// <summary>
+/// Manages multiple chat tabs, each with an independent AgentSession.
+/// The active tab is exposed via <see cref="ActiveTab"/> for binding.
+/// </summary>
 public sealed partial class ChatViewModel : ObservableObject, IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<ChatViewModel> _logger;
-    private readonly IAgentSessionFactory _sessionFactory;
-    private AgentSession _session;
-    private CancellationTokenSource? _cts;
     private string? _currentProjectDir;
 
-    // Track event handlers so we can unsubscribe when swapping sessions.
-    private Action<string, string>? _onToolCall;
-    private Action<string>? _onToolResult;
-    private Action<string>? _onError;
+    public ObservableCollection<ChatTabViewModel> Tabs { get; } = [];
 
     [ObservableProperty]
-    private string _inputText = "";
-
-    [ObservableProperty]
-    private bool _isGenerating;
-
-    public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
+    private ChatTabViewModel? _activeTab;
 
     public ChatViewModel(IServiceProvider services, ILogger<ChatViewModel> logger)
     {
         _services = services;
         _logger = logger;
-        _sessionFactory = services.GetRequiredService<IAgentSessionFactory>();
-        _session = _sessionFactory.Create();
-        SubscribeSessionEvents(_session);
+        AddTab();
     }
 
-    private void SubscribeSessionEvents(AgentSession session)
+    [RelayCommand]
+    private void AddTab()
     {
-        _onToolCall = (name, args) =>
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                Messages.Add(new ChatMessageViewModel
-                {
-                    Role = "tool",
-                    Content = $"\U0001f527 {name}: {args}",
-                    IsToolCall = true
-                }));
-        };
-        _onToolResult = (result) =>
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                Messages.Add(new ChatMessageViewModel
-                {
-                    Role = "tool_result",
-                    Content = result.Length > 500 ? result[..500] + "..." : result,
-                    IsToolResult = true
-                }));
-        };
-        _onError = (err) =>
-        {
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                Messages.Add(new ChatMessageViewModel
-                {
-                    Role = "error",
-                    Content = $"Error: {err}"
-                }));
-        };
-
-        session.OnToolCall += _onToolCall;
-        session.OnToolResult += _onToolResult;
-        session.OnError += _onError;
+        var tab = new ChatTabViewModel(_services,
+            _services.GetRequiredService<ILogger<ChatTabViewModel>>(),
+            _currentProjectDir);
+        tab.Title = $"Chat {Tabs.Count + 1}";
+        Tabs.Add(tab);
+        ActiveTab = tab;
     }
 
-    private void UnsubscribeSessionEvents(AgentSession session)
+    [RelayCommand]
+    private void CloseTab(ChatTabViewModel? tab)
     {
-        if (_onToolCall is not null) session.OnToolCall -= _onToolCall;
-        if (_onToolResult is not null) session.OnToolResult -= _onToolResult;
-        if (_onError is not null) session.OnError -= _onError;
+        if (tab is null || Tabs.Count <= 1) return; // Keep at least one tab
+
+        var idx = Tabs.IndexOf(tab);
+        tab.Dispose();
+        Tabs.Remove(tab);
+
+        if (ActiveTab == tab)
+        {
+            var newIdx = Math.Min(idx, Tabs.Count - 1);
+            ActiveTab = Tabs[newIdx];
+        }
+    }
+
+    [RelayCommand]
+    private void SelectTab(ChatTabViewModel? tab)
+    {
+        if (tab is not null) ActiveTab = tab;
     }
 
     public void OnProjectChanged(string? projectDir)
     {
         _currentProjectDir = projectDir;
-
-        // Swap to a new session for the new project, properly unsubscribing
-        // from the old one to avoid leaked event handlers.
-        UnsubscribeSessionEvents(_session);
-        _session = _sessionFactory.Create(projectDir);
-        SubscribeSessionEvents(_session);
-
-        Messages.Clear();
-        _session.LoadHistory(GetHistoryPath(projectDir));
-        RestoreMessagesFromHistory();
-    }
-
-    private static string GetHistoryPath(string? projectDir)
-    {
-        var baseDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "IsaacAgent", "history");
-        if (string.IsNullOrEmpty(projectDir))
-            return Path.Combine(baseDir, "default.json");
-
-        // Use SHA256 instead of GetHashCode — GetHashCode is randomized per-process
-        // and would produce different file names across restarts.
-        var hashBytes = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(projectDir.ToLowerInvariant()));
-        var hash = Convert.ToHexString(hashBytes)[..12];
-        return Path.Combine(baseDir, $"project_{hash}.json");
-    }
-
-    private void RestoreMessagesFromHistory()
-    {
-        foreach (var msg in _session.History)
-        {
-            if (msg.Role is "system" or "tool" or "tool_result") continue;
-            Messages.Add(new ChatMessageViewModel
-            {
-                Role = msg.Role,
-                Content = msg.Content
-            });
-        }
-    }
-
-    [RelayCommand]
-    private async Task SendAsync()
-    {
-        if (string.IsNullOrWhiteSpace(InputText) || IsGenerating) return;
-
-        var userMsg = InputText.Trim();
-        InputText = "";
-
-        _cts = new CancellationTokenSource();
-        IsGenerating = true;
-
-        Messages.Add(new ChatMessageViewModel { Role = "user", Content = userMsg });
-
-        var assistantMsg = new ChatMessageViewModel { Role = "assistant", Content = "" };
-        Messages.Add(assistantMsg);
-
-        try
-        {
-            await foreach (var chunk in _session.SendMessageAsync(userMsg, _cts.Token))
-            {
-                assistantMsg.Content += chunk;
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Keep any partial content the assistant streamed before cancel;
-            // drop the bubble only if nothing was produced, so the UI doesn't
-            // show an empty assistant message above the "(cancelled)" notice.
-            if (string.IsNullOrEmpty(assistantMsg.Content))
-                Messages.Remove(assistantMsg);
-            Messages.Add(new ChatMessageViewModel { Role = "system", Content = "(cancelled)" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Send failed");
-            // Remove the empty assistant bubble so the error message stands
-            // alone instead of stacking a blank card on top of it.
-            if (string.IsNullOrEmpty(assistantMsg.Content))
-                Messages.Remove(assistantMsg);
-            Messages.Add(new ChatMessageViewModel
-            {
-                Role = "error",
-                Content = $"Error: {ex.Message}"
-            });
-        }
-        finally
-        {
-            IsGenerating = false;
-            _cts?.Dispose();
-            _cts = null;
-            _session.SaveHistory(GetHistoryPath(_currentProjectDir));
-        }
-    }
-
-    [RelayCommand]
-    private void Cancel()
-    {
-        _cts?.Cancel();
+        foreach (var tab in Tabs)
+            tab.OnProjectChanged(projectDir);
     }
 
     public void ClearMessages()
     {
-        Messages.Clear();
-        _session.ClearHistory();
+        ActiveTab?.ClearMessages();
     }
 
     public void Dispose()
     {
-        UnsubscribeSessionEvents(_session);
-        _cts?.Dispose();
-        _cts = null;
+        foreach (var tab in Tabs)
+            tab.Dispose();
+        Tabs.Clear();
     }
 }
 
@@ -212,6 +94,15 @@ public sealed partial class ChatMessageViewModel : ObservableObject
 
     [ObservableProperty]
     private string _content = "";
+
+    [ObservableProperty]
+    private string _toolName = "";
+
+    [ObservableProperty]
+    private TimeSpan _toolDuration;
+
+    [ObservableProperty]
+    private bool _isExpanded;
 
     private string _debouncedMarkdown = "";
     private bool _markdownInitialized;
@@ -246,6 +137,14 @@ public sealed partial class ChatMessageViewModel : ObservableObject
     public bool IsToolResult { get; set; }
     public bool IsError => Role == "error";
     public bool IsSystem => Role == "system";
+    public bool IsTool => Role is "tool" or "tool_result";
+
+    public string ToolDurationLabel =>
+        ToolDuration.TotalSeconds < 1 ? $"{ToolDuration.TotalMilliseconds:F0}ms" : $"{ToolDuration.TotalSeconds:F1}s";
+
+    public string ToolArgsPreview =>
+        string.IsNullOrEmpty(Content) ? "" :
+        Content.Length > 80 ? Content[..80] + "..." : Content;
 
     public ChatMessageViewModel()
     {
@@ -260,8 +159,8 @@ public sealed partial class ChatMessageViewModel : ObservableObject
     {
         "user" => "You",
         "assistant" => "IsaacAgent",
-        "tool" => "Tool Call",
-        "tool_result" => "Tool Result",
+        "tool" => $"🔧 {ToolName}",
+        "tool_result" => $"✅ {ToolName} ({ToolDurationLabel})",
         "error" => "Error",
         "system" => "System",
         _ => Role

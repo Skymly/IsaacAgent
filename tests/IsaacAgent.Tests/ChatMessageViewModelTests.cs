@@ -37,8 +37,30 @@ public class ChatMessageViewModelTests
     [Fact]
     public void RoleLabel_Tool_ReturnsToolCall()
     {
-        var vm = new ChatMessageViewModel { Role = "tool" };
-        Assert.Equal("Tool Call", vm.RoleLabel);
+        var vm = new ChatMessageViewModel { Role = "tool", ToolName = "read_file" };
+        Assert.Equal("🔧 read_file", vm.RoleLabel);
+    }
+
+    [Fact]
+    public void RoleLabel_ToolResult_ReturnsToolNameWithDuration()
+    {
+        var vm = new ChatMessageViewModel
+        {
+            Role = "tool_result",
+            ToolName = "write_file",
+            ToolDuration = TimeSpan.FromMilliseconds(150)
+        };
+        Assert.Contains("✅ write_file", vm.RoleLabel);
+        Assert.Contains("150ms", vm.RoleLabel);
+    }
+
+    [Fact]
+    public void IsTool_True_WhenRoleIsToolOrToolResult()
+    {
+        var vm1 = new ChatMessageViewModel { Role = "tool" };
+        var vm2 = new ChatMessageViewModel { Role = "tool_result" };
+        Assert.True(vm1.IsTool);
+        Assert.True(vm2.IsTool);
     }
 
     [Fact]
