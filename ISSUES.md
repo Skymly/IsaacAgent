@@ -135,14 +135,18 @@
 
 ## P3 — 工程化短板
 
-### P3-1 CI 缺少 lint / format / 发布 / 版本号 / 打包步骤  [x] 已修复
+### P3-1 CI 缺少 lint / format / 发布 / 版本号 / 打包步骤  [~] 部分修复
 
 - 文件：`.github/workflows/build-and-test.yml`
-- 现状：只跑 `windows-latest` 的 `dotnet build` + `dotnet test`。
-- 修复：
-  - 新增 `format-check` job：`dotnet format --verify-no-changes`
-  - `build-and-test` 改为矩阵 `windows-latest / ubuntu-latest / macos-latest`
-  - 新增 `release-build` job：Release 构建 + `dotnet publish` 单文件可执行 + upload artifact
+- 现状：`windows-latest` 单平台，通过 Nuke `CiAll` target 跑 `Format + Clean + Restore + Compile + UnitTest`，上传 `TestResults/` artifact。
+- 已完成：
+  - `dotnet format --verify-no-changes`（经 Nuke `Format` target，`CiAll` 依赖它）
+  - Release 配置构建 + 测试结果 artifact 上传
+- 未完成（与早期记录不符，回退为待办）：
+  - 跨平台矩阵未启用（App 项目 `SupportedOSPlatform=windows`，库项目可跨平台测试，需拆分 job）
+  - `release-build` job（`dotnet publish` 单文件可执行 + upload artifact）未实现
+  - 版本号管理 / CHANGELOG 未引入
+- 备注：早期审计记录称「矩阵 3 OS + release-build job」已修复，但实际 workflow 文件从未包含这些内容，记录失真。此处据实更正。
 
 ### P3-2 缺少 `Directory.Build.props` 统一工程属性  [x] 已修复
 
@@ -214,3 +218,8 @@
 | 2026-06-22 | P3-6 | - | `DiagnoseLuaTool` `StripStringsAndComments` + 转义感知引号检测 + 精确 debug 7 匹配；+9 误报减少测试，139 全过 |
 | 2026-06-22 | N1 | - | README 头部残缺（首行即「- An LLM API endpoint」）→ 重写：补全标题/Features/Tech Stack/Prerequisites/Project Layout，保留原有 Configuration/Build 段落并补充 Tests/Publish 命令 |
 | 2026-06-22 | N3 | - | `ChatViewModel.SendAsync` 异常路径留下空 assistant 气泡 → `assistantMsg` 提到 try 外，catch（取消/异常）中若 `Content` 为空则 `Messages.Remove(assistantMsg)`，保留已流式的部分内容；139 测试全过 |
+| 2026-06-24 | P3-1 | - | 据实更正：早期记录称「矩阵 3 OS + release-build」已修复，实际 workflow 仅 windows-latest + Nuke CiAll（含 format）。状态由 [x] 改为 [~] 部分修复，跨平台矩阵 / publish job / 版本号管理列为待办 |
+| 2026-06-24 | B-1 | - | `SettingsWindow.axaml` 文案「Embedding changes Require restarting」与实际热切换实现矛盾 → 改为「applied on save and trigger a background index rebuild. No restart required.」 |
+| 2026-06-24 | B-2 | - | `SettingsViewModel` 绕过 DI 直接 `AppConfiguration.Load()` → 改为构造注入 `AppConfiguration`，`Save()` 同步更新 DI 单例字段，消除多实例 |
+| 2026-06-24 | B-3 | - | `EmbeddingProviderProxy` 未 Dispose 旧 `OnnxEmbeddingProvider`（`InferenceSession` 泄漏）→ 实现 `IDisposable`，`Replace` 用 `Interlocked.Exchange` 后 Dispose 旧实例 |
+| 2026-06-24 | KB-1 | - | 发现 `ModCallbacks.cs` ID 映射系统性错误（ID 4 起几乎全错，如 ID 11 应为 `MC_ENTITY_TAKE_DMG` 实为 `MC_POST_PICKUP_INIT`）。`QuickReferenceViewModel` 引用的 `MC_ENTITY_TAKE_DMG` 因不在字典被静默跳过。留待下轮从 `vanilla/enums/ModCallbacks.md` 重建 |

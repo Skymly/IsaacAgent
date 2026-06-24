@@ -47,9 +47,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _indexStatus = "";
 
-    public SettingsViewModel()
+    private readonly AppConfiguration _config;
+
+    public SettingsViewModel(AppConfiguration config)
     {
-        var config = AppConfiguration.Load();
+        _config = config;
         _endpoint = config.Endpoint;
         _model = config.Model;
         _apiKey = config.ApiKey;
@@ -63,19 +65,18 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public void Save()
     {
-        var config = new AppConfiguration
-        {
-            ProviderType = SelectedProviderType,
-            Endpoint = Endpoint,
-            Model = Model,
-            ApiKey = ApiKey,
-            EmbeddingSource = SelectedEmbeddingSource,
-            OllamaEmbeddingEndpoint = OllamaEmbeddingEndpoint,
-            OllamaEmbeddingModel = OllamaEmbeddingModel,
-            OnnxEmbeddingModelPath = OnnxEmbeddingModelPath,
-            OnnxEmbeddingVocabPath = OnnxEmbeddingVocabPath,
-        };
-        config.Save();
+        // Keep the DI-managed singleton in sync so other consumers see the
+        // updated values without re-reading from disk.
+        _config.ProviderType = SelectedProviderType;
+        _config.Endpoint = Endpoint;
+        _config.Model = Model;
+        _config.ApiKey = ApiKey;
+        _config.EmbeddingSource = SelectedEmbeddingSource;
+        _config.OllamaEmbeddingEndpoint = OllamaEmbeddingEndpoint;
+        _config.OllamaEmbeddingModel = OllamaEmbeddingModel;
+        _config.OnnxEmbeddingModelPath = OnnxEmbeddingModelPath;
+        _config.OnnxEmbeddingVocabPath = OnnxEmbeddingVocabPath;
+        _config.Save();
         App.ReloadLlmProvider();
         App.ReloadEmbeddingProvider();
     }

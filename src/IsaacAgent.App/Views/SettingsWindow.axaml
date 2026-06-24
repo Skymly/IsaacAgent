@@ -54,7 +54,7 @@
                     <TextBox Text="{Binding OnnxEmbeddingVocabPath}" Watermark="C:\path\to\vocab.txt" />
                 </StackPanel>
 
-                <TextBlock Text="Note: Embedding changes require restarting the application to take effect."
+                <TextBlock Text="Note: Embedding source changes are applied on save and trigger a background index rebuild. No restart required."
                            FontSize="11" Opacity="0.5" TextWrapping="Wrap" />
             </StackPanel>
         </ScrollViewer>

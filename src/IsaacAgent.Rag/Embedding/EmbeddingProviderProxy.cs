@@ -2,13 +2,19 @@ using IsaacAgent.Core.Services;
 
 namespace IsaacAgent.Rag.Embedding;
 
-public sealed class EmbeddingProviderProxy : IEmbeddingProvider
+public sealed class EmbeddingProviderProxy : IEmbeddingProvider, IDisposable
 {
-    private volatile IEmbeddingProvider _inner;
+    private IEmbeddingProvider _inner;
+    private volatile bool _disposed;
 
     public EmbeddingProviderProxy(IEmbeddingProvider inner) => _inner = inner;
 
-    public void Replace(IEmbeddingProvider newProvider) => _inner = newProvider;
+    public void Replace(IEmbeddingProvider newProvider)
+    {
+        var old = System.Threading.Interlocked.Exchange(ref _inner, newProvider);
+        if (old is IDisposable disposable)
+            disposable.Dispose();
+    }
 
     public string ModelName => _inner.ModelName;
     public int Dimensions => _inner.Dimensions;
@@ -18,4 +24,12 @@ public sealed class EmbeddingProviderProxy : IEmbeddingProvider
 
     public Task<IReadOnlyList<float[]>> EmbedBatchAsync(IReadOnlyList<string> texts, CancellationToken ct = default)
         => _inner.EmbedBatchAsync(texts, ct);
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        if (_inner is IDisposable disposable)
+            disposable.Dispose();
+    }
 }
