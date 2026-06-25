@@ -135,18 +135,17 @@
 
 ## P3 — 工程化短板
 
-### P3-1 CI 缺少 lint / format / 发布 / 版本号 / 打包步骤  [x] 已修复（版本号除外）
+### P3-1 CI 缺少 lint / format / 发布 / 版本号 / 打包步骤  [x] 已修复
 
-- 文件：`.github/workflows/build-and-test.yml`
-- 现状：三 job 矩阵 — `ci-lib`（ubuntu-latest, macos-latest，库项目跨平台测试）、`ci-windows`（全解决方案构建 + Nuke `CiAll` 含 `Format`）、`release`（`v*` tag 触发，`dotnet publish` 自包含单文件 + 草稿 GitHub Release）。
+- 文件：`.github/workflows/build-and-test.yml`、`Directory.Build.props`
+- 现状：三 job 矩阵 — `ci-lib`（ubuntu-latest, macos-latest，库项目跨平台测试）、`ci-windows`（全解决方案构建 + Nuke `CiAll` 含 `Format`）、`release`（`v*` tag 触发，`dotnet publish` 自包含单文件 + 草稿 GitHub Release）。版本号通过 MinVer（Git-tag 驱动）自动管理。
 - 已完成：
   - `dotnet format --verify-no-changes`（经 Nuke `Format` target，`CiAll` 依赖它）
   - Release 配置构建 + 测试结果 artifact 上传（三 job 均上传）
   - 跨平台矩阵：库项目在 Linux/macOS 测试，App 项目（`SupportedOSPlatform=windows`）仅在 Windows 构建
   - `release` job：`v*` tag 推送时发布 `win-x64` 自包含单文件可执行 + 创建草稿 Release
-- 未完成：
-  - 版本号自动管理 / CHANGELOG 发布段整理仍为手动
-- 备注：早期审计记录称「矩阵 3 OS + release-build job」从未修复，后据实回退为 `[~]`；现 workflow 已落地矩阵与 release job，状态更新为 `[x]`（仅版本号管理仍待补）。
+  - 版本号自动管理：MinVer 7.0.0 从 `v*` Git tag 推导 `AssemblyVersion`/`FileVersion`/`Version`/`PackageVersion`/`InformationalVersion`；`MinVerMinimumMajorMinor=0.1` 保留基线；CI `fetch-depth: 0` 提供完整历史
+- 备注：早期审计记录称「矩阵 3 OS + release-build job」从未修复，后据实回退为 `[~]`；现 workflow 矩阵 + release job + MinVer 版本号均已落地，状态更新为 `[x]`。
 
 ### P3-2 缺少 `Directory.Build.props` 统一工程属性  [x] 已修复
 
@@ -232,5 +231,6 @@
 | 2026-06-24 | #12 | - | **已修复**：README 工具描述从仅列 4 个工具扩展为完整 12 工具表格，按模块（IsaacAgent.Tools 8 个 / IsaacAgent.Rag 4 个）分类，补充 Project Layout 含 `tools/e2e-test/` 和 `build/` 目录 |
 | 2026-06-25 | P3-1 | - | 状态由 `[~]` 更新为 `[x]`（版本号除外）：复核 `.github/workflows/build-and-test.yml` 确认三 job 矩阵（`ci-lib` ubuntu+macos / `ci-windows` / `release` tag 触发）均已落地，与第 230 行记录一致。仅版本号自动管理仍待补 |
 | 2026-06-25 | 文档 | - | `SystemPrompts` 工具列表补全 4 个新工具（`git_status` / `diff_apply` / `batch_edit` / `run_command`）+ Guidelines 新增 3 条使用引导；README `tools/e2e-test/` 注释由「not in .sln」更正为「in solution as IsaacAgent.E2ETest」 |
+| 2026-06-25 | P3-1 | - | **版本号自动管理**：引入 MinVer 7.0.0（Git-tag 驱动），`Directory.Build.props` 移除硬编码 `VersionPrefix`/`AssemblyVersion`/`FileVersion`，改由 MinVer 从 `v*` tag 自动推导。`MinVerTagPrefix=v` 匹配 CI release 触发，`MinVerMinimumMajorMinor=0.1` 保留基线（无 tag 时版本为 `0.1.0-alpha.0.N`）。CI 三 job `actions/checkout` 加 `fetch-depth: 0` 提供完整 git 历史。P3-1 状态由「版本号除外」更新为完全 `[x]` |
 | 2026-06-24 | #13 | - | **已修复**：`tools/e2e-test/IsaacAgent.E2ETest.csproj` 纳入 `IsaacAgent.sln`，format 检查覆盖该项目 |
 | 2026-06-24 | #14 | - | **已修复**：`Directory.Build.props` 新增 `VersionPrefix=0.1.0` / `AssemblyVersion` / `FileVersion` / `Company` / `Product`；新增 `CHANGELOG.md`（Keep a Changelog 格式，记录本轮全部改动） |

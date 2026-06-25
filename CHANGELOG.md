@@ -72,3 +72,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   from `while (!reader.EndOfStream)` to `while (true)` + null check,
   avoiding synchronous `Read()` calls on async-only streams.
 - P3-1 status updated from "partially fixed" to "fully fixed".
+- Versioning switched from hardcoded `VersionPrefix`/`AssemblyVersion`/
+  `FileVersion` in `Directory.Build.props` to [MinVer](https://github.com/adamralph/minver)
+  (Git-tag-based). AssemblyVersion, FileVersion, Version, PackageVersion and
+  InformationalVersion are now derived from the latest `v*` tag automatically.
+  `MinVerMinimumMajorMinor=0.1` preserves the 0.1.* baseline until the first
+  `v0.1.0` tag. CI checkout `fetch-depth` set to `0` in all three jobs so
+  MinVer has full git history.
+- `SystemPrompts` tool list and guidelines synchronized with `ToolRegistry`:
+  added `git_status`, `diff_apply`, `batch_edit`, `run_command` to the
+  Available Tools list and 3 new guideline entries.
+- README `tools/e2e-test/` note corrected from "not in .sln" to "in solution
+  as IsaacAgent.E2ETest".

@@ -123,6 +123,19 @@ dotnet test IsaacAgent.sln
 dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
+### Versioning
+
+Versions are derived automatically from Git tags by [MinVer](https://github.com/adamralph/minver).
+Pushing a `v*` tag (e.g. `v0.1.0`) triggers the CI release job and sets the
+assembly/package version. Between tags, the version auto-increments as
+pre-release (e.g. `0.1.0-alpha.0.42` where `42` is the commit count since the
+last tag). No manual version editing is needed.
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0   # triggers CI release job
+```
+
 ## Project Layout
 
 ```

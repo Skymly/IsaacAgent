@@ -27,6 +27,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history required by MinVer (Git-tag-based versioning).
+          fetch-depth: 0
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
@@ -57,6 +60,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history required by MinVer (Git-tag-based versioning).
+          fetch-depth: 0
 
       - name: Setup .NET SDK
         id: setup-dotnet
@@ -99,6 +105,9 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history required by MinVer (Git-tag-based versioning).
+          fetch-depth: 0
 
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v4
