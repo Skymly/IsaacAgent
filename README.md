@@ -136,6 +136,6 @@ src/
 tests/
   IsaacAgent.Tests/     Unit and integration tests
 tools/
-  e2e-test/             Standalone E2E test for RAG pipeline (not in .sln)
+  e2e-test/             Standalone E2E test for RAG pipeline (in solution as IsaacAgent.E2ETest)
 build/                  Nuke build script
 ```

@@ -135,18 +135,18 @@
 
 ## P3 — 工程化短板
 
-### P3-1 CI 缺少 lint / format / 发布 / 版本号 / 打包步骤  [~] 部分修复
+### P3-1 CI 缺少 lint / format / 发布 / 版本号 / 打包步骤  [x] 已修复（版本号除外）
 
 - 文件：`.github/workflows/build-and-test.yml`
-- 现状：`windows-latest` 单平台，通过 Nuke `CiAll` target 跑 `Format + Clean + Restore + Compile + UnitTest`，上传 `TestResults/` artifact。
+- 现状：三 job 矩阵 — `ci-lib`（ubuntu-latest, macos-latest，库项目跨平台测试）、`ci-windows`（全解决方案构建 + Nuke `CiAll` 含 `Format`）、`release`（`v*` tag 触发，`dotnet publish` 自包含单文件 + 草稿 GitHub Release）。
 - 已完成：
   - `dotnet format --verify-no-changes`（经 Nuke `Format` target，`CiAll` 依赖它）
-  - Release 配置构建 + 测试结果 artifact 上传
-- 未完成（与早期记录不符，回退为待办）：
-  - 跨平台矩阵未启用（App 项目 `SupportedOSPlatform=windows`，库项目可跨平台测试，需拆分 job）
-  - `release-build` job（`dotnet publish` 单文件可执行 + upload artifact）未实现
-  - 版本号管理 / CHANGELOG 未引入
-- 备注：早期审计记录称「矩阵 3 OS + release-build job」已修复，但实际 workflow 文件从未包含这些内容，记录失真。此处据实更正。
+  - Release 配置构建 + 测试结果 artifact 上传（三 job 均上传）
+  - 跨平台矩阵：库项目在 Linux/macOS 测试，App 项目（`SupportedOSPlatform=windows`）仅在 Windows 构建
+  - `release` job：`v*` tag 推送时发布 `win-x64` 自包含单文件可执行 + 创建草稿 Release
+- 未完成：
+  - 版本号自动管理 / CHANGELOG 发布段整理仍为手动
+- 备注：早期审计记录称「矩阵 3 OS + release-build job」从未修复，后据实回退为 `[~]`；现 workflow 已落地矩阵与 release job，状态更新为 `[x]`（仅版本号管理仍待补）。
 
 ### P3-2 缺少 `Directory.Build.props` 统一工程属性  [x] 已修复
 
@@ -230,5 +230,7 @@
 | 2026-06-24 | P3-1 | - | **已修复**：CI workflow 从单一 windows-latest 扩展为三 job 矩阵：`ci-lib`（ubuntu-latest + macos-latest，Nuke `CiLib` 目标仅构建库项目 + 测试）、`ci-windows`（windows-latest，Nuke `CiAll` 含 format + 全解决方案）、`release`（仅 `v*` tag，`dotnet publish` self-contained win-x64 单文件 + GitHub Release draft）。Nuke 新增 `UnitTestLib` / `CiLib` 目标。App csproj 在非 Windows 抑制 CA1416 以支持跨平台测试构建。CI 三 job 全绿（ubuntu + macos + windows），155 测试全过 |
 | 2026-06-24 | #7 | - | **已修复**：`InMemoryVectorStore.Search` 的快照从 `snapshot = _entries`（直接引用）改为 `snapshot = _entries.ToList()`（防御性拷贝），防止并发 `AddRange`/`ReplaceAll` 在锁外迭代时修改列表 |
 | 2026-06-24 | #12 | - | **已修复**：README 工具描述从仅列 4 个工具扩展为完整 12 工具表格，按模块（IsaacAgent.Tools 8 个 / IsaacAgent.Rag 4 个）分类，补充 Project Layout 含 `tools/e2e-test/` 和 `build/` 目录 |
+| 2026-06-25 | P3-1 | - | 状态由 `[~]` 更新为 `[x]`（版本号除外）：复核 `.github/workflows/build-and-test.yml` 确认三 job 矩阵（`ci-lib` ubuntu+macos / `ci-windows` / `release` tag 触发）均已落地，与第 230 行记录一致。仅版本号自动管理仍待补 |
+| 2026-06-25 | 文档 | - | `SystemPrompts` 工具列表补全 4 个新工具（`git_status` / `diff_apply` / `batch_edit` / `run_command`）+ Guidelines 新增 3 条使用引导；README `tools/e2e-test/` 注释由「not in .sln」更正为「in solution as IsaacAgent.E2ETest」 |
 | 2026-06-24 | #13 | - | **已修复**：`tools/e2e-test/IsaacAgent.E2ETest.csproj` 纳入 `IsaacAgent.sln`，format 检查覆盖该项目 |
 | 2026-06-24 | #14 | - | **已修复**：`Directory.Build.props` 新增 `VersionPrefix=0.1.0` / `AssemblyVersion` / `FileVersion` / `Company` / `Product`；新增 `CHANGELOG.md`（Keep a Changelog 格式，记录本轮全部改动） |

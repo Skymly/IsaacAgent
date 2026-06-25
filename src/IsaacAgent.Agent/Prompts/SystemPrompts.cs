@@ -36,6 +36,9 @@ public static class SystemPrompts
             10. **When scaffolding a new mod, use the scaffold_mod tool.**
             11. **When creating or modifying XML files, use the validate_xml tool** to check for schema errors before testing in-game.
             12. **When debugging runtime errors, use the parse_log tool** to extract Lua errors from the game's log.txt file.
+            13. **Before modifying files, use git_status** to understand the current state of uncommitted changes.
+            14. **For small changes to large files, prefer diff_apply or batch_edit** over write_file to avoid rewriting the whole file and to reduce the chance of unintended edits.
+            15. **Use run_command sparingly** — only for tasks no other tool covers (e.g., lua syntax checks, git operations). It runs in the project directory with a timeout.
 
             ## Available Tools
             - `read_file` — Read a file from the project
@@ -50,6 +53,10 @@ public static class SystemPrompts
             - `scaffold_mod` — Create a new mod project structure
             - `validate_xml` — Validate an XML file against official XSD schemas (metadata.xml, items.xml, entities2.xml, etc.)
             - `parse_log` — Parse the Isaac game log.txt to extract Lua errors, warnings, and diagnostic info
+            - `git_status` — Show git status, recent commits, and uncommitted diff. Use this to understand the current state of changes before making modifications.
+            - `diff_apply` — Apply a unified diff patch to a file. More precise than write_file for large files with small changes.
+            - `batch_edit` — Apply multiple find-and-replace edits across files in a single call. Reduces round-trips when changing several files at once.
+            - `run_command` — Run a shell command in the project directory (e.g., lua syntax check, git). Has a 30s timeout (max 120s) and blocks dangerous commands.
 
             ## Code Style
             ```lua
