@@ -8,7 +8,7 @@ IsaacAgent is a desktop AI coding agent (Avalonia + C#) specialized for **The Bi
 
 - **.NET 8** + **Avalonia 11** + **CommunityToolkit.Mvvm**
 - **MVVM** architecture
-- Multi-project solution: App / Core / LLM / Tools / Agent
+- Multi-project solution: App / Core / LLM / Tools / Agent / Rag
 
 ## Project Structure
 

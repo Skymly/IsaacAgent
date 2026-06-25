@@ -20,6 +20,16 @@ public sealed class RetryChatService : IChatService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Determines whether an exception represents a transient failure that
+    /// is worth retrying (network errors, timeouts, I/O failures). Non-transient
+    /// exceptions (argument errors, JSON parsing errors, etc.) propagate immediately.
+    /// </summary>
+    private static bool IsTransient(Exception ex) =>
+        ex is HttpRequestException ||
+        ex is TimeoutException ||
+        ex is IOException;
+
     public async Task<ChatResponse> CompleteAsync(ChatRequest request, CancellationToken ct = default)
     {
         for (var attempt = 0; ; attempt++)
@@ -32,7 +42,7 @@ public sealed class RetryChatService : IChatService
             {
                 throw;
             }
-            catch (Exception ex) when (attempt < _maxRetries)
+            catch (Exception ex) when (attempt < _maxRetries && IsTransient(ex))
             {
                 var delay = _retryDelays[Math.Min(attempt, _retryDelays.Length - 1)];
                 _logger.LogWarning(ex, "CompleteAsync attempt {Attempt} failed, retrying in {Delay}s", attempt + 1, delay.TotalSeconds);
@@ -63,7 +73,7 @@ public sealed class RetryChatService : IChatService
                     {
                         yield break;
                     }
-                    catch (Exception ex) when (attempt < _maxRetries && !hasYielded)
+                    catch (Exception ex) when (attempt < _maxRetries && !hasYielded && IsTransient(ex))
                     {
                         var delay = _retryDelays[Math.Min(attempt, _retryDelays.Length - 1)];
                         _logger.LogWarning(ex, "StreamAsync attempt {Attempt} failed, retrying in {Delay}s", attempt + 1, delay.TotalSeconds);

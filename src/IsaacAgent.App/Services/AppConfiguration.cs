@@ -113,8 +113,13 @@ public sealed class AppConfiguration
             }
             else
             {
+                // DPAPI encryption failed — do NOT fall back to plaintext.
+                // Discard the key entirely; the user will need to re-enter it.
                 toSave.EncryptedApiKey = null;
-                toSave.ApiKey = ApiKey;
+                toSave.ApiKey = null;
+                System.Diagnostics.Debug.WriteLine(
+                    "Warning: DPAPI encryption of the API key failed. "
+                    + "The key was not saved. Please re-enter the API key.");
             }
         }
 

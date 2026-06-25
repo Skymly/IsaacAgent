@@ -7,11 +7,12 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.LLM.Providers;
 
-public sealed class OllamaProvider : IChatService
+public sealed class OllamaProvider : IChatService, IDisposable
 {
     private readonly HttpClient _http;
     private readonly string _model;
     private readonly ILogger<OllamaProvider> _logger;
+    private bool _disposed;
 
     internal TimeSpan StreamReadTimeout { get; } = TimeSpan.FromSeconds(90);
 
@@ -29,7 +30,7 @@ public sealed class OllamaProvider : IChatService
         var payload = BuildPayload(request, stream: false);
 
         using var resp = await _http.PostAsJsonAsync("/api/chat", payload, ct);
-        resp.EnsureSuccessStatusCode();
+        EnsureSuccessStatusCodeWithDetail(resp);
 
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
         var message = doc.RootElement.GetProperty("message");
@@ -68,7 +69,7 @@ public sealed class OllamaProvider : IChatService
             Content = JsonContent.Create(payload)
         };
         using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        resp.EnsureSuccessStatusCode();
+        EnsureSuccessStatusCodeWithDetail(resp);
 
         using var stream = await resp.Content.ReadAsStreamAsync(ct);
         using var reader = new StreamReader(stream);
@@ -94,23 +95,35 @@ public sealed class OllamaProvider : IChatService
 
             if (line is null) break; // EOF
 
-            using var doc = JsonDocument.Parse(line);
-            if (doc.RootElement.TryGetProperty("message", out var msg))
+            JsonDocument doc;
+            try
             {
-                var text = msg.TryGetProperty("content", out var content) ? content.GetString() : null;
-                if (!string.IsNullOrEmpty(text))
-                    yield return new ChatChunk(text, false, -1, null, null, null);
-
-                if (msg.TryGetProperty("tool_calls", out var tc) && tc.GetArrayLength() > 0)
+                doc = JsonDocument.Parse(line);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Skipping malformed JSON line in stream: {Line}", line);
+                continue;
+            }
+            using (doc)
+            {
+                if (doc.RootElement.TryGetProperty("message", out var msg))
                 {
-                    for (var i = 0; i < tc.GetArrayLength(); i++)
+                    var text = msg.TryGetProperty("content", out var content) ? content.GetString() : null;
+                    if (!string.IsNullOrEmpty(text))
+                        yield return new ChatChunk(text, false, -1, null, null, null);
+
+                    if (msg.TryGetProperty("tool_calls", out var tc) && tc.GetArrayLength() > 0)
                     {
-                        var item = tc[i];
-                        if (item.TryGetProperty("function", out var fn))
+                        for (var i = 0; i < tc.GetArrayLength(); i++)
                         {
-                            var name = fn.TryGetProperty("name", out var n) ? n.GetString() : null;
-                            var args = fn.TryGetProperty("arguments", out var a) ? a.GetRawText() : null;
-                            yield return new ChatChunk("", true, i, null, name, args);
+                            var item = tc[i];
+                            if (item.TryGetProperty("function", out var fn))
+                            {
+                                var name = fn.TryGetProperty("name", out var n) ? n.GetString() : null;
+                                var args = fn.TryGetProperty("arguments", out var a) ? a.GetRawText() : null;
+                                yield return new ChatChunk("", true, i, null, name, args);
+                            }
                         }
                     }
                 }
@@ -200,5 +213,42 @@ public sealed class OllamaProvider : IChatService
             });
         }
         return calls;
+    }
+
+    /// <summary>
+    /// Throws an <see cref="HttpRequestException"/> with a descriptive message
+    /// for common non-success status codes, falling back to
+    /// <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/> for others.
+    /// </summary>
+    private void EnsureSuccessStatusCodeWithDetail(HttpResponseMessage resp)
+    {
+        if (resp.IsSuccessStatusCode) return;
+
+        var status = resp.StatusCode;
+        if (status == System.Net.HttpStatusCode.TooManyRequests)
+        {
+            throw new HttpRequestException(
+                $"Rate limited by Ollama (429 Too ManyRequests). Request will be retried after backoff.",
+                null, status);
+        }
+
+        if (status == System.Net.HttpStatusCode.Unauthorized ||
+            status == System.Net.HttpStatusCode.Forbidden)
+        {
+            throw new HttpRequestException(
+                $"Authentication failed ({(int)status} {status}). Check Ollama access permissions.",
+                null, status);
+        }
+
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _http.Dispose();
+            _disposed = true;
+        }
     }
 }

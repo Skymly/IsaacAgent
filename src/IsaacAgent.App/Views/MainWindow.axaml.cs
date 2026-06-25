@@ -7,17 +7,20 @@ using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace IsaacAgent.App.Views;
 
 public sealed partial class MainWindow : Window
 {
     private ChatTabViewModel? _scrollTab;
+    private MainViewModel? _mainVm;
 
     public MainWindow()
     {
         InitializeComponent();
         var vm = App.Services.GetRequiredService<MainViewModel>();
+        _mainVm = vm;
         DataContext = vm;
 
         vm.Project.PickFolderAsync = async () =>
@@ -32,18 +35,32 @@ public sealed partial class MainWindow : Window
 
         // Subscribe to active tab message changes for auto-scroll.
         // Unsubscribe from the previous tab to avoid handler accumulation.
-        vm.Chat.PropertyChanged += (s, e) =>
-        {
-            if (e.PropertyName != nameof(ChatViewModel.ActiveTab)) return;
-            if (_scrollTab is not null)
-                _scrollTab.Messages.CollectionChanged -= OnMessagesChanged;
-            _scrollTab = vm.Chat.ActiveTab;
-            if (_scrollTab is not null)
-                _scrollTab.Messages.CollectionChanged += OnMessagesChanged;
-        };
+        vm.Chat.PropertyChanged += OnChatPropertyChanged;
         _scrollTab = vm.Chat.ActiveTab;
         if (_scrollTab is not null)
             _scrollTab.Messages.CollectionChanged += OnMessagesChanged;
+    }
+
+    private void OnChatPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ChatViewModel.ActiveTab)) return;
+        if (_scrollTab is not null)
+            _scrollTab.Messages.CollectionChanged -= OnMessagesChanged;
+        _scrollTab = _mainVm?.Chat.ActiveTab;
+        if (_scrollTab is not null)
+            _scrollTab.Messages.CollectionChanged += OnMessagesChanged;
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        // Unsubscribe all event handlers to prevent leaks.
+        if (_mainVm is not null)
+            _mainVm.Chat.PropertyChanged -= OnChatPropertyChanged;
+        if (_scrollTab is not null)
+            _scrollTab.Messages.CollectionChanged -= OnMessagesChanged;
+        _scrollTab = null;
+        _mainVm = null;
+        base.OnClosed(e);
     }
 
     private void InitializeComponent()

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.App.Services;
@@ -65,7 +66,7 @@ public sealed partial class ProjectViewModel : ObservableObject
             _logger.LogError(ex, "Failed to scaffold new project at {Path}", projectDir);
         }
 
-        LoadProject(projectDir);
+        await LoadProjectAsync(projectDir);
     }
 
     [RelayCommand]
@@ -74,7 +75,7 @@ public sealed partial class ProjectViewModel : ObservableObject
         if (PickFolderAsync is null) return;
         var folder = await PickFolderAsync();
         if (folder is null) return;
-        LoadProject(folder.Path.LocalPath);
+        await LoadProjectAsync(folder.Path.LocalPath);
     }
 
     [RelayCommand]
@@ -98,7 +99,7 @@ public sealed partial class ProjectViewModel : ObservableObject
         }
     }
 
-    public void LoadProject(string path)
+    public async Task LoadProjectAsync(string path)
     {
         if (!Directory.Exists(path)) return;
         ProjectPath = path;
@@ -107,20 +108,25 @@ public sealed partial class ProjectViewModel : ObservableObject
         HasFilePreview = false;
         FilePreviewContent = "";
         FilePreviewName = "";
-        RefreshFiles();
+        await RefreshFilesAsync();
         ProjectLoaded?.Invoke(path);
     }
 
-    private void RefreshFiles()
+    private Task RefreshFilesAsync()
     {
         Files.Clear();
-        if (string.IsNullOrEmpty(ProjectPath)) return;
+        if (string.IsNullOrEmpty(ProjectPath)) return Task.CompletedTask;
+
+        var projectPath = ProjectPath;
         try
         {
-            var files = Directory.GetFiles(ProjectPath, "*", SearchOption.AllDirectories);
+            // Enumerate files synchronously. For typical mod projects (tens to
+            // a few hundred files) this is fast enough and avoids dispatcher /
+            // SynchronizationContext issues in headless test environments.
+            var files = Directory.GetFiles(projectPath, "*", SearchOption.AllDirectories);
             foreach (var file in files.OrderBy(f => f))
             {
-                var relPath = Path.GetRelativePath(ProjectPath, file).Replace('\\', '/');
+                var relPath = Path.GetRelativePath(projectPath, file).Replace('\\', '/');
                 Files.Add(new FileTreeItem
                 {
                     Name = Path.GetFileName(file),
@@ -134,6 +140,7 @@ public sealed partial class ProjectViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to refresh files");
         }
+        return Task.CompletedTask;
     }
 }
 

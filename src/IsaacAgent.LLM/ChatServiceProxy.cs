@@ -3,9 +3,10 @@ using IsaacAgent.Core.Services;
 
 namespace IsaacAgent.LLM;
 
-public sealed class ChatServiceProxy : IChatService
+public sealed class ChatServiceProxy : IChatService, IDisposable
 {
-    private volatile IChatService _inner;
+    private IChatService _inner;
+    private volatile bool _disposed;
 
     public ChatServiceProxy(IChatService initial)
     {
@@ -14,7 +15,9 @@ public sealed class ChatServiceProxy : IChatService
 
     public void Replace(IChatService newService)
     {
-        _inner = newService;
+        var old = System.Threading.Interlocked.Exchange(ref _inner, newService);
+        if (old is IDisposable disposable)
+            disposable.Dispose();
     }
 
     public Task<ChatResponse> CompleteAsync(ChatRequest request, CancellationToken ct = default)
@@ -22,4 +25,12 @@ public sealed class ChatServiceProxy : IChatService
 
     public IAsyncEnumerable<ChatChunk> StreamAsync(ChatRequest request, CancellationToken ct = default)
         => _inner.StreamAsync(request, ct);
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        if (_inner is IDisposable disposable)
+            disposable.Dispose();
+    }
 }

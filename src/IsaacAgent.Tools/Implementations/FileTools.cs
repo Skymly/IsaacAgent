@@ -31,9 +31,9 @@ public sealed class ReadFileTool : ITool
     {
         var args = JsonDocument.Parse(arguments).RootElement;
         var relPath = args.GetProperty("path").GetString()!;
-        var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
+        var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
 
-        if (!FileToolPathSafety.IsWithinProject(fullPath, _projectDir))
+        if (!isSafe)
             return "Error: Path traversal detected.";
 
         if (!File.Exists(fullPath))
@@ -72,9 +72,9 @@ public sealed class WriteFileTool : ITool
         var args = JsonDocument.Parse(arguments).RootElement;
         var relPath = args.GetProperty("path").GetString()!;
         var content = args.GetProperty("content").GetString()!;
-        var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
+        var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
 
-        if (!FileToolPathSafety.IsWithinProject(fullPath, _projectDir))
+        if (!isSafe)
             return "Error: Path traversal detected.";
 
         var dir = Path.GetDirectoryName(fullPath);
@@ -118,17 +118,23 @@ public sealed class ListFilesTool : ITool
                 subdir = sd.GetString() ?? "";
         }
 
-        var targetDir = string.IsNullOrEmpty(subdir)
-            ? _projectDir
-            : Path.GetFullPath(Path.Combine(_projectDir, subdir));
-
-        if (!FileToolPathSafety.IsWithinProject(targetDir, _projectDir))
-            return Task.FromResult("Error: Path traversal detected.");
+        string targetDir;
+        if (string.IsNullOrEmpty(subdir))
+        {
+            targetDir = _projectDir;
+        }
+        else
+        {
+            var (resolvedDir, dirSafe) = FileToolPathSafety.Resolve(_projectDir, subdir);
+            if (!dirSafe)
+                return Task.FromResult("Error: Path traversal detected.");
+            targetDir = resolvedDir;
+        }
 
         if (!Directory.Exists(targetDir))
             return Task.FromResult($"Error: Directory not found: {subdir}");
 
-        var files = Directory.GetFiles(targetDir, "*", SearchOption.AllDirectories)
+        var files = EnumerateFilesSafe(targetDir)
             .Select(f => Path.GetRelativePath(_projectDir, f).Replace('\\', '/'))
             .ToList();
 
@@ -136,10 +142,90 @@ public sealed class ListFilesTool : ITool
             ? string.Join('\n', files)
             : "No files found.");
     }
+
+    /// <summary>
+    /// Recursively enumerate files, skipping reparse points (junctions/symlinks)
+    /// to prevent traversal outside the project directory.
+    /// </summary>
+    private static IEnumerable<string> EnumerateFilesSafe(string dir)
+    {
+        var stack = new Stack<string>();
+        stack.Push(dir);
+
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+
+            string[] subDirs;
+            string[] currentFiles;
+
+            try
+            {
+                subDirs = Directory.GetDirectories(current);
+                currentFiles = Directory.GetFiles(current);
+            }
+            catch { continue; }
+
+            foreach (var f in currentFiles)
+                yield return f;
+
+            foreach (var sd in subDirs)
+            {
+                // Skip reparse points (junctions, symlinks) to avoid
+                // following links outside the project directory.
+                if (!IsReparsePoint(sd))
+                    stack.Push(sd);
+            }
+        }
+    }
+
+    private static bool IsReparsePoint(string path)
+    {
+        try
+        {
+            var di = new DirectoryInfo(path);
+            return di.Attributes.HasFlag(FileAttributes.ReparsePoint);
+        }
+        catch { return false; }
+    }
 }
 
 internal static class FileToolPathSafety
 {
+    /// <summary>
+    /// Normalizes a relative path by collapsing sequences of 3+ dots
+    /// (e.g. "....") into ".." to defeat double-encoded traversal attempts
+    /// like "....//target/evil.lua" that <see cref="Path.GetFullPath"/>
+    /// treats as a literal directory name rather than a parent reference.
+    /// </summary>
+    private static string NormalizeRelativePath(string relPath)
+    {
+        // Replace alternate separators with the OS separator, then split
+        // into segments so we can inspect each one independently.
+        var normalized = relPath.Replace('/', Path.DirectorySeparatorChar)
+                                .Replace('\\', Path.DirectorySeparatorChar);
+        var segments = normalized.Split(Path.DirectorySeparatorChar, StringSplitOptions.None);
+        for (var i = 0; i < segments.Length; i++)
+        {
+            // 3+ consecutive dots → treat as parent-directory reference
+            if (segments[i].Length >= 3 && segments[i].All(c => c == '.'))
+                segments[i] = "..";
+        }
+        return string.Join(Path.DirectorySeparatorChar, segments);
+    }
+
+    /// <summary>
+    /// Resolves <paramref name="relPath"/> against <paramref name="projectDir"/>
+    /// after normalizing double-encoded traversal patterns, then verifies
+    /// the resulting full path stays within the project directory.
+    /// </summary>
+    public static (string FullPath, bool IsSafe) Resolve(string projectDir, string relPath)
+    {
+        var normalizedRel = NormalizeRelativePath(relPath);
+        var fullPath = Path.GetFullPath(Path.Combine(projectDir, normalizedRel));
+        return (fullPath, IsWithinProject(fullPath, projectDir));
+    }
+
     public static bool IsWithinProject(string fullPath, string projectDir)
     {
         var projectRoot = projectDir.EndsWith(Path.DirectorySeparatorChar)

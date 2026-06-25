@@ -243,7 +243,7 @@ public static class MkDocsChunker
             Category = category,
             Title = title,
             Content = content,
-            Metadata = metadata
+            Metadata = new Dictionary<string, string>(metadata)
         };
     }
 

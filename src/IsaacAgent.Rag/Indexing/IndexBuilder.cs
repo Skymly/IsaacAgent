@@ -65,16 +65,26 @@ public sealed class IndexBuilder
 
         var entries = new List<VectorStoreEntry>(chunks.Count);
         const int batchSize = 16;
+        var failedChunks = 0;
         for (var i = 0; i < chunks.Count; i += batchSize)
         {
             ct.ThrowIfCancellationRequested();
             var take = Math.Min(batchSize, chunks.Count - i);
             var batch = chunks.GetRange(i, take);
             var texts = batch.Select(c => $"{c.Title}\n{c.Content}").ToList();
-            var vectors = await _embedding.EmbedBatchAsync(texts, ct);
 
-            for (var j = 0; j < batch.Count; j++)
-                entries.Add(new VectorStoreEntry { Chunk = batch[j], Vector = vectors[j] });
+            try
+            {
+                var vectors = await _embedding.EmbedBatchAsync(texts, ct);
+
+                for (var j = 0; j < batch.Count; j++)
+                    entries.Add(new VectorStoreEntry { Chunk = batch[j], Vector = vectors[j] });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Embedding failed for batch starting at chunk {Index}/{Total}, skipping {BatchCount} chunks", i, chunks.Count, batch.Count);
+                failedChunks += batch.Count;
+            }
 
             var done = Math.Min(i + batchSize, chunks.Count);
             if (done % 100 == 0 || done == chunks.Count)
@@ -82,6 +92,6 @@ public sealed class IndexBuilder
         }
 
         _store.ReplaceAll(_embedding.ModelName, _embedding.Dimensions, entries);
-        _logger.LogInformation("RAG index built: {Count} entries", entries.Count);
+        _logger.LogInformation("RAG index built: {Count} entries, {Failed} chunks skipped due to embedding failures", entries.Count, failedChunks);
     }
 }

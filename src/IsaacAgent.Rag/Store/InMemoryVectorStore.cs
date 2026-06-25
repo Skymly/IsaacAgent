@@ -51,11 +51,16 @@ public sealed class InMemoryVectorStore
     {
         // Take a defensive copy so concurrent AddRange/ReplaceAll calls
         // don't mutate the list while we iterate it outside the lock.
+        // Capture _dimensions inside the lock to avoid a race with ReplaceAll.
         List<VectorStoreEntry> snapshot;
+        int dims;
         lock (_lock)
+        {
             snapshot = _entries.ToList();
+            dims = _dimensions;
+        }
 
-        if (snapshot.Count == 0 || queryVector.Length != _dimensions)
+        if (snapshot.Count == 0 || queryVector.Length != dims)
             return [];
 
         var scores = new List<(VectorStoreEntry Entry, float Score)>(snapshot.Count);
@@ -76,6 +81,8 @@ public sealed class InMemoryVectorStore
 
     private static float CosineSimilarity(float[] a, float[] b)
     {
+        if (a.Length != b.Length)
+            throw new ArgumentException($"Vector dimension mismatch: {a.Length} vs {b.Length}");
         var dot = 0f;
         var normA = 0f;
         var normB = 0f;

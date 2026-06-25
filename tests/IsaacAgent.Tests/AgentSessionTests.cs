@@ -126,7 +126,7 @@ public class AgentSessionTests
     }
 
     [Fact]
-    public async Task SendMessageAsync_MultipleToolCalls_ParallelExecution()
+    public async Task SendMessageAsync_MultipleToolCalls_SequentialExecution()
     {
         var chat = new StubChatService(
             new ChatChunk("", true, 0, "call_1", "search_isaac_api", """{"query":"a"}"""),

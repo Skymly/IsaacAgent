@@ -5,12 +5,13 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.Rag.Embedding;
 
-public sealed class OllamaEmbeddingProvider : IEmbeddingProvider
+public sealed class OllamaEmbeddingProvider : IEmbeddingProvider, IDisposable
 {
     private readonly HttpClient _http;
     private readonly string _model;
     private readonly ILogger<OllamaEmbeddingProvider> _logger;
     private int? _dimensions;
+    private bool _disposed;
 
     public OllamaEmbeddingProvider(HttpClient http, string model, ILogger<OllamaEmbeddingProvider> logger)
     {
@@ -78,5 +79,14 @@ public sealed class OllamaEmbeddingProvider : IEmbeddingProvider
 
         await Task.WhenAll(tasks);
         return results;
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _http.Dispose();
+            _disposed = true;
+        }
     }
 }

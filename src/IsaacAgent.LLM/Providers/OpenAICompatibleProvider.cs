@@ -8,11 +8,12 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.LLM.Providers;
 
-public sealed class OpenAICompatibleProvider : IChatService
+public sealed class OpenAICompatibleProvider : IChatService, IDisposable
 {
     private readonly HttpClient _http;
     private readonly ILogger<OpenAICompatibleProvider> _logger;
     private readonly string _model;
+    private bool _disposed;
 
     /// <summary>
     /// Idle timeout for SSE stream reads. If no data arrives within this
@@ -34,7 +35,7 @@ public sealed class OpenAICompatibleProvider : IChatService
     {
         var payload = BuildPayload(request, stream: false);
         using var resp = await _http.PostAsJsonAsync("/v1/chat/completions", payload, ct);
-        resp.EnsureSuccessStatusCode();
+        EnsureSuccessStatusCodeWithDetail(resp);
 
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
         var choice = doc.RootElement.GetProperty("choices")[0].GetProperty("message");
@@ -63,7 +64,7 @@ public sealed class OpenAICompatibleProvider : IChatService
             Content = JsonContent.Create(payload)
         };
         using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        resp.EnsureSuccessStatusCode();
+        EnsureSuccessStatusCodeWithDetail(resp);
 
         using var stream = await resp.Content.ReadAsStreamAsync(ct);
         using var reader = new StreamReader(stream);
@@ -96,34 +97,46 @@ public sealed class OpenAICompatibleProvider : IChatService
             var data = line[6..];
             if (data == "[DONE]") break;
 
-            using var doc = JsonDocument.Parse(data);
-            var delta = doc.RootElement.GetProperty("choices")[0].GetProperty("delta");
-
-            var content = delta.TryGetProperty("content", out var c) ? c.GetString() : null;
-
-            if (delta.TryGetProperty("tool_calls", out var tc) && tc.GetArrayLength() > 0)
+            JsonDocument doc;
+            try
             {
-                // A single delta chunk may carry multiple tool calls (some OpenAI-compatible
-                // endpoints batch them). Emit one ChatChunk per tool call so AgentSession's
-                // index-keyed accumulator can capture all of them.
-                foreach (var item in tc.EnumerateArray())
-                {
-                    var idx = item.TryGetProperty("index", out var idxEl) ? idxEl.GetInt32() : 0;
-                    var id = item.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                    string? name = null;
-                    string? args = null;
-                    if (item.TryGetProperty("function", out var fn))
-                    {
-                        name = fn.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : null;
-                        args = fn.TryGetProperty("arguments", out var argsEl) ? argsEl.GetString() : null;
-                    }
-                    yield return new ChatChunk("", true, idx, id, name, args);
-                }
+                doc = JsonDocument.Parse(data);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Skipping malformed JSON line in stream: {Line}", data);
                 continue;
             }
+            using (doc)
+            {
+                var delta = doc.RootElement.GetProperty("choices")[0].GetProperty("delta");
 
-            if (content is not null)
-                yield return new ChatChunk(content, false, -1, null, null, null);
+                var content = delta.TryGetProperty("content", out var c) ? c.GetString() : null;
+
+                if (delta.TryGetProperty("tool_calls", out var tc) && tc.GetArrayLength() > 0)
+                {
+                    // A single delta chunk may carry multiple tool calls (some OpenAI-compatible
+                    // endpoints batch them). Emit one ChatChunk per tool call so AgentSession's
+                    // index-keyed accumulator can capture all of them.
+                    foreach (var item in tc.EnumerateArray())
+                    {
+                        var idx = item.TryGetProperty("index", out var idxEl) ? idxEl.GetInt32() : 0;
+                        var id = item.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+                        string? name = null;
+                        string? args = null;
+                        if (item.TryGetProperty("function", out var fn))
+                        {
+                            name = fn.TryGetProperty("name", out var nameEl) ? nameEl.GetString() : null;
+                            args = fn.TryGetProperty("arguments", out var argsEl) ? argsEl.GetString() : null;
+                        }
+                        yield return new ChatChunk("", true, idx, id, name, args);
+                    }
+                    continue;
+                }
+
+                if (content is not null)
+                    yield return new ChatChunk(content, false, -1, null, null, null);
+            }
         }
     }
 
@@ -191,5 +204,42 @@ public sealed class OpenAICompatibleProvider : IChatService
             });
         }
         return calls;
+    }
+
+    /// <summary>
+    /// Throws an <see cref="HttpRequestException"/> with a descriptive message
+    /// for common non-success status codes, falling back to
+    /// <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/> for others.
+    /// </summary>
+    private void EnsureSuccessStatusCodeWithDetail(HttpResponseMessage resp)
+    {
+        if (resp.IsSuccessStatusCode) return;
+
+        var status = resp.StatusCode;
+        if (status == System.Net.HttpStatusCode.TooManyRequests)
+        {
+            throw new HttpRequestException(
+                $"Rate limited by LLM provider (429 Too ManyRequests). Request will be retried after backoff.",
+                null, status);
+        }
+
+        if (status == System.Net.HttpStatusCode.Unauthorized ||
+            status == System.Net.HttpStatusCode.Forbidden)
+        {
+            throw new HttpRequestException(
+                $"Authentication failed ({(int)status} {status}). Check API key and permissions.",
+                null, status);
+        }
+
+        resp.EnsureSuccessStatusCode();
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _http.Dispose();
+            _disposed = true;
+        }
     }
 }

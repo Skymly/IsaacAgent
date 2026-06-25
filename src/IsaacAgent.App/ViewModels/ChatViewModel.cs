@@ -97,8 +97,17 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
     }
 }
 
-public sealed partial class ChatMessageViewModel : ObservableObject
+public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
 {
+    private static readonly SolidColorBrush _userBrush = new(Color.Parse("#1e4d8b"));
+    private static readonly SolidColorBrush _assistantBrush = new(Color.Parse("#2d2d30"));
+    private static readonly SolidColorBrush _toolBrush = new(Color.Parse("#3d3520"));
+    private static readonly SolidColorBrush _toolResultBrush = new(Color.Parse("#1a3a1a"));
+    private static readonly SolidColorBrush _retrievalBrush = new(Color.Parse("#1a2a3a"));
+    private static readonly SolidColorBrush _errorBrush = new(Color.Parse("#5c1a1a"));
+    private static readonly SolidColorBrush _systemBrush = new(Color.Parse("#3a3a3a"));
+    private static readonly SolidColorBrush _defaultBrush = new(Color.Parse("#2d2d30"));
+
     [ObservableProperty]
     private string _role = "";
 
@@ -181,15 +190,21 @@ public sealed partial class ChatMessageViewModel : ObservableObject
 
     public IBrush BackgroundBrush => Role switch
     {
-        "user" => new SolidColorBrush(Color.Parse("#1e4d8b")),
-        "assistant" => new SolidColorBrush(Color.Parse("#2d2d30")),
-        "tool" => new SolidColorBrush(Color.Parse("#3d3520")),
-        "tool_result" => new SolidColorBrush(Color.Parse("#1a3a1a")),
-        "retrieval" => new SolidColorBrush(Color.Parse("#1a2a3a")),
-        "error" => new SolidColorBrush(Color.Parse("#5c1a1a")),
-        "system" => new SolidColorBrush(Color.Parse("#3a3a3a")),
-        _ => new SolidColorBrush(Color.Parse("#2d2d30"))
+        "user" => _userBrush,
+        "assistant" => _assistantBrush,
+        "tool" => _toolBrush,
+        "tool_result" => _toolResultBrush,
+        "retrieval" => _retrievalBrush,
+        "error" => _errorBrush,
+        "system" => _systemBrush,
+        _ => _defaultBrush
     };
 
     public HorizontalAlignment HorizontalAlign => Role == "user" ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+
+    public void Dispose()
+    {
+        _renderTimer.Stop();
+        _renderTimer.Tick -= OnRenderTick;
+    }
 }

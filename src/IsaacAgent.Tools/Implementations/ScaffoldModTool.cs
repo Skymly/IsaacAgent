@@ -31,7 +31,7 @@ public sealed class ScaffoldModTool : ITool
 
     private readonly string _projectDir;
 
-    public ScaffoldModTool(string projectDir) => _projectDir = projectDir;
+    public ScaffoldModTool(string projectDir) => _projectDir = Path.GetFullPath(projectDir);
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken ct = default)
     {

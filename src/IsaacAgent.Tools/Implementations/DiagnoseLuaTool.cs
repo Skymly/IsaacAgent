@@ -33,12 +33,9 @@ public sealed class DiagnoseLuaTool : ITool
     {
         var args = JsonDocument.Parse(arguments).RootElement;
         var relPath = args.GetProperty("path").GetString()!;
-        var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
+        var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
 
-        var projectRoot = _projectDir.EndsWith(Path.DirectorySeparatorChar)
-            ? _projectDir
-            : _projectDir + Path.DirectorySeparatorChar;
-        if (!fullPath.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
+        if (!isSafe)
             return "Error: Path traversal detected.";
 
         if (!File.Exists(fullPath))

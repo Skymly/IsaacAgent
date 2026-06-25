@@ -11,6 +11,13 @@ public sealed class EmbeddingProviderProxy : IEmbeddingProvider, IDisposable
 
     public void Replace(IEmbeddingProvider newProvider)
     {
+        if (newProvider.Dimensions != _inner.Dimensions)
+        {
+            throw new ArgumentException(
+                $"Embedding dimension mismatch: current provider has {_inner.Dimensions} dimensions, " +
+                $"but replacement has {newProvider.Dimensions}. Vector store compatibility requires identical dimensions.");
+        }
+
         var old = System.Threading.Interlocked.Exchange(ref _inner, newProvider);
         if (old is IDisposable disposable)
             disposable.Dispose();

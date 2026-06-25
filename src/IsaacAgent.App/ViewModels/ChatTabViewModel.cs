@@ -143,6 +143,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     {
         _currentProjectDir = projectDir;
         UnsubscribeSessionEvents(_session);
+        _session.Dispose();
         _session = _sessionFactory.Create(projectDir);
         SubscribeSessionEvents(_session);
         Messages.Clear();
@@ -199,7 +200,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         {
             await foreach (var chunk in _session.SendMessageAsync(userMsg, _cts.Token))
             {
-                assistantMsg.Content += chunk;
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => assistantMsg.Content += chunk);
             }
         }
         catch (OperationCanceledException)
@@ -224,7 +225,8 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             IsGenerating = false;
             _cts?.Dispose();
             _cts = null;
-            _session.SaveHistory(GetHistoryPath(_currentProjectDir));
+            var historyPath = GetHistoryPath(_currentProjectDir);
+            _ = Task.Run(() => _session.SaveHistory(historyPath));
         }
     }
 
@@ -242,6 +244,8 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
     public void ClearMessages()
     {
+        foreach (var msg in Messages)
+            msg.Dispose();
         Messages.Clear();
         _session.ClearHistory();
         TotalInputTokens = 0;
@@ -254,5 +258,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         UnsubscribeSessionEvents(_session);
         _cts?.Dispose();
         _cts = null;
+        foreach (var msg in Messages)
+            msg.Dispose();
     }
 }

@@ -65,10 +65,14 @@ public sealed class GitStatusTool : ITool
 
     private async Task<string> RunGitAsync(string args, CancellationToken ct)
     {
+        // Prefix with -c core.hooksPath=/dev/null to prevent malicious
+        // .git/config hook redirection from executing arbitrary code.
+        var safeArgs = $"-c core.hooksPath=/dev/null {args}";
+
         var psi = new ProcessStartInfo
         {
             FileName = "git",
-            Arguments = args,
+            Arguments = safeArgs,
             WorkingDirectory = _projectDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -82,6 +86,9 @@ public sealed class GitStatusTool : ITool
         psi.Environment["GIT_EDITOR"] = "true";
         psi.Environment["GIT_HOOKS"] = "0";
         psi.Environment["GIT_CONFIG_NOSYSTEM"] = "1";
+        psi.Environment["GIT_TERMINAL_PROMPT"] = "0";
+        psi.Environment["GIT_ASKPASS"] = "true";
+        psi.Environment["GIT_SSH_COMMAND"] = "ssh -oBatchMode=yes";
 
         try
         {
@@ -133,9 +140,9 @@ public sealed class DiffApplyTool : ITool
         var args = JsonDocument.Parse(arguments).RootElement;
         var relPath = args.GetProperty("path").GetString()!;
         var patch = args.GetProperty("patch").GetString()!;
-        var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
+        var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
 
-        if (!FileToolPathSafety.IsWithinProject(fullPath, _projectDir))
+        if (!isSafe)
             return Task.FromResult("Error: Path traversal detected.");
 
         if (!File.Exists(fullPath))
@@ -313,7 +320,7 @@ public sealed class BatchEditTool : ITool
             var find = edit.GetProperty("find").GetString()!;
             var replace = edit.GetProperty("replace").GetString()!;
             var replaceAll = edit.TryGetProperty("replace_all", out var ra) && ra.GetBoolean();
-            var fullPath = Path.GetFullPath(Path.Combine(_projectDir, relPath));
+            var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
 
             if (string.IsNullOrEmpty(find))
             {
@@ -321,7 +328,7 @@ public sealed class BatchEditTool : ITool
                 continue;
             }
 
-            if (!FileToolPathSafety.IsWithinProject(fullPath, _projectDir))
+            if (!isSafe)
             {
                 results.Add($"  {relPath}: Error: Path traversal detected");
                 continue;
@@ -424,7 +431,17 @@ public sealed class RunCommandTool : ITool
             catch (OperationCanceledException)
             {
                 // Kill the process tree to prevent zombie processes
-                try { proc.Kill(entireProcessTree: true); } catch { }
+                try
+                {
+                    proc.Kill(entireProcessTree: true);
+                    // Fallback: if the process hasn't exited within 1 second,
+                    // try killing by PID again.
+                    if (!proc.WaitForExit(1000))
+                    {
+                        try { proc.Kill(entireProcessTree: true); } catch { }
+                    }
+                }
+                catch { }
                 return $"Error: Command timed out after {timeoutSec}s.";
             }
 
@@ -452,6 +469,8 @@ public sealed class RunCommandTool : ITool
         Compile(@"\brmdir\s+/s\b"),
         Compile(@"\bformat\s+[a-z]:"),
         Compile(@"\bdel\s+/f\s+/s\b"),
+        Compile(@"\bdel\s+/s\s+/q\b"),
+        Compile(@"\brd\s+/s\s+/q\b"),
         Compile(@"\bmkfs\b"),
         Compile(@"\bdd\s+if="),
         Compile(@"\b(shutdown|reboot|halt)\b"),
@@ -463,14 +482,38 @@ public sealed class RunCommandTool : ITool
         Compile(@"\bsudo\b"),
         Compile(@"\bcurl\s+.*\|\s*(bash|sh)\b"),
         Compile(@"\bwget\s+.*\|\s*(bash|sh)\b"),
+        // PowerShell dangerous cmdlets
+        Compile(@"\bRemove-Item\b.*(-Recurse|-Force)"),
+        Compile(@"\bInvoke-Expression\b"),
+        Compile(@"\bStart-Process\b"),
     ];
 
     private static Regex Compile(string pattern) => new(pattern, RegexOptions.IgnoreCase);
 
+    /// <summary>
+    /// Shell operators that chain or pipe commands. We split on these so that
+    /// a dangerous command hidden after a benign one (e.g. "safe && rm -rf /")
+    /// is still detected.
+    /// </summary>
+    private static readonly Regex ShellOperatorSplit = new(
+        @"\s*(?:&&|\|\||;|\|)\s*", RegexOptions.IgnoreCase);
+
     private static bool IsDangerousCommand(string command)
     {
         // Normalize whitespace to prevent bypass via double spaces or tabs
-        var normalized = System.Text.RegularExpressions.Regex.Replace(command, @"\s+", " ").Trim().ToLowerInvariant();
-        return DangerousPatterns.Any(p => p.IsMatch(normalized));
+        var normalized = Regex.Replace(command, @"\s+", " ").Trim().ToLowerInvariant();
+
+        // Split on shell operators so each subcommand is checked independently.
+        // This prevents bypass via chaining (e.g. "safe_cmd && rm -rf /").
+        var subcommands = ShellOperatorSplit.Split(normalized);
+
+        foreach (var sub in subcommands)
+        {
+            if (string.IsNullOrWhiteSpace(sub)) continue;
+            if (DangerousPatterns.Any(p => p.IsMatch(sub)))
+                return true;
+        }
+
+        return false;
     }
 }

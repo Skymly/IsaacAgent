@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Headless;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
@@ -9,6 +10,19 @@ namespace IsaacAgent.Tests;
 
 public class ProjectViewModelTests
 {
+    static ProjectViewModelTests()
+    {
+        // Initialize Avalonia headless application once for all tests.
+        // This enables Dispatcher.UIThread and other UI-thread-dependent features.
+        try
+        {
+            AppBuilder.Configure<HeadlessApp>()
+                .UseHeadless(new AvaloniaHeadlessPlatformOptions())
+                .SetupWithoutStarting();
+        }
+        catch { /* Already initialized */ }
+    }
+
     private static ProjectViewModel CreateViewModel()
     {
         var logger = Mock.Of<ILogger<ProjectViewModel>>();
@@ -17,7 +31,7 @@ public class ProjectViewModelTests
     }
 
     [Fact]
-    public void LoadProject_ValidDirectory_SetsPropertiesAndLoadsFiles()
+    public async Task LoadProject_ValidDirectory_SetsPropertiesAndLoadsFiles()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
@@ -32,7 +46,7 @@ public class ProjectViewModelTests
             string? loadedPath = null;
             vm.ProjectLoaded += path => loadedPath = path;
 
-            vm.LoadProject(tempDir);
+            await vm.LoadProjectAsync(tempDir);
 
             Assert.Equal(tempDir, vm.ProjectPath);
             Assert.Equal(Path.GetFileName(tempDir), vm.ProjectName);
@@ -52,19 +66,19 @@ public class ProjectViewModelTests
     }
 
     [Fact]
-    public void LoadProject_NonexistentDirectory_DoesNothing()
+    public async Task LoadProject_NonexistentDirectory_DoesNothing()
     {
         var vm = CreateViewModel();
         var fakePath = Path.Combine(Path.GetTempPath(), $"nonexistent_{Guid.NewGuid():N}");
 
-        vm.LoadProject(fakePath);
+        await vm.LoadProjectAsync(fakePath);
 
         Assert.False(vm.HasProject);
         Assert.Empty(vm.Files);
     }
 
     [Fact]
-    public void LoadProject_EmptyDirectory_LoadsNoFiles()
+    public async Task LoadProject_EmptyDirectory_LoadsNoFiles()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_empty_{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
@@ -72,7 +86,7 @@ public class ProjectViewModelTests
         {
             var vm = CreateViewModel();
 
-            vm.LoadProject(tempDir);
+            await vm.LoadProjectAsync(tempDir);
 
             Assert.True(vm.HasProject);
             Assert.Empty(vm.Files);
@@ -95,7 +109,7 @@ public class ProjectViewModelTests
             await File.WriteAllTextAsync(filePath, content);
 
             var vm = CreateViewModel();
-            vm.LoadProject(tempDir);
+            await vm.LoadProjectAsync(tempDir);
 
             var item = vm.Files.First(f => f.Name == "main.lua");
             await vm.OpenFileCommand.ExecuteAsync(item);
@@ -118,7 +132,7 @@ public class ProjectViewModelTests
         try
         {
             var vm = CreateViewModel();
-            vm.LoadProject(tempDir);
+            await vm.LoadProjectAsync(tempDir);
 
             await vm.OpenFileCommand.ExecuteAsync(null);
 

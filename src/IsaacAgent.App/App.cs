@@ -18,6 +18,8 @@ namespace IsaacAgent.App;
 
 public sealed class App : Application
 {
+    private static readonly object _reloadLock = new();
+
     public static IServiceProvider Services { get; private set; } = null!;
 
     public override void Initialize()
@@ -76,44 +78,50 @@ public sealed class App : Application
 
     public static void ReloadLlmProvider()
     {
-        var config = AppConfiguration.Load();
-        var proxy = Services.GetRequiredService<ChatServiceProxy>();
-        var newProvider = LlmServiceRegistration.BuildProvider(Services, new ProviderConfig(
-            config.ProviderType, config.Endpoint, config.Model, config.ApiKey, 120));
-        proxy.Replace(newProvider);
+        lock (_reloadLock)
+        {
+            var config = AppConfiguration.Load();
+            var proxy = Services.GetRequiredService<ChatServiceProxy>();
+            var newProvider = LlmServiceRegistration.BuildProvider(Services, new ProviderConfig(
+                config.ProviderType, config.Endpoint, config.Model, config.ApiKey, 120));
+            proxy.Replace(newProvider);
+        }
     }
 
     public static void ReloadEmbeddingProvider()
     {
-        var config = AppConfiguration.Load();
-        var proxy = Services.GetRequiredService<EmbeddingProviderProxy>();
-        var newProvider = RagServiceRegistration.BuildEmbeddingProvider(Services, config.ToEmbeddingConfig());
-        proxy.Replace(newProvider);
-
-        if (Services.GetRequiredService<IRetriever>() is Retriever retriever)
+        lock (_reloadLock)
         {
-            retriever.ResetReady();
-            var settings = Services.GetService<SettingsViewModel>();
-            settings?.SetIndexRebuilding(true);
+            var config = AppConfiguration.Load();
+            var proxy = Services.GetRequiredService<EmbeddingProviderProxy>();
+            var newProvider = RagServiceRegistration.BuildEmbeddingProvider(Services, config.ToEmbeddingConfig());
+            proxy.Replace(newProvider);
 
-            _ = Task.Run(async () =>
+            if (Services.GetRequiredService<IRetriever>() is Retriever retriever)
             {
-                try
+                retriever.ResetReady();
+                var settings = Services.GetService<SettingsViewModel>();
+                settings?.SetIndexRebuilding(true);
+
+                _ = Task.Run(async () =>
                 {
-                    await retriever.RebuildIndexAsync();
-                    settings?.SetIndexStatus("Index rebuilt successfully.");
-                }
-                catch (Exception ex)
-                {
-                    var logger = Services.GetRequiredService<ILogger<App>>();
-                    logger.LogError(ex, "Index rebuild failed");
-                    settings?.SetIndexStatus($"Index rebuild failed: {ex.Message}");
-                }
-                finally
-                {
-                    settings?.SetIndexRebuilding(false);
-                }
-            });
+                    try
+                    {
+                        await retriever.RebuildIndexAsync();
+                        settings?.SetIndexStatus("Index rebuilt successfully.");
+                    }
+                    catch (Exception ex)
+                    {
+                        var logger = Services.GetRequiredService<ILogger<App>>();
+                        logger.LogError(ex, "Index rebuild failed");
+                        settings?.SetIndexStatus($"Index rebuild failed: {ex.Message}");
+                    }
+                    finally
+                    {
+                        settings?.SetIndexRebuilding(false);
+                    }
+                });
+            }
         }
     }
 

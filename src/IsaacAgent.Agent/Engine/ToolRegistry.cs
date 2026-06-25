@@ -12,6 +12,7 @@ public sealed class ToolRegistry
     private readonly ConcurrentDictionary<string, ITool> _tools = new();
     private readonly ILogger<ToolRegistry> _logger;
     private readonly IRetriever? _retriever;
+    private readonly SemaphoreSlim _registryLock = new(1, 1);
 
     /// <summary>
     /// Fired when a knowledge retrieval tool returns results, carrying the
@@ -41,43 +42,51 @@ public sealed class ToolRegistry
 
     public void ReconfigureForProject(string? projectDir)
     {
-        CurrentProjectDir = projectDir;
-        _tools.Clear();
-
-        RegisterAll([
-            new SearchApiTool(),
-            new GetCallbackInfoTool(),
-            new GetClassInfoTool()
-        ]);
-
-        if (_retriever is not null)
+        _registryLock.Wait();
+        try
         {
-            var searchTool = new SearchKnowledgeTool(_retriever);
-            var patternTool = new GetPatternTool(_retriever);
-            searchTool.OnRetrievalResults = (q, r) => OnRetrievalResults?.Invoke(q, r);
-            patternTool.OnRetrievalResults = (q, r) => OnRetrievalResults?.Invoke(q, r);
-            RegisterAll([searchTool, patternTool]);
-        }
+            CurrentProjectDir = projectDir;
+            _tools.Clear();
 
-        if (!string.IsNullOrEmpty(projectDir))
-        {
-            Directory.CreateDirectory(projectDir);
             RegisterAll([
-                new ReadFileTool(projectDir),
-                new WriteFileTool(projectDir),
-                new ListFilesTool(projectDir),
-                new DiagnoseLuaTool(projectDir),
-                new ScaffoldModTool(projectDir),
-                new ValidateXmlTool(projectDir),
-                new ParseLogTool(projectDir),
-                new GitStatusTool(projectDir),
-                new DiffApplyTool(projectDir),
-                new BatchEditTool(projectDir),
-                new RunCommandTool(projectDir)
+                new SearchApiTool(),
+                new GetCallbackInfoTool(),
+                new GetClassInfoTool()
             ]);
-        }
 
-        _logger.LogInformation("ToolRegistry reconfigured for project: {ProjectDir}", projectDir ?? "(none)");
+            if (_retriever is not null)
+            {
+                var searchTool = new SearchKnowledgeTool(_retriever);
+                var patternTool = new GetPatternTool(_retriever);
+                searchTool.OnRetrievalResults = (q, r) => OnRetrievalResults?.Invoke(q, r);
+                patternTool.OnRetrievalResults = (q, r) => OnRetrievalResults?.Invoke(q, r);
+                RegisterAll([searchTool, patternTool]);
+            }
+
+            if (!string.IsNullOrEmpty(projectDir))
+            {
+                Directory.CreateDirectory(projectDir);
+                RegisterAll([
+                    new ReadFileTool(projectDir),
+                    new WriteFileTool(projectDir),
+                    new ListFilesTool(projectDir),
+                    new DiagnoseLuaTool(projectDir),
+                    new ScaffoldModTool(projectDir),
+                    new ValidateXmlTool(projectDir),
+                    new ParseLogTool(projectDir),
+                    new GitStatusTool(projectDir),
+                    new DiffApplyTool(projectDir),
+                    new BatchEditTool(projectDir),
+                    new RunCommandTool(projectDir)
+                ]);
+            }
+
+            _logger.LogInformation("ToolRegistry reconfigured for project: {ProjectDir}", projectDir ?? "(none)");
+        }
+        finally
+        {
+            _registryLock.Release();
+        }
     }
 
     public ITool? Get(string name) => _tools.TryGetValue(name, out var tool) ? tool : null;
@@ -86,7 +95,21 @@ public sealed class ToolRegistry
 
     public async Task<string> ExecuteAsync(string toolName, string arguments, CancellationToken ct = default)
     {
-        if (!_tools.TryGetValue(toolName, out var tool))
+        // Hold the lock only for the tool lookup so that ReconfigureForProject
+        // cannot clear the registry mid-lookup. Release before executing the
+        // tool so that sequential tool calls don't hold the lock during I/O.
+        await _registryLock.WaitAsync(ct);
+        ITool? tool;
+        try
+        {
+            _tools.TryGetValue(toolName, out tool);
+        }
+        finally
+        {
+            _registryLock.Release();
+        }
+
+        if (tool is null)
         {
             _logger.LogWarning("Tool not found: {ToolName}", toolName);
             return $"Error: Tool '{toolName}' not found.";

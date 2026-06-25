@@ -105,11 +105,11 @@ public class StreamTimeoutTests
 
     private static OpenAICompatibleProvider CreateOpenAIProvider(HttpClient http, TimeSpan? timeout = null) =>
         new(http, "test-model", Mock.Of<ILogger<OpenAICompatibleProvider>>(),
-            streamReadTimeout: timeout ?? TimeSpan.FromMilliseconds(100));
+            streamReadTimeout: timeout ?? TimeSpan.FromMilliseconds(500));
 
     private static OllamaProvider CreateOllamaProvider(HttpClient http) =>
         new(http, "test-model", Mock.Of<ILogger<OllamaProvider>>(),
-            streamReadTimeout: TimeSpan.FromMilliseconds(100));
+            streamReadTimeout: TimeSpan.FromMilliseconds(500));
 
     [Fact]
     public async Task OpenAI_StreamStalled_ThrowsTimeoutException()

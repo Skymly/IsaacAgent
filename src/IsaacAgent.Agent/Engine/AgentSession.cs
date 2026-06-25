@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.Agent.Engine;
 
-public sealed class AgentSession
+public sealed class AgentSession : IDisposable
 {
     private readonly IChatService _chat;
     private readonly ToolRegistry _tools;
@@ -124,29 +124,33 @@ public sealed class AgentSession
 
             if (toolCalls.Count > 0)
             {
-                var toolTasks = toolCalls.Select(async toolCall =>
+                // Execute tools sequentially instead of in parallel. Several
+                // tools (write_file, diff_apply, batch_edit, run_command) write
+                // to the project directory, so parallel execution can race on
+                // the same file and produce non-deterministic results. Sequential
+                // execution preserves the order implied by the tool_calls list
+                // and keeps the side-effect order predictable.
+                foreach (var toolCall in toolCalls)
                 {
+                    string result;
                     try
                     {
                         OnToolCall?.Invoke(toolCall.Name, toolCall.Arguments);
                         var sw = System.Diagnostics.Stopwatch.StartNew();
-                        var result = await _tools.ExecuteAsync(toolCall.Name, toolCall.Arguments, ct);
+                        result = await _tools.ExecuteAsync(toolCall.Name, toolCall.Arguments, ct);
                         sw.Stop();
                         OnToolResult?.Invoke(result, toolCall.Name, sw.Elapsed);
-                        return (toolCall, result);
                     }
                     catch (Exception ex) when (ex is not OperationCanceledException)
                     {
                         _logger.LogError(ex, "Tool {ToolName} threw unexpectedly", toolCall.Name);
-                        var errMsg = $"Error: Tool '{toolCall.Name}' failed: {ex.Message}";
-                        OnToolResult?.Invoke(errMsg, toolCall.Name, TimeSpan.Zero);
-                        return (toolCall, errMsg);
+                        result = $"Error: Tool '{toolCall.Name}' failed: {ex.Message}";
+                        OnToolResult?.Invoke(result, toolCall.Name, TimeSpan.Zero);
                     }
-                }).ToList();
 
-                var results = await Task.WhenAll(toolTasks);
-                foreach (var (toolCall, result) in results)
-                    _history.Add(ChatMessage.Tool(toolCall.Id, result));
+                    _history.Add(ChatMessage.Tool(toolCall.Id, SanitizeToolResult(toolCall.Name, result)));
+                }
+
                 continue;
             }
 
@@ -163,13 +167,21 @@ public sealed class AgentSession
         _history.Add(ChatMessage.System(SystemPrompts.BuildSystemPrompt(_projectDir)));
     }
 
+    public void Dispose()
+    {
+        _tools.OnRetrievalResults -= OnRetrievalResults;
+        _history.Clear();
+    }
+
     public void SaveHistory(string path)
     {
         try
         {
             var dir = Path.GetDirectoryName(path);
             if (dir is not null) Directory.CreateDirectory(dir);
-            var json = System.Text.Json.JsonSerializer.Serialize(_history, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            var opts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+            var wrapper = new { Version = 1, Messages = _history };
+            var json = System.Text.Json.JsonSerializer.Serialize(wrapper, opts);
             File.WriteAllText(path, json);
         }
         catch (Exception ex)
@@ -184,8 +196,25 @@ public sealed class AgentSession
         {
             if (!File.Exists(path)) return;
             var json = File.ReadAllText(path);
-            var loaded = System.Text.Json.JsonSerializer.Deserialize<List<ChatMessage>>(json);
-            if (loaded is not null && loaded.Count > 0)
+            var opts = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+            // Try the versioned envelope format first.
+            List<ChatMessage>? loaded = null;
+            try
+            {
+                var wrapper = System.Text.Json.JsonSerializer.Deserialize<HistoryWrapper>(json, opts);
+                if (wrapper?.Messages is { Count: > 0 })
+                    loaded = wrapper.Messages;
+            }
+            catch
+            {
+                // Not the wrapper format — fall through to legacy deserialization.
+            }
+
+            // Fall back to legacy format (bare List<ChatMessage>) for backward compat.
+            loaded ??= System.Text.Json.JsonSerializer.Deserialize<List<ChatMessage>>(json);
+
+            if (loaded is { Count: > 0 })
             {
                 _history.Clear();
                 _history.AddRange(loaded);
@@ -196,6 +225,17 @@ public sealed class AgentSession
         {
             _logger.LogError(ex, "Failed to load chat history from {Path}", path);
         }
+    }
+
+    /// <summary>
+    /// Wraps file-reading tool results with context markers to reduce
+    /// prompt-injection risk from untrusted file/log contents.
+    /// </summary>
+    private static string SanitizeToolResult(string toolName, string result)
+    {
+        if (toolName is "read_file" or "list_files" or "parse_log" or "git_status")
+            return $"[Tool output from {toolName}]\n{result}\n[End of tool output]";
+        return result;
     }
 
     private void TrimHistory()
@@ -295,6 +335,18 @@ public sealed class AgentSession
         _history.RemoveRange(1, toRemove);
         _logger.LogInformation("Trimmed {Count} old messages from history ({Chars}→{Remaining} chars est.)",
             toRemove, charCount, EstimateHistoryChars());
+
+        // If a single message still exceeds the budget, truncate it
+        var remaining = EstimateHistoryChars();
+        if (remaining > MaxContextChars && _history.Count == 2)
+        {
+            var msg = _history[1];
+            if (msg.Content is { Length: > 0 })
+            {
+                var maxChars = MaxContextChars - (EstimateHistoryChars() - msg.Content.Length);
+                msg.Content = msg.Content[..Math.Max(0, maxChars)] + "\n[... truncated ...]";
+            }
+        }
     }
 
     /// <summary>
@@ -323,5 +375,15 @@ public sealed class AgentSession
         public string? Id { get; set; }
         public string? Name { get; set; }
         public System.Text.StringBuilder Arguments { get; } = new();
+    }
+
+    /// <summary>
+    /// Versioned envelope for persisted chat history, enabling future format
+    /// migrations without breaking backward compatibility with old files.
+    /// </summary>
+    private sealed class HistoryWrapper
+    {
+        public int Version { get; set; }
+        public List<ChatMessage>? Messages { get; set; }
     }
 }

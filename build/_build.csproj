@@ -13,7 +13,6 @@
   <ItemGroup>
     <PackageReference Include="Nuke.Common">
       <Version>9.0.4</Version>
-      <Version>9.0.4</Version>
     </PackageReference>
   </ItemGroup>
 

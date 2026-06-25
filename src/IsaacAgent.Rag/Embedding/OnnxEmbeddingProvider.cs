@@ -11,6 +11,7 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
     private readonly WordPieceTokenizer _tokenizer;
     private readonly ILogger<OnnxEmbeddingProvider> _logger;
     private readonly int _dimensions;
+    private readonly object _sessionLock = new();
     private bool _disposed;
 
     public OnnxEmbeddingProvider(string modelPath, string vocabPath, ILogger<OnnxEmbeddingProvider> logger)
@@ -84,7 +85,7 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
                 NamedOnnxValue.CreateFromTensor("token_type_ids", tokenTypeIdsTensor),
             };
 
-            using var results = _session.Run(inputs);
+            using var results = RunSession(inputs);
             var output = results.First().AsTensor<float>();
 
             // Pool and normalize each sequence in the batch
@@ -95,6 +96,19 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
             }
             return embeddings;
         }, ct);
+    }
+
+    /// <summary>
+    /// Runs the ONNX inference session under a lock. InferenceSession.Run is
+    /// NOT thread-safe, and this provider is registered as a Singleton, so all
+    /// forward passes must be serialized.
+    /// </summary>
+    private IDisposableReadOnlyCollection<DisposableNamedOnnxValue> RunSession(IReadOnlyCollection<NamedOnnxValue> inputs)
+    {
+        lock (_sessionLock)
+        {
+            return _session.Run(inputs);
+        }
     }
 
     private int InferDimensions()
@@ -121,7 +135,7 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
                 NamedOnnxValue.CreateFromTensor("attention_mask", dummyMask),
                 NamedOnnxValue.CreateFromTensor("token_type_ids", dummyType),
             };
-            using var results = _session.Run(inputs);
+            using var results = RunSession(inputs);
             var output = results.First().AsTensor<float>();
             if (output.Dimensions.Length >= 3)
                 return output.Dimensions[2];

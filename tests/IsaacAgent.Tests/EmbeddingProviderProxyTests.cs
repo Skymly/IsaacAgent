@@ -24,6 +24,18 @@ public class EmbeddingProviderProxyTests
     private sealed class PlainEmbeddingProvider : IEmbeddingProvider
     {
         public string ModelName => "plain-model";
+        public int Dimensions => 4;
+
+        public Task<float[]> EmbedAsync(string text, CancellationToken ct = default)
+            => Task.FromResult(new float[] { 0f, 1f, 0f, 0f });
+
+        public Task<IReadOnlyList<float[]>> EmbedBatchAsync(IReadOnlyList<string> texts, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<float[]>>(texts.Select(_ => new float[] { 0f, 1f, 0f, 0f }).ToList());
+    }
+
+    private sealed class MismatchedEmbeddingProvider : IEmbeddingProvider
+    {
+        public string ModelName => "mismatched-model";
         public int Dimensions => 2;
 
         public Task<float[]> EmbedAsync(string text, CancellationToken ct = default)
@@ -80,17 +92,26 @@ public class EmbeddingProviderProxyTests
     }
 
     [Fact]
+    public void Replace_DimensionMismatch_Throws()
+    {
+        var proxy = new EmbeddingProviderProxy(new PlainEmbeddingProvider());
+        Assert.Throws<ArgumentException>(() => proxy.Replace(new MismatchedEmbeddingProvider()));
+    }
+
+    [Fact]
     public async Task DelegatesToCurrentInner()
     {
         var first = new PlainEmbeddingProvider();
         var proxy = new EmbeddingProviderProxy(first);
 
         var result = await proxy.EmbedAsync("test");
-        Assert.Equal(2, result.Length);
+        Assert.Equal(0f, result[0]);
+        Assert.Equal(1f, result[1]);
 
         proxy.Replace(new DisposableEmbeddingProvider());
         var result2 = await proxy.EmbedAsync("test");
-        Assert.Equal(4, result2.Length);
+        Assert.Equal(1f, result2[0]);
+        Assert.Equal(0f, result2[1]);
         Assert.Equal(4, proxy.Dimensions);
     }
 }

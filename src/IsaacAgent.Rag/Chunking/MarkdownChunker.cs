@@ -55,7 +55,7 @@ public static class MarkdownChunker
                 Category = category,
                 Title = title,
                 Content = body.Trim(),
-                Metadata = metadata
+                Metadata = new Dictionary<string, string>(metadata)
             }];
         }
 
@@ -71,7 +71,7 @@ public static class MarkdownChunker
                 Category = category,
                 Title = section.Heading is null ? title : $"{title} — {section.Heading}",
                 Content = section.Content.Trim(),
-                Metadata = metadata
+                Metadata = new Dictionary<string, string>(metadata)
             });
         }
         return chunks;

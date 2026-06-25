@@ -225,6 +225,148 @@ public class PathTraversalTests
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
         }
     }
+
+    [Fact]
+    public async Task ReadFileTool_MixedSlashes_BackslashTraversal_ReturnsError()
+    {
+        // On Windows, backslashes are directory separators. A path like
+        // "..\..\target" should be detected as traversal regardless of
+        // slash direction.
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_mixed_slash_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var targetDir = Path.Combine(baseDir, "target");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(targetDir);
+        try
+        {
+            var targetFile = Path.Combine(targetDir, "secret.lua");
+            await File.WriteAllTextAsync(targetFile, "local secret = 42");
+
+            var tool = new ReadFileTool(safeDir);
+            var args = """{"path":"..\\..\\target\\secret.lua"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task WriteFileTool_DoubleEncodedTraversal_ReturnsError()
+    {
+        // Double-slash patterns like "..//..//" should still normalize to
+        // "../../" and be detected as path traversal.
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_double_enc_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var targetDir = Path.Combine(baseDir, "target");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(targetDir);
+        try
+        {
+            var tool = new WriteFileTool(safeDir);
+            // Double forward slashes should still resolve to traversal
+            var args = """{"path":"..//..//target/evil.lua","content":"print('pwned')"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+            Assert.False(File.Exists(Path.Combine(targetDir, "evil.lua")));
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ReadFileTool_BackslashDoubleSlash_ReturnsError()
+    {
+        // "..\\..\\" with double backslashes should be detected as traversal.
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_bs_double_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var targetDir = Path.Combine(baseDir, "target");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(targetDir);
+        try
+        {
+            var targetFile = Path.Combine(targetDir, "secret.lua");
+            await File.WriteAllTextAsync(targetFile, "local secret = 42");
+
+            var tool = new ReadFileTool(safeDir);
+            var args = """{"path":"..\\\\..\\\\target\\\\secret.lua"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ValidateXmlTool_CaseVariation_WindowsCaseInsensitive_ReturnsError()
+    {
+        // On Windows, the filesystem is case-insensitive. A path like
+        // "..\MYPROJECT" should be detected as traversal even if the
+        // actual directory is "myproject" (different case).
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_case_var_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var targetDir = Path.Combine(baseDir, "target");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(targetDir);
+        try
+        {
+            var targetFile = Path.Combine(targetDir, "secret.xml");
+            await File.WriteAllTextAsync(targetFile, "<root/>");
+
+            var tool = new ValidateXmlTool(safeDir);
+            // Use uppercase directory name to test case-insensitive traversal
+            var args = """{"file_path":"../TARGET/secret.xml"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ReadFileTool_CaseVariation_MixedCaseTraversal_ReturnsError()
+    {
+        // Test that case variation in path traversal is detected.
+        // "..\MyProject" vs "..\myproject" on Windows (case-insensitive FS).
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_case_read_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        var targetDir = Path.Combine(baseDir, "Target");
+        Directory.CreateDirectory(safeDir);
+        Directory.CreateDirectory(targetDir);
+        try
+        {
+            var targetFile = Path.Combine(targetDir, "secret.lua");
+            await File.WriteAllTextAsync(targetFile, "local secret = 42");
+
+            var tool = new ReadFileTool(safeDir);
+            // Use lowercase "target" when actual dir is "Target" (case variation)
+            var args = """{"path":"../target/secret.lua"}""";
+
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            if (Directory.Exists(baseDir)) Directory.Delete(baseDir, true);
+        }
+    }
 }
 
 public class InMemoryVectorStoreLoadTests
