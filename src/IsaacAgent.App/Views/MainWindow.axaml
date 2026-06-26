@@ -23,6 +23,8 @@
                 <MenuItem Header="Clear Chat" Command="{Binding ClearChatCommand}" />
             </MenuItem>
             <MenuItem Header="Help">
+                <MenuItem Header="Command Palette..." Click="OnCommandPalette" InputGesture="Ctrl+Shift+P" />
+                <Separator />
                 <MenuItem Header="About IsaacAgent" Click="OnAbout" />
             </MenuItem>
         </Menu>

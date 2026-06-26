@@ -109,6 +109,13 @@ public sealed partial class MainWindow : Window
         var vm = DataContext as MainViewModel;
         if (vm is not null)
         {
+            // Ctrl+Shift+P: Command palette
+            if (e.Key == Avalonia.Input.Key.P && e.KeyModifiers == (Avalonia.Input.KeyModifiers.Control | Avalonia.Input.KeyModifiers.Shift))
+            {
+                OpenCommandPalette();
+                e.Handled = true;
+                return;
+            }
             // Ctrl+K: Clear chat
             if (e.Key == Avalonia.Input.Key.K && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control)
             {
@@ -139,6 +146,27 @@ public sealed partial class MainWindow : Window
             }
         }
         base.OnKeyDown(e);
+    }
+
+    private void OpenCommandPalette()
+    {
+        var dialog = new CommandPaletteWindow
+        {
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        dialog.ShowDialog(this);
+    }
+
+    private void OnCommandPalette(object? sender, RoutedEventArgs e) => OpenCommandPalette();
+
+    internal void OpenSettings() => OnSettings(this, new RoutedEventArgs());
+
+    internal void ShowAbout() => OnAbout(this, new RoutedEventArgs());
+
+    internal void FocusFileList()
+    {
+        // Focus the chat input as the primary interaction point
+        ChatInputBox.Focus();
     }
 
     private void OnSettings(object? sender, RoutedEventArgs e)
