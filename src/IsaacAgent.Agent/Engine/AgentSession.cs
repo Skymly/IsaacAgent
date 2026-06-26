@@ -15,6 +15,7 @@ public sealed class AgentSession : IDisposable
     private readonly List<ChatMessage> _history = [];
     private readonly int _maxIterations = 10;
     private const int MaxHistoryMessages = 50;
+    private const int DefaultMaxTokens = 4096;
 
     /// <summary>
     /// Soft character budget for the conversation history (excluding the
@@ -66,7 +67,7 @@ public sealed class AgentSession : IDisposable
                 Messages = _history.ToList(),
                 Tools = _tools.GetDefinitions(),
                 Temperature = 0.3,
-                MaxTokens = 4096
+                MaxTokens = DefaultMaxTokens
             };
 
             var contentBuilder = new System.Text.StringBuilder();
@@ -173,7 +174,7 @@ public sealed class AgentSession : IDisposable
         _history.Clear();
     }
 
-    public void SaveHistory(string path)
+    public void SaveHistory(string path, CancellationToken ct = default)
     {
         try
         {

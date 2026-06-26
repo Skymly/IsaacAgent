@@ -280,5 +280,9 @@ public static class ModCallbacks
     public static int? GetRepentogonId(string name)
         => RepentogonModifiedIds.TryGetValue(name, out var id) ? id : null;
 
+    /// <summary>
+    /// Describes a single mod callback: its numeric ID, argument types,
+    /// optional filter argument, and documentation string.
+    /// </summary>
     public record CallbackInfo(int Id, string Args, string OptionalArgs, string Description);
 }

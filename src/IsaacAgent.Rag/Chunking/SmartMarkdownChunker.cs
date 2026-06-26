@@ -25,6 +25,9 @@ public static class SmartMarkdownChunker
     /// <summary>Minimum chunk size — smaller sections are merged with neighbors.</summary>
     private const int MinChunkSize = 100;
 
+    /// <summary>Minimum distance from start before snapping a split point to a line boundary.</summary>
+    private const int MinSplitDistance = 100;
+
     public static List<KnowledgeChunk> ChunkDirectory(string dirPath, string source = "example")
     {
         var chunks = new List<KnowledgeChunk>();
@@ -45,9 +48,7 @@ public static class SmartMarkdownChunker
     public static List<KnowledgeChunk> ChunkFromEmbeddedResources(Assembly assembly, string resourcePrefix, string source)
     {
         var chunks = new List<KnowledgeChunk>();
-        var resourceNames = assembly.GetManifestResourceNames()
-            .Where(n => n.StartsWith(resourcePrefix, StringComparison.Ordinal) && n.EndsWith(".md", StringComparison.Ordinal))
-            .OrderBy(n => n);
+        var resourceNames = ChunkerHelpers.GetMarkdownResourceNames(assembly, resourcePrefix);
 
         foreach (var name in resourceNames)
         {
@@ -70,7 +71,7 @@ public static class SmartMarkdownChunker
         if (fmMatch.Success)
         {
             body = content[(fmMatch.Index + fmMatch.Length)..];
-            ParseFrontMatter(fmMatch.Groups[1].Value, metadata);
+            ChunkerHelpers.ParseFrontMatter(fmMatch.Groups[1].Value, metadata);
         }
 
         var title = metadata.TryGetValue("title", out var t) ? t : fileName;
@@ -236,36 +237,9 @@ public static class SmartMarkdownChunker
         // Snap to line boundary for cleaner chunks
         var searchEnd = Math.Min(proposedEnd, text.Length - 1);
         var lineBreak = text.LastIndexOf('\n', searchEnd);
-        if (lineBreak > start + 100) return lineBreak + 1;
+        if (lineBreak > start + MinSplitDistance) return lineBreak + 1;
 
         return proposedEnd;
-    }
-
-    private static void ParseFrontMatter(string frontMatter, Dictionary<string, string> metadata)
-    {
-        var lines = frontMatter.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        for (var i = 0; i < lines.Length; i++)
-        {
-            var line = lines[i];
-            var idx = line.IndexOf(':');
-            if (idx <= 0) continue;
-            var key = line[..idx].Trim();
-            var value = line[(idx + 1)..].Trim();
-
-            // Multi-line YAML list: key:\n  - value
-            if (string.IsNullOrEmpty(value) && i + 1 < lines.Length)
-            {
-                var nextLine = lines[i + 1].TrimStart();
-                if (nextLine.StartsWith('-'))
-                {
-                    value = nextLine[1..].Trim();
-                    i++;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(value))
-                metadata[key] = value;
-        }
     }
 
     private static KnowledgeChunk CreateChunk(string id, string source, string category, string title, string content, Dictionary<string, string> metadata)

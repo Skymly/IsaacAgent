@@ -9,6 +9,12 @@ namespace IsaacAgent.Rag.Indexing;
 
 public sealed class IndexBuilder
 {
+    /// <summary>Number of chunks embedded per batch request.</summary>
+    private const int EmbeddingBatchSize = 16;
+
+    /// <summary>Interval (in chunks) at which progress is logged during embedding.</summary>
+    private const int ProgressReportInterval = 100;
+
     private readonly IEmbeddingProvider _embedding;
     private readonly InMemoryVectorStore _store;
     private readonly ILogger<IndexBuilder> _logger;
@@ -64,12 +70,11 @@ public sealed class IndexBuilder
         _logger.LogInformation("Total chunks to embed: {Count}", chunks.Count);
 
         var entries = new List<VectorStoreEntry>(chunks.Count);
-        const int batchSize = 16;
         var failedChunks = 0;
-        for (var i = 0; i < chunks.Count; i += batchSize)
+        for (var i = 0; i < chunks.Count; i += EmbeddingBatchSize)
         {
             ct.ThrowIfCancellationRequested();
-            var take = Math.Min(batchSize, chunks.Count - i);
+            var take = Math.Min(EmbeddingBatchSize, chunks.Count - i);
             var batch = chunks.GetRange(i, take);
             var texts = batch.Select(c => $"{c.Title}\n{c.Content}").ToList();
 
@@ -86,8 +91,8 @@ public sealed class IndexBuilder
                 failedChunks += batch.Count;
             }
 
-            var done = Math.Min(i + batchSize, chunks.Count);
-            if (done % 100 == 0 || done == chunks.Count)
+            var done = Math.Min(i + EmbeddingBatchSize, chunks.Count);
+            if (done % ProgressReportInterval == 0 || done == chunks.Count)
                 _logger.LogInformation("Embedded {Done}/{Total} ({Pct:F1}%)", done, chunks.Count, 100.0 * done / chunks.Count);
         }
 

@@ -144,9 +144,7 @@ public sealed class GetCallbackInfoTool : ITool
             .Where(k => k.Contains(name, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        return Task.FromResult(suggestions.Count > 0
-            ? $"Callback '{name}' not found. Did you mean: {string.Join(", ", suggestions)}?"
-            : $"Callback '{name}' not found.");
+        return Task.FromResult(KnowledgeToolHelpers.FormatNotFoundWithSuggestions("Callback", name, suggestions));
     }
 }
 
@@ -183,8 +181,19 @@ public sealed class GetClassInfoTool : ITool
             .Where(k => k.Contains(name, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        return Task.FromResult(suggestions.Count > 0
-            ? $"Class '{name}' not found. Did you mean: {string.Join(", ", suggestions)}?"
-            : $"Class '{name}' not found.");
+        return Task.FromResult(KnowledgeToolHelpers.FormatNotFoundWithSuggestions("Class", name, suggestions));
+    }
+}
+
+internal static class KnowledgeToolHelpers
+{
+    /// <summary>
+    /// Formats a "not found" message with optional "Did you mean" suggestions.
+    /// </summary>
+    public static string FormatNotFoundWithSuggestions(string kind, string name, List<string> suggestions)
+    {
+        return suggestions.Count > 0
+            ? $"{kind} '{name}' not found. Did you mean: {string.Join(", ", suggestions)}?"
+            : $"{kind} '{name}' not found.";
     }
 }

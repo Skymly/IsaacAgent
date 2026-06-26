@@ -123,6 +123,8 @@ public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isExpanded;
 
+    private const int RenderDebounceMs = 150;
+
     private string _debouncedMarkdown = "";
     private bool _markdownInitialized;
     private readonly Avalonia.Threading.DispatcherTimer _renderTimer;
@@ -171,7 +173,7 @@ public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
     {
         _renderTimer = new Avalonia.Threading.DispatcherTimer
         {
-            Interval = TimeSpan.FromMilliseconds(150)
+            Interval = TimeSpan.FromMilliseconds(RenderDebounceMs)
         };
         _renderTimer.Tick += OnRenderTick;
     }

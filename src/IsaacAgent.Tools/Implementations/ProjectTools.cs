@@ -158,7 +158,7 @@ public sealed class DiffApplyTool : ITool
         }
         catch (Exception ex)
         {
-            return Task.FromResult($"Error applying patch: {ex.Message}");
+            return Task.FromResult($"Error: Failed to apply patch: {ex.Message}");
         }
     }
 
@@ -331,13 +331,13 @@ public sealed class BatchEditTool : ITool
 
             if (!isSafe)
             {
-                results.Add($"  {relPath}: Error: Path traversal detected");
+                results.Add($"  {relPath}: Error: Path traversal detected.");
                 continue;
             }
 
             if (!File.Exists(fullPath))
             {
-                results.Add($"  {relPath}: Error: File not found");
+                results.Add($"  {relPath}: Error: File not found: {relPath}");
                 continue;
             }
 
@@ -393,13 +393,16 @@ public sealed class RunCommandTool : ITool
     private readonly string _projectDir;
     public RunCommandTool(string projectDir) => _projectDir = Path.GetFullPath(projectDir);
 
+    private const int MaxTimeoutSeconds = 120;
+    private const int ProcessKillWaitMs = 1000;
+
     public async Task<string> ExecuteAsync(string arguments, CancellationToken ct = default)
     {
         var args = JsonDocument.Parse(arguments).RootElement;
         var command = args.GetProperty("command").GetString()!;
         var timeoutSec = 30;
         if (args.TryGetProperty("timeout_seconds", out var ts))
-            timeoutSec = Math.Clamp(ts.GetInt32(), 1, 120);
+            timeoutSec = Math.Clamp(ts.GetInt32(), 1, MaxTimeoutSeconds);
 
         // Block dangerous commands
         if (IsDangerousCommand(command))
@@ -443,7 +446,7 @@ public sealed class RunCommandTool : ITool
                     proc.Kill(entireProcessTree: true);
                     // Fallback: if the process hasn't exited within 1 second,
                     // try killing by PID again.
-                    if (!proc.WaitForExit(1000))
+                    if (!proc.WaitForExit(ProcessKillWaitMs))
                     {
                         try { proc.Kill(entireProcessTree: true); } catch { }
                     }

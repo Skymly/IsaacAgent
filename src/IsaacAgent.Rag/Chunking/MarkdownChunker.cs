@@ -9,6 +9,9 @@ public static class MarkdownChunker
     private static readonly Regex FrontMatterRegex = new(@"^---\s*\n(.*?)\n---\s*\n", RegexOptions.Singleline);
     private static readonly Regex HeadingRegex = new(@"^(#{1,3})\s+(.+)$", RegexOptions.Multiline);
 
+    /// <summary>Minimum section size in characters — smaller sections are emitted as a single chunk.</summary>
+    private const int MinSectionSize = 200;
+
     public static List<KnowledgeChunk> ChunkDirectory(string dirPath, string source = "example")
     {
         var chunks = new List<KnowledgeChunk>();
@@ -32,12 +35,7 @@ public static class MarkdownChunker
         if (fmMatch.Success)
         {
             body = content[(fmMatch.Index + fmMatch.Length)..];
-            foreach (var line in fmMatch.Groups[1].Value.Split('\n', StringSplitOptions.RemoveEmptyEntries))
-            {
-                var idx = line.IndexOf(':');
-                if (idx > 0)
-                    metadata[line[..idx].Trim()] = line[(idx + 1)..].Trim();
-            }
+            ChunkerHelpers.ParseFrontMatter(fmMatch.Groups[1].Value, metadata);
         }
 
         var title = metadata.TryGetValue("title", out var t) ? t : fileName;
@@ -46,7 +44,7 @@ public static class MarkdownChunker
             metadata["tags"] = tags;
 
         var sections = SplitByHeadings(body);
-        if (sections.Count == 0 || (sections.Count == 1 && sections[0].Content.Length < 200))
+        if (sections.Count == 0 || (sections.Count == 1 && sections[0].Content.Length < MinSectionSize))
         {
             return [new KnowledgeChunk
             {

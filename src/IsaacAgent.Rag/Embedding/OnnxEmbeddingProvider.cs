@@ -7,6 +7,12 @@ namespace IsaacAgent.Rag.Embedding;
 
 public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
 {
+    /// <summary>Fallback embedding dimension for all-MiniLM-L6-v2 when model metadata is unavailable.</summary>
+    private const int FallbackEmbeddingDimensions = 384;
+
+    /// <summary>Maximum token sequence length accepted by the ONNX model.</summary>
+    private const int MaxSequenceLength = 512;
+
     private readonly InferenceSession _session;
     private readonly WordPieceTokenizer _tokenizer;
     private readonly ILogger<OnnxEmbeddingProvider> _logger;
@@ -50,13 +56,12 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
 
             // Tokenize all texts, then pad to the max sequence length in this batch
             // so we can run a single forward pass through the ONNX model.
-            const int maxSeqLen = 512;
             var encoded = new (long[] Ids, long[] Mask)[texts.Count];
             var batchSeqLen = 0;
             for (var i = 0; i < texts.Count; i++)
             {
                 ct.ThrowIfCancellationRequested();
-                var (ids, mask) = _tokenizer.Encode(texts[i], maxLength: maxSeqLen);
+                var (ids, mask) = _tokenizer.Encode(texts[i], maxLength: MaxSequenceLength);
                 encoded[i] = (ids, mask);
                 if (ids.Length > batchSeqLen) batchSeqLen = ids.Length;
             }
@@ -143,7 +148,7 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
         catch { }
 
         // Final fallback: all-MiniLM-L6-v2 default
-        return 384;
+        return FallbackEmbeddingDimensions;
     }
 
     private static float[] MeanPoolAndNormalize(Tensor<float> tokenEmbeddings, long[] attentionMask, int batchIndex)

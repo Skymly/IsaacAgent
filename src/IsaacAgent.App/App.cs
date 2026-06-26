@@ -19,6 +19,7 @@ namespace IsaacAgent.App;
 public sealed class App : Application
 {
     private static readonly object _reloadLock = new();
+    private static readonly CancellationTokenSource _shutdownCts = new();
 
     public static IServiceProvider Services { get; private set; } = null!;
 
@@ -34,13 +35,20 @@ public sealed class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = Services.GetRequiredService<MainWindow>();
+            desktop.ShutdownRequested += OnShutdownRequested;
         }
 
         // Pre-warm the RAG index in the background so the first search_knowledge
         // call doesn't block the UI for tens of seconds (especially with ONNX).
-        _ = Task.Run(() => PrewarmRagIndexAsync());
+        _ = Task.Run(() => PrewarmRagIndexAsync(_shutdownCts.Token), _shutdownCts.Token);
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e)
+    {
+        _shutdownCts.Cancel();
+        _shutdownCts.Dispose();
     }
 
     private static IServiceProvider ConfigureServices()
@@ -107,7 +115,7 @@ public sealed class App : Application
                 {
                     try
                     {
-                        await retriever.RebuildIndexAsync();
+                        await retriever.RebuildIndexAsync(_shutdownCts.Token);
                         settings?.SetIndexStatus("Index rebuilt successfully.");
                     }
                     catch (Exception ex)
@@ -120,18 +128,18 @@ public sealed class App : Application
                     {
                         settings?.SetIndexRebuilding(false);
                     }
-                });
+                }, _shutdownCts.Token);
             }
         }
     }
 
-    private static async Task PrewarmRagIndexAsync()
+    private static async Task PrewarmRagIndexAsync(CancellationToken ct)
     {
         try
         {
             var retriever = Services.GetService<IRetriever>();
             if (retriever is null) return;
-            await retriever.EnsureIndexAsync();
+            await retriever.EnsureIndexAsync(ct);
         }
         catch (Exception ex)
         {

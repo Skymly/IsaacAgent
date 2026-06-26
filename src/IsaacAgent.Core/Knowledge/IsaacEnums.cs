@@ -1506,5 +1506,8 @@ public static class IsaacEnums
         }),
     };
 
+    /// <summary>
+    /// Describes an Isaac API enum: its documentation and list of value strings.
+    /// </summary>
     public record EnumInfo(string Description, string[] Values);
 }

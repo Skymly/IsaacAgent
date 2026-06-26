@@ -7,6 +7,12 @@ namespace IsaacAgent.Rag.Embedding;
 
 public sealed class OllamaEmbeddingProvider : IEmbeddingProvider, IDisposable
 {
+    /// <summary>Default embedding dimension for nomic-embed-text when model metadata is unavailable.</summary>
+    private const int DefaultEmbeddingDimensions = 768;
+
+    /// <summary>Maximum input text length in characters to avoid exceeding model context.</summary>
+    private const int MaxInputChars = 2000;
+
     private readonly HttpClient _http;
     private readonly string _model;
     private readonly ILogger<OllamaEmbeddingProvider> _logger;
@@ -22,7 +28,7 @@ public sealed class OllamaEmbeddingProvider : IEmbeddingProvider, IDisposable
 
     public string ModelName => _model;
 
-    public int Dimensions => _dimensions ?? 768;
+    public int Dimensions => _dimensions ?? DefaultEmbeddingDimensions;
 
     public async Task<float[]> EmbedAsync(string text, CancellationToken ct = default)
     {
@@ -43,9 +49,8 @@ public sealed class OllamaEmbeddingProvider : IEmbeddingProvider, IDisposable
             var text = texts[idx];
             // Truncate to avoid exceeding model context length.
             // nomic-embed-text has 8192 token context; ~2000 chars is safe for mixed content.
-            const int maxChars = 2000;
-            if (text.Length > maxChars)
-                text = text[..maxChars];
+            if (text.Length > MaxInputChars)
+                text = text[..MaxInputChars];
 
             tasks[idx] = Task.Run(async () =>
             {

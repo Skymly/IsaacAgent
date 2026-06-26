@@ -34,24 +34,28 @@ public sealed partial class QuickReferenceViewModel : ObservableObject
         }
 
         // Add any remaining vanilla callbacks (sorted)
-        foreach (var cb in ModCallbacks.Callbacks.Keys.OrderBy(k => k))
-        {
-            if (!Callbacks.Contains(cb))
-                Callbacks.Add(cb);
-        }
+        AddSortedKeys(ModCallbacks.Callbacks, Callbacks);
 
         // Add REPENTOGON-only callbacks (sorted, prefixed for clarity)
-        foreach (var cb in ModCallbacks.RepentogonCallbacks.Keys.OrderBy(k => k))
-        {
-            if (!Callbacks.Contains(cb))
-                Callbacks.Add(cb);
-        }
+        AddSortedKeys(ModCallbacks.RepentogonCallbacks, Callbacks);
     }
 
     private void LoadClasses()
     {
-        foreach (var cls in IsaacClasses.Classes.Keys.OrderBy(k => k))
-            Classes.Add(cls);
+        AddSortedKeys(IsaacClasses.Classes, Classes);
+    }
+
+    /// <summary>
+    /// Adds keys from <paramref name="source"/> to <paramref name="target"/>,
+    /// skipping any that already exist, in sorted order.
+    /// </summary>
+    private static void AddSortedKeys<T>(Dictionary<string, T> source, ICollection<string> target)
+    {
+        foreach (var key in source.Keys.OrderBy(k => k))
+        {
+            if (!target.Contains(key))
+                target.Add(key);
+        }
     }
 
     private void LoadModStructure()

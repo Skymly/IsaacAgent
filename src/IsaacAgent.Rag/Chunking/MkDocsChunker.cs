@@ -23,6 +23,8 @@ public static class MkDocsChunker
     private const int MaxChunkSize = 2000;
     /// <summary>Overlap between adjacent chunks to preserve context.</summary>
     private const int OverlapChars = 200;
+    /// <summary>Minimum section size in characters — smaller sections are emitted as a single chunk.</summary>
+    private const int MinSectionSize = 100;
 
     private static readonly Dictionary<string, string> TagToCategory = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -43,9 +45,7 @@ public static class MkDocsChunker
     public static List<KnowledgeChunk> ChunkFromEmbeddedResources(Assembly assembly, string resourcePrefix, string source)
     {
         var chunks = new List<KnowledgeChunk>();
-        var resourceNames = assembly.GetManifestResourceNames()
-            .Where(n => n.StartsWith(resourcePrefix, StringComparison.Ordinal) && n.EndsWith(".md", StringComparison.Ordinal))
-            .OrderBy(n => n);
+        var resourceNames = ChunkerHelpers.GetMarkdownResourceNames(assembly, resourcePrefix);
 
         foreach (var name in resourceNames)
         {
@@ -85,7 +85,7 @@ public static class MkDocsChunker
         if (fmMatch.Success)
         {
             body = content[(fmMatch.Index + fmMatch.Length)..];
-            ParseFrontMatter(fmMatch.Groups[1].Value, metadata);
+            ChunkerHelpers.ParseFrontMatter(fmMatch.Groups[1].Value, metadata);
         }
 
         var category = DetermineCategory(metadata, fileName);
@@ -94,7 +94,7 @@ public static class MkDocsChunker
         body = CleanMkDocsSyntax(body);
 
         var sections = SplitByHeadings(body);
-        if (sections.Count == 0 || (sections.Count == 1 && sections[0].Content.Length < 100))
+        if (sections.Count == 0 || (sections.Count == 1 && sections[0].Content.Length < MinSectionSize))
         {
             var singleContent = body.Trim();
             if (string.IsNullOrWhiteSpace(singleContent)) return [];
@@ -124,33 +124,6 @@ public static class MkDocsChunker
             }
         }
         return chunks;
-    }
-
-    private static void ParseFrontMatter(string frontMatter, Dictionary<string, string> metadata)
-    {
-        var lines = frontMatter.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        for (var i = 0; i < lines.Length; i++)
-        {
-            var line = lines[i];
-            var idx = line.IndexOf(':');
-            if (idx <= 0) continue;
-            var key = line[..idx].Trim();
-            var value = line[(idx + 1)..].Trim();
-
-            // Multi-line YAML list: key:\n  - value
-            if (string.IsNullOrEmpty(value) && i + 1 < lines.Length)
-            {
-                var nextLine = lines[i + 1].TrimStart();
-                if (nextLine.StartsWith('-'))
-                {
-                    value = nextLine[1..].Trim();
-                    i++;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(value))
-                metadata[key] = value;
-        }
     }
 
     private static string DetermineCategory(Dictionary<string, string> metadata, string fileName)
@@ -286,7 +259,7 @@ public static class MkDocsChunker
                 // Snap to line boundary
                 var searchEnd = Math.Min(end, text.Length - 1);
                 var lineBreak = text.LastIndexOf('\n', searchEnd);
-                if (lineBreak > pos + 100) end = lineBreak + 1;
+                if (lineBreak > pos + MinSectionSize) end = lineBreak + 1;
             }
 
             chunks.Add(text[pos..end]);

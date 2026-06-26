@@ -226,7 +226,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             _cts?.Dispose();
             _cts = null;
             var historyPath = GetHistoryPath(_currentProjectDir);
-            _ = Task.Run(() => _session.SaveHistory(historyPath));
+            _ = Task.Run(() => _session.SaveHistory(historyPath, CancellationToken.None), CancellationToken.None);
         }
     }
 

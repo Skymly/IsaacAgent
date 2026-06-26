@@ -663,5 +663,8 @@ public static class IsaacClasses
         }),
     };
 
+    /// <summary>
+    /// Describes an Isaac API class: its category, documentation, and method signatures.
+    /// </summary>
     public record ClassInfo(string Category, string Description, string[] Methods);
 }

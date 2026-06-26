@@ -304,6 +304,20 @@ public sealed class DiagnoseLuaTool : ITool
     }
 
     /// <summary>
+    /// Checks for a long-bracket closing sequence (]=...=]) at position <paramref name="i"/>.
+    /// Returns the index after the closing bracket if found, or -1 if not.
+    /// </summary>
+    private static int FindClosingBracket(string input, int i)
+    {
+        if (i >= input.Length || input[i] != ']') return -1;
+        var j = i + 1;
+        while (j < input.Length && input[j] == '=') { j++; }
+        if (j < input.Length && input[j] == ']')
+            return j + 1;
+        return -1;
+    }
+
+    /// <summary>
     /// Replace string literals and comments with spaces (preserving line structure)
     /// so that bracket/quote analysis only sees actual code tokens.
     /// </summary>
@@ -352,18 +366,13 @@ public sealed class DiagnoseLuaTool : ITool
             if (inBlockComment)
             {
                 // Look for closing ]=...=]
-                if (input[i] == ']')
+                var closeEnd = FindClosingBracket(input, i);
+                if (closeEnd >= 0)
                 {
-                    var level = 0;
-                    var j = i + 1;
-                    while (j < input.Length && input[j] == '=') { level++; j++; }
-                    if (j < input.Length && input[j] == ']')
-                    {
-                        inBlockComment = false;
-                        for (var k = i; k <= j; k++) result.Append(' ');
-                        i = j + 1;
-                        continue;
-                    }
+                    inBlockComment = false;
+                    for (var k = i; k < closeEnd; k++) result.Append(' ');
+                    i = closeEnd;
+                    continue;
                 }
                 result.Append(input[i] == '\n' ? '\n' : ' ');
                 i++;
@@ -372,18 +381,13 @@ public sealed class DiagnoseLuaTool : ITool
 
             if (inLongString)
             {
-                if (input[i] == ']')
+                var closeEnd = FindClosingBracket(input, i);
+                if (closeEnd >= 0)
                 {
-                    var level = 0;
-                    var j = i + 1;
-                    while (j < input.Length && input[j] == '=') { level++; j++; }
-                    if (j < input.Length && input[j] == ']')
-                    {
-                        inLongString = false;
-                        for (var k = i; k <= j; k++) result.Append(' ');
-                        i = j + 1;
-                        continue;
-                    }
+                    inLongString = false;
+                    for (var k = i; k < closeEnd; k++) result.Append(' ');
+                    i = closeEnd;
+                    continue;
                 }
                 result.Append(input[i] == '\n' ? '\n' : ' ');
                 i++;
