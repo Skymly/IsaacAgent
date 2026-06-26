@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- `ScaffoldModTool` constructor now normalizes the project path with
+  `Path.GetFullPath`, closing a path-traversal gap.
+- `AppConfiguration.Save` no longer falls back to plaintext API key storage
+  when DPAPI encryption fails — the key is discarded with a warning instead.
+- `IsDangerousCommand` rewritten to split commands on shell operators
+  (`&&`, `||`, `;`, `|`) before checking each sub-command, and now detects
+  PowerShell (`Remove-Item -Recurse`, `Invoke-Expression`, `Start-Process`)
+  and Windows (`del /f /s /q`, `rd /s /q`) destructive patterns.
+- `FileTools` file enumeration now skips reparse points (junctions/symlinks)
+  via `EnumerateFilesSafe` to prevent junction-based traversal.
+- Git invocations in `ProjectTools` hardened with `GIT_TERMINAL_PROMPT=0`,
+  `GIT_SSH_COMMAND=ssh -oBatchMode=yes`, and `-c core.hooksPath=/dev/null`
+  to prevent credential prompts and malicious hook redirection.
+- `AgentSession` now sanitizes tool results with boundary markers to
+  prevent LLM injection via forged tool output.
+
 ### Added
 - Four new agent tools for enhanced project interaction:
   - `git_status` — shows git status, recent commits, and uncommitted diff
@@ -43,6 +60,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (expanded to 16 tools across Tools and Rag modules).
 
 ### Fixed
+- `OnnxEmbeddingProvider.session.Run` now serialized with a lock to fix
+  thread-safety crashes under concurrent embedding calls.
+- `ChatServiceProxy.Replace` now uses `Interlocked.Exchange` for atomic
+  provider swap and disposes the old provider; implements `IDisposable`.
+- `OpenAICompatibleProvider`, `OllamaProvider`, and `OllamaEmbeddingProvider`
+  now implement `IDisposable` to properly dispose `HttpClient`.
+- `EmbeddingProviderProxy.Replace` validates dimension match before swap.
+- Streaming JSON parsing in both LLM providers now tolerates malformed lines
+  instead of crashing.
+- `RetryChatService` now retries only transient exceptions
+  (`HttpRequestException`, `TimeoutException`, `IOException`).
+- HTTP error responses now differentiate 429/401/403 with descriptive messages.
+- `ToolRegistry` now uses a `SemaphoreSlim` to prevent reconfigure/lookup races.
+- `AgentSession` now implements `IDisposable` (unsubscribes events, clears
+  history); `ChatTabViewModel` disposes old session on project switch.
+- `AgentSession.TrimHistory` now truncates oversized single messages with a
+  marker, and history persistence is versioned with backward-compatible
+  legacy loading.
+- `ChatTabViewModel` assistant content updates now marshaled via
+  `Dispatcher.UIThread.Post`.
+- `MainWindow` event handler leak and `SolidColorBrush` memory leak fixed;
+  `DispatcherTimer` now disposed on window close.
+- `CosineSimilarity` now validates inputs for NaN/zero-norm.
+- Chunker metadata now returns defensive copies to prevent caller mutation.
+- `IndexBuilder` now handles failed embeddings gracefully (skip + warning).
+- `InMemoryVectorStore` search snapshot now uses `ToList()` defensive copy.
+- `ProjectTools` process kill now has a 1-second fallback re-kill.
+- `RefreshFiles` simplified to avoid headless dispatcher deadlock in tests.
+- `StreamTimeoutTests` flakiness fixed.
+- Path traversal tests extended for double-encoded sequences.
+- `ProjectViewModelTests` updated to use async `LoadProjectAsync`.
 - `ModCallbacks.cs` ID mapping: all 74 vanilla callback IDs (0-73)
   corrected to match official IsaacDocs documentation. Previous mapping
   was systematically wrong from ID 4 onward.
