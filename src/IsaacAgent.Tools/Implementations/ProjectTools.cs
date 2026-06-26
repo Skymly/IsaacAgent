@@ -65,20 +65,21 @@ public sealed class GitStatusTool : ITool
 
     private async Task<string> RunGitAsync(string args, CancellationToken ct)
     {
-        // Prefix with -c core.hooksPath=/dev/null to prevent malicious
-        // .git/config hook redirection from executing arbitrary code.
-        var safeArgs = $"-c core.hooksPath=/dev/null {args}";
-
         var psi = new ProcessStartInfo
         {
             FileName = "git",
-            Arguments = safeArgs,
             WorkingDirectory = _projectDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        // Prevent malicious .git/config hook redirection from executing
+        // arbitrary code. Use ArgumentList for proper cross-platform quoting.
+        psi.ArgumentList.Add("-c");
+        psi.ArgumentList.Add("core.hooksPath=/dev/null");
+        foreach (var a in args.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            psi.ArgumentList.Add(a);
 
         // Disable git features that could execute arbitrary code via
         // malicious .git/config, hooks, or environment variables.
@@ -408,13 +409,19 @@ public sealed class RunCommandTool : ITool
         var psi = new ProcessStartInfo
         {
             FileName = isWindows ? "cmd" : "/bin/sh",
-            Arguments = isWindows ? $"/c {command}" : $"-c {command}",
             WorkingDirectory = _projectDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true
         };
+        if (isWindows)
+            psi.ArgumentList.Add($"/c {command}");
+        else
+        {
+            psi.ArgumentList.Add("-c");
+            psi.ArgumentList.Add(command);
+        }
 
         try
         {
