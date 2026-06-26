@@ -123,6 +123,13 @@ public sealed partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
+            // Ctrl+Shift+D: Diff viewer
+            if (e.Key == Avalonia.Input.Key.D && e.KeyModifiers == (Avalonia.Input.KeyModifiers.Control | Avalonia.Input.KeyModifiers.Shift))
+            {
+                OpenDiffViewer();
+                e.Handled = true;
+                return;
+            }
             // Ctrl+K: Clear chat
             if (e.Key == Avalonia.Input.Key.K && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control)
             {
@@ -176,6 +183,19 @@ public sealed partial class MainWindow : Window
     }
 
     private void OnTemplateGallery(object? sender, RoutedEventArgs e) => OpenTemplateGallery();
+
+    private void OpenDiffViewer()
+    {
+        var vm = DataContext as MainViewModel;
+        var dialog = new DiffViewerWindow();
+        var diffVm = App.Services.GetRequiredService<DiffViewerViewModel>();
+        diffVm.SetProjectDir(vm?.Project?.ProjectPath);
+        dialog.DataContext = diffVm;
+        dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        dialog.ShowDialog(this);
+    }
+
+    private void OnDiffViewer(object? sender, RoutedEventArgs e) => OpenDiffViewer();
 
     private void OnLogMonitorStart(object? sender, RoutedEventArgs e)
     {

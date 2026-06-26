@@ -24,6 +24,9 @@
             <MenuItem Header="Chat">
                 <MenuItem Header="Clear Chat" Command="{Binding ClearChatCommand}" />
             </MenuItem>
+            <MenuItem Header="View">
+                <MenuItem Header="Diff Viewer..." Click="OnDiffViewer" InputGesture="Ctrl+Shift+D" />
+            </MenuItem>
             <MenuItem Header="Help">
                 <MenuItem Header="Command Palette..." Click="OnCommandPalette" InputGesture="Ctrl+Shift+P" />
                 <Separator />

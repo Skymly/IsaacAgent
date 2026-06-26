@@ -81,6 +81,8 @@ public sealed class App : Application
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<QuickReferenceViewModel>();
         services.AddSingleton<LogMonitorService>();
+        services.AddSingleton<DiffService>();
+        services.AddSingleton<DiffViewerViewModel>();
 
         return services.BuildServiceProvider();
     }
