@@ -180,6 +180,61 @@
 
 ---
 
+## P4 — 综合评审第二轮（2026-06-26）
+
+> 基于 8 个子代理的全面代码评审，识别 4 Critical / 11 High / 18 Medium / 20+ Low 问题。
+> 本轮修复覆盖全部 Critical + High + Medium，Low 级别留待后续。
+
+### Critical
+
+| 编号 | 问题 | 修复 |
+|------|------|------|
+| C1 | `ScaffoldModTool` 构造函数未 `Path.GetFullPath` 规范化项目路径 | 构造函数改为 `_projectDir = Path.GetFullPath(projectDir)`，与其他工具对齐 |
+| C2 | `AppConfiguration.Save` 在 DPAPI 加密失败时回退到明文存储 ApiKey | 移除明文回退；加密失败时丢弃 key 并输出 warning |
+| C3 | `IsDangerousCommand` 黑名单可被 `&&`/`||`/`;`/`\|` 分割绕过 | 重写为按 shell 操作符分割后逐子命令检查；新增 PowerShell（`Remove-Item -Recurse`/`Invoke-Expression`/`Start-Process`）和 Windows（`del /f /s /q`/`rd /s /q`）模式 |
+| C4 | `OnnxEmbeddingProvider.session.Run` 非线程安全，并发调用导致崩溃 | 新增 `_sessionLock` 对象，`RunSession()` 包装 `lock(_sessionLock)` |
+
+### High
+
+| 编号 | 问题 | 修复 |
+|------|------|------|
+| H1 | `FileTools` 文件枚举不跳过 reparse point（junction/symlink） | 新增 `EnumerateFilesSafe` 递归枚举，`IsReparsePoint` 检查 `FileAttributes.ReparsePoint` |
+| H2 | `ProjectTools` git 调用未隔离环境变量 | 新增 `GIT_TERMINAL_PROMPT=0`/`GIT_ASKPASS=true`/`GIT_SSH_COMMAND=ssh -oBatchMode=yes`；`-c core.hooksPath=/dev/null` 防止恶意 hook |
+| H3 | `ToolRegistry.ReconfigureForProject` 与 `ExecuteAsync` 存在竞态 | 新增 `SemaphoreSlim`，`ReconfigureForProject` 全程持锁，`ExecuteAsync` 仅 lookup 持锁 |
+| H4 | `ChatServiceProxy.Replace` 非原子交换，旧 provider 未 Dispose | 改用 `Interlocked.Exchange` 原子交换 + Dispose 旧 provider；实现 `IDisposable` |
+| H5 | `OpenAICompatibleProvider`/`OllamaProvider` 未实现 `IDisposable`（HttpClient 泄漏） | 两类 provider 实现 `IDisposable` + `_disposed` 守卫 + Dispose `HttpClient` |
+| H6 | `OllamaEmbeddingProvider` 未实现 `IDisposable` | 同上 |
+| H7 | 流式 JSON 解析遇畸形行直接崩溃 | `JsonDocument.Parse` 包裹 `try-catch(JsonException)`，畸形行 log warning 并 skip |
+| H8 | `AgentSession` 工具结果未消毒，LLM 可被注入伪 tool 输出 | `SanitizeToolResult` 为 `read_file`/`list_files`/`parse_log`/`git_status` 结果添加边界标记 |
+| H9 | `AgentSession` 未实现 `IDisposable`，事件订阅泄漏 | 实现 `IDisposable`：取消 `OnRetrievalResults` 订阅 + 清空 `_history`；`ChatTabViewModel` 切换项目时 Dispose 旧 session |
+| H10 | `InMemoryVectorStore` add/search 竞态条件 | 搜索快照改为 `ToList()` 防御性拷贝 |
+| H11 | `MainWindow` 事件处理器泄漏 + `SolidColorBrush` 未冻结 | 修复事件 handler leak + Freeze brush 防止泄漏 |
+
+### Medium
+
+| 编号 | 问题 | 修复 |
+|------|------|------|
+| M1 | `ProjectTools` 进程 kill 无 fallback | `proc.Kill(entireProcessTree: true)` 后 1 秒未退出则再次 kill |
+| M2 | `DiagnoseLuaTool` 路径校验内联重复 | 改用 `FileToolPathSafety.IsWithinProject` 共享 helper |
+| M3 | `CosineSimilarity` 未校验 NaN/零范数 | 添加输入校验 |
+| M4 | chunker metadata 暴露内部列表引用 | 防御性拷贝 |
+| M5 | `IndexBuilder` 对失败 embedding 无容错 | 跳过失败项 + log warning |
+| M6 | `EmbeddingProviderProxy.Replace` 未校验维度匹配 | 维度不匹配时抛 `ArgumentException` |
+| M7 | `RetryChatService` 对所有异常重试 | 仅对 `HttpRequestException`/`TimeoutException`/`IOException` 重试 |
+| M8 | HTTP 错误无状态码区分 | 429/401/403 分别输出描述性错误信息 |
+| M9 | `OpenAICompatibleProvider`/`OllamaProvider` 缺 `Dispose()` 方法 | 补全（H5 一并修复） |
+| M10 | `ChatTabViewModel` assistant 内容更新未 marshal 到 UI 线程 | `Dispatcher.UIThread.Post` 包裹 |
+| M11 | `AgentSession.TrimHistory` 单消息超长无截断 | 新增单消息截断 + `[... truncated ...]` 标记 |
+| M12 | `DispatcherTimer` 未 Dispose | 窗口关闭时 Dispose |
+| M13 | `RefreshFiles` 阻塞 UI 线程 | 简化为同步枚举（mod 项目文件量小，避免 headless dispatcher 死锁） |
+| M14 | `AgentSession` 历史持久化无版本号 | 版本化 `{ Version, Messages }` envelope + legacy fallback |
+| M15 | `ToolRegistry.Clear` 竞态 | H3 一并修复 |
+| M16 | `_build.csproj` 重复版本行 | 去重 |
+| M17 | `AGENTS.md` 未记录 Rag 项目 | 补充 Rag 项目 + build 命令 |
+| M18 | `StreamTimeoutTests` flaky | 修复稳定性 |
+
+---
+
 ## 修复优先级建议
 
 1. **P0-1** 修 `MarkdownRenderer` 的 `Underline` → `TextDecorations = TextDecorations.Underline`，让 main 重新可构建、CI 转绿。
@@ -234,3 +289,18 @@
 | 2026-06-25 | P3-1 | - | **版本号自动管理**：引入 MinVer 7.0.0（Git-tag 驱动），`Directory.Build.props` 移除硬编码 `VersionPrefix`/`AssemblyVersion`/`FileVersion`，改由 MinVer 从 `v*` tag 自动推导。`MinVerTagPrefix=v` 匹配 CI release 触发，`MinVerMinimumMajorMinor=0.1` 保留基线（无 tag 时版本为 `0.1.0-alpha.0.N`）。CI 三 job `actions/checkout` 加 `fetch-depth: 0` 提供完整 git 历史。P3-1 状态由「版本号除外」更新为完全 `[x]` |
 | 2026-06-24 | #13 | - | **已修复**：`tools/e2e-test/IsaacAgent.E2ETest.csproj` 纳入 `IsaacAgent.sln`，format 检查覆盖该项目 |
 | 2026-06-24 | #14 | - | **已修复**：`Directory.Build.props` 新增 `VersionPrefix=0.1.0` / `AssemblyVersion` / `FileVersion` / `Company` / `Product`；新增 `CHANGELOG.md`（Keep a Changelog 格式，记录本轮全部改动） |
+| 2026-06-26 | C1 | - | `ScaffoldModTool` 构造函数补 `Path.GetFullPath` 规范化 |
+| 2026-06-26 | C2 | - | `AppConfiguration.Save` 移除 DPAPI 明文回退，加密失败时丢弃 key |
+| 2026-06-26 | C3 | - | `IsDangerousCommand` 重写：按 `&&`/`\|\|`/`;`/`\|` 分割后逐子命令检查 + PowerShell/Windows 模式 |
+| 2026-06-26 | C4 | - | `OnnxEmbeddingProvider` 新增 `_sessionLock`，`RunSession()` 包装 `lock` |
+| 2026-06-26 | H1 | - | `FileTools` 新增 `EnumerateFilesSafe` 跳过 reparse point（junction/symlink） |
+| 2026-06-26 | H2 | - | `ProjectTools` git 环境变量加固：`GIT_TERMINAL_PROMPT=0` + hooks 禁用 + batch SSH |
+| 2026-06-26 | H3 | - | `ToolRegistry` 新增 `SemaphoreSlim` 修复 reconfigure/lookup 竞态 |
+| 2026-06-26 | H4 | - | `ChatServiceProxy` 改用 `Interlocked.Exchange` + `IDisposable` |
+| 2026-06-26 | H5~H6 | - | `OpenAICompatibleProvider`/`OllamaProvider`/`OllamaEmbeddingProvider` 实现 `IDisposable` |
+| 2026-06-26 | H7 | - | 流式 JSON 解析 `JsonDocument.Parse` 包裹 try-catch，畸形行 skip |
+| 2026-06-26 | H8 | - | `AgentSession.SanitizeToolResult` 为工具结果添加边界标记防注入 |
+| 2026-06-26 | H9 | - | `AgentSession` 实现 `IDisposable`，`ChatTabViewModel` 切换项目时 Dispose 旧 session |
+| 2026-06-26 | H10 | - | `InMemoryVectorStore` 搜索快照改 `ToList()` 防御性拷贝 |
+| 2026-06-26 | H11 | - | `MainWindow` 事件 handler leak 修复 + `SolidColorBrush` Freeze |
+| 2026-06-26 | M1~M18 | - | 18 个 Medium 修复：进程 kill fallback / 路径校验复用 / CosineSimilarity 校验 / chunker 防御拷贝 / IndexBuilder 容错 / 维度校验 / 瞬态重试 / HTTP 状态码区分 / Dispose 补全 / Dispatcher marshal / 单消息截断 / Timer Dispose / RefreshFiles 简化 / 历史版本化 / ToolRegistry 锁 / 版本行去重 / AGENTS.md 补 Rag / StreamTimeout 稳定性。192 测试全过 |
