@@ -116,6 +116,13 @@ public sealed partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
+            // Ctrl+Shift+T: Template gallery
+            if (e.Key == Avalonia.Input.Key.T && e.KeyModifiers == (Avalonia.Input.KeyModifiers.Control | Avalonia.Input.KeyModifiers.Shift))
+            {
+                OpenTemplateGallery();
+                e.Handled = true;
+                return;
+            }
             // Ctrl+K: Clear chat
             if (e.Key == Avalonia.Input.Key.K && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control)
             {
@@ -158,6 +165,17 @@ public sealed partial class MainWindow : Window
     }
 
     private void OnCommandPalette(object? sender, RoutedEventArgs e) => OpenCommandPalette();
+
+    private void OpenTemplateGallery()
+    {
+        var dialog = new TemplateGalleryWindow
+        {
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        dialog.ShowDialog(this);
+    }
+
+    private void OnTemplateGallery(object? sender, RoutedEventArgs e) => OpenTemplateGallery();
 
     internal void OpenSettings() => OnSettings(this, new RoutedEventArgs());
 

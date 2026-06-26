@@ -13,6 +13,7 @@
         <Menu Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltMediumBrush}">
             <MenuItem Header="File">
                 <MenuItem Header="New Project..." Command="{Binding NewProjectAsyncCommand}" />
+                <MenuItem Header="New from Template..." Click="OnTemplateGallery" InputGesture="Ctrl+Shift+T" />
                 <MenuItem Header="Open Project..." Command="{Binding OpenProjectAsyncCommand}" />
                 <Separator />
                 <MenuItem Header="Settings..." Click="OnSettings" />
