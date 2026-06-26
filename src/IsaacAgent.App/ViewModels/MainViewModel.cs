@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.Agent.Engine;
+using IsaacAgent.App.Services;
 using IsaacAgent.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,6 +17,7 @@ public sealed partial class MainViewModel : ObservableObject
     public ChatViewModel Chat { get; }
     public ProjectViewModel Project { get; }
     public QuickReferenceViewModel QuickReference { get; }
+    public LogMonitorService LogMonitor { get; }
 
     [ObservableProperty]
     private string _statusText = "Ready";
@@ -30,6 +32,7 @@ public sealed partial class MainViewModel : ObservableObject
         Chat = services.GetRequiredService<ChatViewModel>();
         Project = services.GetRequiredService<ProjectViewModel>();
         QuickReference = services.GetRequiredService<QuickReferenceViewModel>();
+        LogMonitor = services.GetRequiredService<LogMonitorService>();
 
         Project.ProjectLoaded += path =>
         {

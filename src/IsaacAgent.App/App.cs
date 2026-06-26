@@ -80,6 +80,7 @@ public sealed class App : Application
         services.AddSingleton<ProjectViewModel>();
         services.AddSingleton<SettingsViewModel>();
         services.AddSingleton<QuickReferenceViewModel>();
+        services.AddSingleton<LogMonitorService>();
 
         return services.BuildServiceProvider();
     }

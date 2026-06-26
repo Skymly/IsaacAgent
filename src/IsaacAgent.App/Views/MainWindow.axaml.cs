@@ -177,6 +177,24 @@ public sealed partial class MainWindow : Window
 
     private void OnTemplateGallery(object? sender, RoutedEventArgs e) => OpenTemplateGallery();
 
+    private void OnLogMonitorStart(object? sender, RoutedEventArgs e)
+    {
+        var vm = DataContext as MainViewModel;
+        vm?.LogMonitor.Start();
+    }
+
+    private void OnLogMonitorStop(object? sender, RoutedEventArgs e)
+    {
+        var vm = DataContext as MainViewModel;
+        vm?.LogMonitor.Stop();
+    }
+
+    private void OnLogMonitorClear(object? sender, RoutedEventArgs e)
+    {
+        var vm = DataContext as MainViewModel;
+        vm?.LogMonitor.Clear();
+    }
+
     internal void OpenSettings() => OnSettings(this, new RoutedEventArgs());
 
     internal void ShowAbout() => OnAbout(this, new RoutedEventArgs());
