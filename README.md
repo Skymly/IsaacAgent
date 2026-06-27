@@ -152,3 +152,7 @@ tools/
   e2e-test/             Standalone E2E test for RAG pipeline (in solution as IsaacAgent.E2ETest)
 build/                  Nuke build script
 ```
+
+## License
+
+[MIT](LICENSE) — Copyright (c) 2026 Skymly
