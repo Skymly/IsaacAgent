@@ -16,7 +16,7 @@ public sealed class ValidateXmlTool : ITool
     }
 
     public string Name => "validate_xml";
-    public string Description => "Validate an Isaac mod XML file (metadata.xml, items.xml, entities2.xml, players.xml, etc.) against the official XSD schemas. Detects missing required attributes, invalid values, and structural errors.";
+    public string Description => "Validate an Isaac mod XML file (metadata.xml, items.xml, entities2.xml, players.xml, trinkets.xml, challenges.xml, etc.) against the official XSD schemas. Detects missing required attributes, invalid values, and structural errors. Always call this after creating or modifying any XML file before suggesting the user test in-game.";
 
     public ToolDefinition Definition => new()
     {

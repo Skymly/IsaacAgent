@@ -15,7 +15,7 @@ public sealed class ParseLogTool : ITool
     }
 
     public string Name => "parse_log";
-    public string Description => "Parse the Isaac game log.txt file to extract Lua errors, warnings, and useful diagnostic information. Can read from the default Isaac log location or a relative path within the project. Identifies error lines, file names, line numbers, and callback context.";
+    public string Description => "Parse the Isaac game log.txt file to extract Lua errors, warnings, and useful diagnostic information. Can read from the default Isaac log location or a relative path within the project. Identifies error lines, file names, line numbers, and callback context. Use this as the first step when the user reports a crash, unexpected behavior, or 'my mod doesn't work'.";
 
     public ToolDefinition Definition => new()
     {

@@ -7,7 +7,7 @@ namespace IsaacAgent.Tools.Implementations;
 public sealed class ReadFileTool : ITool
 {
     public string Name => "read_file";
-    public string Description => "Read the content of a file in the mod project directory.";
+    public string Description => "Read the content of a file in the mod project directory. Use this before modifying existing files to understand the current structure, and when debugging issues reported by diagnose_lua or parse_log.";
 
     public ToolDefinition Definition => new()
     {
@@ -46,7 +46,7 @@ public sealed class ReadFileTool : ITool
 public sealed class WriteFileTool : ITool
 {
     public string Name => "write_file";
-    public string Description => "Write content to a file in the mod project directory. Creates parent directories if needed.";
+    public string Description => "Write content to a file in the mod project directory. Creates parent directories if needed. Use this for creating new files or rewriting entire files. For small changes to large files, prefer diff_apply or batch_edit instead.";
 
     public ToolDefinition Definition => new()
     {

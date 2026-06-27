@@ -8,7 +8,7 @@ namespace IsaacAgent.Tools.Implementations;
 public sealed class ScaffoldModTool : ITool
 {
     public string Name => "scaffold_mod";
-    public string Description => "Create a new Binding of Isaac: Repentance mod project structure with main.lua, metadata.xml, and optional files.";
+    public string Description => "Create a new Binding of Isaac: Repentance mod project structure with main.lua, metadata.xml, and optional files (items.xml, entities2.xml, trinkets.xml, challenges.xml, players.xml). Use this when the user wants to start a new mod. Set includeItems/includeEntities/includeTrinkets/includeChallenges/includePlayers to true as needed.";
 
     public ToolDefinition Definition => new()
     {

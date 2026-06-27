@@ -9,7 +9,7 @@ namespace IsaacAgent.Tools.Implementations;
 public sealed class DiagnoseLuaTool : ITool
 {
     public string Name => "diagnose_lua";
-    public string Description => "Analyze a Lua file for common Isaac modding issues: syntax errors, undefined callbacks, incorrect API usage, and missing mod structure.";
+    public string Description => "Analyze a Lua file for common Isaac modding issues: syntax errors, undefined callbacks, incorrect API usage, missing mod structure, and global variable leaks. Use this after writing or modifying Lua code, and always before suggesting the user test in-game. Also use this when debugging runtime errors alongside parse_log.";
 
     public ToolDefinition Definition => new()
     {

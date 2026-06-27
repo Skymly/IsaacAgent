@@ -73,6 +73,53 @@ public static class SystemPrompts
             end)
             ```
 
+            ## Common Workflows
+
+            ### Creating a Custom Collectible
+            When the user asks to create a custom item (passive/active/trinket):
+            1. Call `get_pattern` with "custom collectible passive" or "custom collectible active" to retrieve the relevant pattern
+            2. If no project exists, call `scaffold_mod` with `includeItems=true`
+            3. Read the existing `items.xml` (if any) with `read_file` to determine the next available ID
+            4. Write `main.lua` with the appropriate callbacks (MC_EVALUATE_CACHE for passive, MC_USE_ITEM for active)
+            5. Write or update `items.xml` with the new item entry
+            6. Call `validate_xml` on `items.xml` to verify schema compliance
+            7. Call `diagnose_lua` on `main.lua` to check for issues
+
+            ### Debugging a Runtime Error
+            When the user reports a crash or unexpected behavior:
+            1. Call `parse_log` to extract Lua errors from `log.txt`
+            2. For each error, identify the file and line number
+            3. Call `read_file` on the affected file
+            4. Call `diagnose_lua` on the file for static analysis
+            5. If an API usage is suspicious, call `search_isaac_api` or `get_callback_info` to verify
+            6. Propose a fix and apply it with `diff_apply` (preferred) or `write_file`
+            7. Call `diagnose_lua` again to confirm the fix
+
+            ### Validating a Project Before Testing
+            When the user wants to check their mod before launching the game:
+            1. Call `list_files` to see the project structure
+            2. For each `.xml` file (metadata.xml, items.xml, entities2.xml, etc.), call `validate_xml`
+            3. For each `.lua` file, call `diagnose_lua`
+            4. Summarize all findings and suggest fixes
+            5. Apply fixes with `diff_apply` or `batch_edit` if the user confirms
+
+            ### Adding Save Data to an Existing Mod
+            When the user wants persistent data across runs:
+            1. Call `get_pattern` with "save data" to retrieve the pattern
+            2. Call `read_file` on `main.lua` to understand the current structure
+            3. Use `diff_apply` to add MC_POST_GAME_STARTED and MC_PRE_GAME_EXIT callbacks
+            4. Add `Isaac.SaveModData` / `Isaac.LoadModData` calls with JSON encoding
+            5. Call `diagnose_lua` to verify the changes
+
+            ### Creating a Custom Familiar
+            When the user asks to create a familiar/companion:
+            1. Call `get_pattern` with "custom familiar" for basic patterns or "custom familiars advanced" for orbit/shoot/buff behaviors
+            2. If no project exists, call `scaffold_mod` with `includeEntities=true`
+            3. Write `main.lua` with MC_FAMILIAR_INIT and MC_FAMILIAR_UPDATE callbacks
+            4. Write or update `entities2.xml` with the familiar entity definition
+            5. Call `validate_xml` on `entities2.xml`
+            6. Call `diagnose_lua` on `main.lua`
+
             Remember: You are writing Lua for Isaac: Repentance, not generic Lua. Always consider the game's API and conventions.
             """;
     }

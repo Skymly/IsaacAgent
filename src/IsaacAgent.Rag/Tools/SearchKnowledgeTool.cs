@@ -70,7 +70,7 @@ public sealed class GetPatternTool : ITool
     public GetPatternTool(IRetriever retriever) => _retriever = retriever;
 
     public string Name => "get_pattern";
-    public string Description => "Find code patterns and examples for common Isaac modding tasks (e.g., 'custom collectible', 'save data', 'custom entity'). Returns relevant example code and explanations.";
+    public string Description => "Find code patterns and examples for common Isaac modding tasks. Available patterns include: custom collectible (passive/active), custom familiar, custom boss, custom room, custom challenge, custom character, custom trinket, custom card/pill, custom curse, custom door, custom pedestal, custom shop, custom devil room, custom tear effect, custom familiars advanced, custom hud, custom music, custom cutscene, custom status effect, save data, achievement tracking, item pool modification, multiplayer sync, and REPENTOGON ImGui menu. Use this when the user asks to create something new or wants a code example.";
 
     public ToolDefinition Definition => new()
     {

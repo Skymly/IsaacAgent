@@ -116,7 +116,7 @@ public sealed class GitStatusTool : ITool
 public sealed class DiffApplyTool : ITool
 {
     public string Name => "diff_apply";
-    public string Description => "Apply a unified diff patch to a file in the project directory. More precise than write_file for large files with small changes. The patch must be in unified diff format with @@ hunks.";
+    public string Description => "Apply a unified diff patch to a file in the project directory. More precise than write_file for large files with small changes. The patch must be in unified diff format with @@ hunks. Use this for targeted edits like adding a callback to main.lua or fixing a specific line. After applying, run diagnose_lua to verify.";
 
     public ToolDefinition Definition => new()
     {
