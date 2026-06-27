@@ -1,0 +1,85 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the details below.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear description of what the bug is.
+      placeholder: "When I do X, Y happens instead of Z..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the behavior.
+      placeholder: |
+        1. Open project '...'
+        2. Type '...' in chat
+        3. Click Send
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: App version (shown in Help > About) or Git commit hash.
+      placeholder: "0.1.0 or commit abc1234"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows 11
+        - Windows 10
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: |
+        Any relevant log output (Isaac log.txt, app console output, error messages).
+        Paste as-is — no need for backticks.
+      render: shell
+
+  - type: textarea
+    id: config
+    attributes:
+      label: LLM/Embedding Configuration
+      description: |
+        Provider type, endpoint, and model (omit API keys!).
+        Example: OpenAI-compatible, MiniMax endpoint, abab6.5s-chat, ONNX embeddings.
+      placeholder: "Provider: ..., Endpoint: ..., Model: ..., Embedding: ..."

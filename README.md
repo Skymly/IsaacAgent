@@ -1,17 +1,68 @@
 # IsaacAgent
 
+[![CI](https://github.com/Skymly/IsaacAgent/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/Skymly/IsaacAgent/actions/workflows/build-and-test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[!.NET](https://img.shields.io/badge/.NET-8.0-512BD4.svg)
+[![Avalonia](https://img.shields.io/badge/Avalonia-11-01A0E9.svg)
+[![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)
+
 An AI coding agent for **The Binding of Isaac: Repentance** Lua mod development.
 It provides a Cursor/OpenCode-like desktop experience with Isaac-specific
 knowledge, tools, and workflows built in.
 
+<!-- TODO: Add screenshot here once available -->
+<!-- ![IsaacAgent Screenshot](docs/screenshot.png) -->
+
+## Quick Start
+
+### 1. Get the App
+
+**Option A — Build from source** (requires .NET 8 SDK):
+
+```powershell
+git clone https://github.com/Skymly/IsaacAgent.git
+cd IsaacAgent
+dotnet build IsaacAgent.sln -c Release
+dotnet run --project src/IsaacAgent.App/IsaacAgent.App.csproj -c Release
+```
+
+**Option B — Publish a single-file executable**:
+
+```powershell
+dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+.\publish\IsaacAgent.exe
+```
+
+### 2. Configure LLM
+
+On first launch, open **Settings** (Ctrl+,) and configure:
+
+| Field | Example | Notes |
+|-------|---------|-------|
+| Provider | OpenAI-compatible / Ollama | OpenAI-compatible works with any endpoint |
+| Endpoint | `https://api.minimax.chat/v1` | Or `http://localhost:11434` for Ollama |
+| Model | `abab6.5s-chat` / `llama3` | Depends on your provider |
+| API Key | `your-key-here` | Stored encrypted with DPAPI |
+
+For embeddings (RAG), choose **ONNX** (local, no setup) or **Ollama**.
+
+### 3. Start Coding
+
+1. **Ctrl+N** — New project (or **Ctrl+Shift+T** to pick a template)
+2. Type your request in the chat box, e.g. *"Create a passive item that doubles fire rate"*
+3. The agent will scaffold files, write code, and validate XML automatically
+4. **Ctrl+Enter** to send, **Ctrl+K** to clear chat
+
 ## Features
+
+### Core
 
 - **Chat-driven mod development** — streaming assistant responses with
   tool-calling for file operations, scaffolding, diagnostics, API lookup,
   and semantic knowledge search.
 - **Isaac API knowledge base** — built-in enums, classes, and callbacks for
-  the vanilla API plus REPENTOGON extensions.
-- **Local RAG search** — semantic search over embedded modding documentation
+  the vanilla API (74 callbacks) plus REPENTOGON extensions (130+ callbacks).
+- **Local RAG search** — semantic search over 470+ embedded modding docs
   (MkDocs chunker + ONNX or Ollama embeddings, in-memory vector store).
 - **Multi-provider LLM** — any OpenAI-compatible endpoint (MiniMax, OpenAI,
   local servers) or Ollama.
@@ -22,11 +73,23 @@ knowledge, tools, and workflows built in.
 - **Persistent chat history** — per-project history is saved and restored
   across restarts.
 
+### UI Features
+
+| Feature | Shortcut | Description |
+|---------|----------|-------------|
+| Multi-tab chat | — | Independent conversation contexts per tab |
+| Command palette | Ctrl+Shift+P | Fuzzy-search all app actions |
+| Template gallery | Ctrl+Shift+T | 5 built-in mod templates (Basic, Item, Familiar, Challenge, Save Data) |
+| Live log monitor | — | Real-time Isaac `log.txt` parsing with error highlighting |
+| Visual diff viewer | Ctrl+Shift+D | Side-by-side git diff with color-coded changes |
+| Quick reference panel | — | Browse callbacks, classes, and mod structure |
+| Settings | Ctrl+, | LLM and embedding provider configuration |
+
 ### Agent Tools
 
-The agent has access to 16 tools across two modules:
+The agent has access to 15 tools across two modules:
 
-**IsaacAgent.Tools** (file operations, scaffolding, API knowledge, project commands, 12 tools):
+**IsaacAgent.Tools** (file operations, scaffolding, API knowledge, project commands):
 
 | Tool | Description |
 |------|-------------|
@@ -49,8 +112,18 @@ The agent has access to 16 tools across two modules:
 |------|-------------|
 | `search_knowledge` | Semantic search over the knowledge base |
 | `get_pattern` | Find code patterns for common tasks |
-| `validate_xml` | Validate XML against official XSD schemas |
+| `validate_xml` | Validate XML against official XSD schemas (35 schemas) |
 | `parse_log` | Extract errors/warnings from `log.txt` |
+
+### Knowledge Base
+
+- **470+ Markdown docs** — vanilla + REPENTOGON API documentation
+- **11 code patterns** — collectible, familiar, boss, room, challenge, character, save data, etc.
+- **35 XSD schemas** — official Isaac XML validation schemas
+- **74 vanilla callbacks** with canonical IDs (0-73)
+- **130+ REPENTOGON callbacks** (IDs 1000+) with override tracking
+- **Isaac classes** with method listings
+- **Enums** with value descriptions
 
 ## Tech Stack
 
@@ -152,6 +225,11 @@ tools/
   e2e-test/             Standalone E2E test for RAG pipeline (in solution as IsaacAgent.E2ETest)
 build/                  Nuke build script
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code
+conventions, and pull request guidelines.
 
 ## License
 
