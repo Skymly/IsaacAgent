@@ -29,8 +29,8 @@ dotnet run --project src/IsaacAgent.App/IsaacAgent.App.csproj -c Release
 **Option B — Publish a single-file executable**:
 
 ```powershell
-dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
-.\publish\IsaacAgent.exe
+./build.ps1 --target Publish --configuration Release
+.\artifacts\publish\win-x64\IsaacAgent.exe
 ```
 
 ### 2. Configure LLM
@@ -62,7 +62,7 @@ For embeddings (RAG), choose **ONNX** (local, no setup) or **Ollama**.
   and semantic knowledge search.
 - **Isaac API knowledge base** — built-in enums, classes, and callbacks for
   the vanilla API (74 callbacks) plus REPENTOGON extensions (130+ callbacks).
-- **Local RAG search** — semantic search over 470+ embedded modding docs
+- **Local RAG search** — semantic search over 480+ embedded modding docs
   (MkDocs chunker + ONNX or Ollama embeddings, in-memory vector store).
 - **Multi-provider LLM** — any OpenAI-compatible endpoint (MiniMax, OpenAI,
   local servers) or Ollama.
@@ -139,7 +139,7 @@ user's message matches a keyword pattern, or explicitly via a slash command
 
 ### Knowledge Base
 
-- **470+ Markdown docs** — vanilla + REPENTOGON API documentation
+- **480+ Markdown docs** — vanilla + REPENTOGON API documentation
 - **25 code patterns** — collectible (passive/active), familiar (basic + advanced), boss, room, challenge, character, trinket, card/pill, curse, door, pedestal, shop, devil room, tear effect, HUD, music, cutscene, status effect, save data, achievement tracking, item pool modification, multiplayer sync, REPENTOGON ImGui menu
 - **35 XSD schemas** — official Isaac XML validation schemas
 - **74 vanilla callbacks** with canonical IDs (0-73)
@@ -215,8 +215,12 @@ dotnet test IsaacAgent.sln
 
 ### Publish a Single-File Executable
 
-```bash
-dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+```powershell
+# Via Nuke (CI-authoritative, includes verification)
+./build.ps1 --target Publish --configuration Release --runtime win-x64
+
+# Or traditional dotnet
+dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts/publish/win-x64
 ```
 
 ### Versioning

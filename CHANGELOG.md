@@ -7,60 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- Nuke build overhaul: publish is now orchestrated by Nuke instead of
-  raw `dotnet publish` in CI YAML. New targets: `Publish` (self-contained
-  single-file exe → `artifacts/publish/{Runtime}/`), `PublishVerify`
-  (verifies exe exists and size >50 MB), `Release` (full pipeline:
-  CiAll + PublishVerify), `Test` (alias for UnitTest). New parameters:
-  `Version` (override MinVer), `Runtime` (default `win-x64`).
-- UnitTest and UnitTestLib now collect code coverage via
-  `XPlat Code Coverage` data collector.
-- CI release job calls `Nuke --target Release` instead of inline
-  `dotnet publish`. CI jobs upload coverage artifacts.
-- Output directory standardized to `artifacts/publish/{Runtime}/`
-  (was ad-hoc `publish/`).
+## [0.1.0] - 2026-06-28
 
-### Fixed
-- `MC_HUD_UPDATE` (ID 1020) and `MC_HUD_POST_UPDATE` (ID 1021) moved from
-  `RepentogonModifiedIds` to `RepentogonCallbacks`. They are REPENTOGON-only
-  callbacks (not vanilla overrides) and were misclassified.
+First public release. An AI coding agent for The Binding of Isaac: Repentance
+Lua mod development, built with .NET 8 + Avalonia 11.
 
 ### Added
-- Agent loop end-to-end tests (`AgentSessionE2ETests`): 12 tests using a
-  scripted fake LLM (`ScriptedChatService` returns different chunks per
-  iteration) and verifiable fake tools (`FakeTool` records invocations).
-  Covers multi-turn tool chains (A→B→final), parallel tool calls, argument
-  passing, tool result feedback to LLM, tool result sanitization boundary
-  markers, throwing tool error handling, event firing (OnToolCall/
-  OnToolResult/OnTextGenerated), and skill activation (slash command
-  stripping, auto-activation, pre-fetched context injection). No real LLM
-  or Ollama dependency — runs in CI.
-- Knowledge-base accuracy guard tests (`ModCallbacksAccuracyGuardTests`):
-  parse the embedded `ModCallbacks.md` tables and assert that every C#
-  callback ID matches the official documentation. Covers vanilla callbacks
-  (bidirectional exact match, all 74 IDs) and REPENTOGON callbacks
-  (one-directional: every C# entry must appear in the markdown). Prevents
-  recurrence of KB-1, a systematic ID mapping error.
 
-### Security
-- `ScaffoldModTool` constructor now normalizes the project path with
-  `Path.GetFullPath`, closing a path-traversal gap.
-- `AppConfiguration.Save` no longer falls back to plaintext API key storage
-  when DPAPI encryption fails — the key is discarded with a warning instead.
-- `IsDangerousCommand` rewritten to split commands on shell operators
-  (`&&`, `||`, `;`, `|`) before checking each sub-command, and now detects
-  PowerShell (`Remove-Item -Recurse`, `Invoke-Expression`, `Start-Process`)
-  and Windows (`del /f /s /q`, `rd /s /q`) destructive patterns.
-- `FileTools` file enumeration now skips reparse points (junctions/symlinks)
-  via `EnumerateFilesSafe` to prevent junction-based traversal.
-- Git invocations in `ProjectTools` hardened with `GIT_TERMINAL_PROMPT=0`,
-  `GIT_SSH_COMMAND=ssh -oBatchMode=yes`, and `-c core.hooksPath=/dev/null`
-  to prevent credential prompts and malicious hook redirection.
-- `AgentSession` now sanitizes tool results with boundary markers to
-  prevent LLM injection via forged tool output.
-
-### Added
 - Skills system: higher-level workflows that augment the agent's behavior
   for specific Isaac modding tasks. Each skill injects task-specific prompt
   guidance and pre-fetches relevant RAG context before the LLM processes
@@ -86,11 +39,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     timeout (30s default, max 120s) and dangerous-command blocking
 - 13 new tests covering all four tools (diff apply add/remove/modify,
   path traversal, batch edit, run command echo/block/timeout, git status).
+- Agent loop end-to-end tests (`AgentSessionE2ETests`): 12 tests using a
+  scripted fake LLM (`ScriptedChatService` returns different chunks per
+  iteration) and verifiable fake tools (`FakeTool` records invocations).
+  Covers multi-turn tool chains (A→B→final), parallel tool calls, argument
+  passing, tool result feedback to LLM, tool result sanitization boundary
+  markers, throwing tool error handling, event firing (OnToolCall/
+  OnToolResult/OnTextGenerated), and skill activation (slash command
+  stripping, auto-activation, pre-fetched context injection). No real LLM
+  or Ollama dependency — runs in CI.
+- Knowledge-base accuracy guard tests (`ModCallbacksAccuracyGuardTests`):
+  parse the embedded `ModCallbacks.md` tables and assert that every C#
+  callback ID matches the official documentation. Covers vanilla callbacks
+  (bidirectional exact match, all 74 IDs) and REPENTOGON callbacks
+  (one-directional: every C# entry must appear in the markdown). Prevents
+  recurrence of KB-1, a systematic ID mapping error.
 - Cross-platform CI matrix: `ci-lib` (ubuntu-latest, macos-latest) for
   library tests, `ci-windows` for full solution build + format check.
 - Release build job: publishes self-contained win-x64 single-file
   executable on `v*` tag pushes, creates a draft GitHub Release.
 - Nuke `CiLib` and `UnitTestLib` targets for cross-platform library testing.
+- Nuke `Publish`, `PublishVerify`, `Release`, and `Test` targets. Publish
+  is now orchestrated by Nuke instead of raw `dotnet publish` in CI YAML.
+  New parameters: `Version` (override MinVer), `Runtime` (default `win-x64`).
+- Code coverage collection via `XPlat Code Coverage` data collector in all
+  test targets. CI jobs upload coverage artifacts.
 - Character-budget history trimming in `AgentSession` (120k chars ~30k
   tokens) alongside the existing message-count limit, preventing context
   overflow from large tool results.
@@ -104,8 +77,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ModCallbacks.Lookup()` and `GetRepentogonId()` helper methods for
   cross-dictionary queries.
 - `InternalsVisibleTo` for IsaacAgent.Tests from IsaacAgent.LLM.
-- Version properties (`VersionPrefix`, `AssemblyVersion`, `FileVersion`)
-  in `Directory.Build.props`.
 - E2E test project (`IsaacAgent.E2ETest`) added to the solution.
 - Comprehensive agent tools table in README with module attribution
   (expanded to 16 tools across Tools and Rag modules).
@@ -133,7 +104,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Live log monitor with real-time Isaac log.txt parsing and error highlighting.
 - Visual diff viewer (Ctrl+Shift+D) with side-by-side git diff visualization.
 
+### Changed
+
+- `CommandPaletteViewModel` accepts an optional `SkillRegistry` and derives
+  skill entries from it (single source of truth), eliminating the duplicated
+  skill list that could drift out of sync with `AgentServiceRegistration`.
+- `SkillDescriptor` record now carries `DisplayName` alongside Name,
+  Description, and SlashCommand.
+- `FileToolPathSafety` changed from `file static class` to `internal static
+  class` so it can be shared across tool implementation files.
+- CI workflow restructured from single windows-latest job to three jobs:
+  `ci-lib`, `ci-windows`, `release`.
+- `OpenAICompatibleProvider` and `OllamaProvider` stream loops changed
+  from `while (!reader.EndOfStream)` to `while (true)` + null check,
+  avoiding synchronous `Read()` calls on async-only streams.
+- Versioning switched from hardcoded `VersionPrefix`/`AssemblyVersion`/
+  `FileVersion` in `Directory.Build.props` to [MinVer](https://github.com/adamralph/minver)
+  (Git-tag-based). AssemblyVersion, FileVersion, Version, PackageVersion and
+  InformationalVersion are now derived from the latest `v*` tag automatically.
+  `MinVerMinimumMajorMinor=0.1` preserves the 0.1.* baseline until the first
+  `v0.1.0` tag. CI checkout `fetch-depth` set to `0` in all three jobs so
+  MinVer has full git history.
+- `SystemPrompts` tool list and guidelines synchronized with `ToolRegistry`:
+  added `git_status`, `diff_apply`, `batch_edit`, `run_command` to the
+  Available Tools list and 3 new guideline entries.
+- README `tools/e2e-test/` note corrected from "not in .sln" to "in solution
+  as IsaacAgent.E2ETest".
+- Output directory standardized to `artifacts/publish/{Runtime}/`
+  (was ad-hoc `publish/`).
+
 ### Fixed
+
+- `MC_HUD_UPDATE` (ID 1020) and `MC_HUD_POST_UPDATE` (ID 1021) moved from
+  `RepentogonModifiedIds` to `RepentogonCallbacks`. They are REPENTOGON-only
+  callbacks (not vanilla overrides) and were misclassified.
 - `OnnxEmbeddingProvider.session.Run` now serialized with a lock to fix
   thread-safety crashes under concurrent embedding calls.
 - `ChatServiceProxy.Replace` now uses `Interlocked.Exchange` for atomic
@@ -185,29 +189,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ApiDocChunker` generates RAG chunks for REPENTOGON callbacks.
 - `QuickReferenceViewModel` lists REPENTOGON callbacks alongside vanilla.
 
-### Changed
-- `CommandPaletteViewModel` accepts an optional `SkillRegistry` and derives
-  skill entries from it (single source of truth), eliminating the duplicated
-  skill list that could drift out of sync with `AgentServiceRegistration`.
-- `SkillDescriptor` record now carries `DisplayName` alongside Name,
-  Description, and SlashCommand.
-- `FileToolPathSafety` changed from `file static class` to `internal static
-  class` so it can be shared across tool implementation files.
-- CI workflow restructured from single windows-latest job to three jobs:
-  `ci-lib`, `ci-windows`, `release`.
-- `OpenAICompatibleProvider` and `OllamaProvider` stream loops changed
-  from `while (!reader.EndOfStream)` to `while (true)` + null check,
-  avoiding synchronous `Read()` calls on async-only streams.
-- P3-1 status updated from "partially fixed" to "fully fixed".
-- Versioning switched from hardcoded `VersionPrefix`/`AssemblyVersion`/
-  `FileVersion` in `Directory.Build.props` to [MinVer](https://github.com/adamralph/minver)
-  (Git-tag-based). AssemblyVersion, FileVersion, Version, PackageVersion and
-  InformationalVersion are now derived from the latest `v*` tag automatically.
-  `MinVerMinimumMajorMinor=0.1` preserves the 0.1.* baseline until the first
-  `v0.1.0` tag. CI checkout `fetch-depth` set to `0` in all three jobs so
-  MinVer has full git history.
-- `SystemPrompts` tool list and guidelines synchronized with `ToolRegistry`:
-  added `git_status`, `diff_apply`, `batch_edit`, `run_command` to the
-  Available Tools list and 3 new guideline entries.
-- README `tools/e2e-test/` note corrected from "not in .sln" to "in solution
-  as IsaacAgent.E2ETest".
+### Security
+
+- `ScaffoldModTool` constructor now normalizes the project path with
+  `Path.GetFullPath`, closing a path-traversal gap.
+- `AppConfiguration.Save` no longer falls back to plaintext API key storage
+  when DPAPI encryption fails — the key is discarded with a warning instead.
+- `IsDangerousCommand` rewritten to split commands on shell operators
+  (`&&`, `||`, `;`, `|`) before checking each sub-command, and now detects
+  PowerShell (`Remove-Item -Recurse`, `Invoke-Expression`, `Start-Process`)
+  and Windows (`del /f /s /q`, `rd /s /q`) destructive patterns.
+- `FileTools` file enumeration now skips reparse points (junctions/symlinks)
+  via `EnumerateFilesSafe` to prevent junction-based traversal.
+- Git invocations in `ProjectTools` hardened with `GIT_TERMINAL_PROMPT=0`,
+  `GIT_SSH_COMMAND=ssh -oBatchMode=yes`, and `-c core.hooksPath=/dev/null`
+  to prevent credential prompts and malicious hook redirection.
+- `AgentSession` now sanitizes tool results with boundary markers to
+  prevent LLM injection via forged tool output.
