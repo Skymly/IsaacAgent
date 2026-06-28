@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.Agent.Engine;
 
-public sealed class ToolRegistry
+public sealed class ToolRegistry : IDisposable
 {
     private readonly ConcurrentDictionary<string, ITool> _tools = new();
     private readonly ILogger<ToolRegistry> _logger;
@@ -127,5 +127,10 @@ public sealed class ToolRegistry
             _logger.LogError(ex, "Tool {ToolName} failed", toolName);
             return $"Error executing {toolName}: {ex.Message}";
         }
+    }
+
+    public void Dispose()
+    {
+        _registryLock.Dispose();
     }
 }

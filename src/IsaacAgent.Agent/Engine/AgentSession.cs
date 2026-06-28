@@ -255,10 +255,11 @@ public sealed class AgentSession : IDisposable
     public void Dispose()
     {
         _tools.OnRetrievalResults -= OnRetrievalResults;
+        _tools.Dispose();
         _history.Clear();
     }
 
-    public void SaveHistory(string path, CancellationToken ct = default)
+    public async Task SaveHistoryAsync(string path, CancellationToken ct = default)
     {
         try
         {
@@ -267,12 +268,22 @@ public sealed class AgentSession : IDisposable
             var opts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
             var wrapper = new { Version = 1, Messages = _history };
             var json = System.Text.Json.JsonSerializer.Serialize(wrapper, opts);
-            File.WriteAllText(path, json);
+            await File.WriteAllTextAsync(path, json, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation is expected during shutdown — no need to log
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save chat history to {Path}", path);
         }
+    }
+
+    public void SaveHistory(string path, CancellationToken ct = default)
+    {
+        // Synchronous wrapper for backward compatibility
+        SaveHistoryAsync(path, ct).GetAwaiter().GetResult();
     }
 
     public void LoadHistory(string path)

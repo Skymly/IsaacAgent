@@ -226,7 +226,17 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             _cts?.Dispose();
             _cts = null;
             var historyPath = GetHistoryPath(_currentProjectDir);
-            _ = Task.Run(() => _session.SaveHistory(historyPath, CancellationToken.None), CancellationToken.None);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _session.SaveHistoryAsync(historyPath, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to save chat history");
+                }
+            }, CancellationToken.None);
         }
     }
 
@@ -256,6 +266,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     {
         _cts?.Cancel();
         UnsubscribeSessionEvents(_session);
+        _session.Dispose();
         _cts?.Dispose();
         _cts = null;
         foreach (var msg in Messages)

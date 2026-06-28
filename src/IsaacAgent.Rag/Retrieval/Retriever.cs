@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.Rag.Retrieval;
 
-public sealed class Retriever : IRetriever
+public sealed class Retriever : IRetriever, IDisposable
 {
     private readonly IEmbeddingProvider _embedding;
     private readonly InMemoryVectorStore _store;
@@ -87,5 +87,10 @@ public sealed class Retriever : IRetriever
 
         var queryVector = await _embedding.EmbedAsync(query, ct);
         return _store.Search(queryVector, topK, categoryFilter);
+    }
+
+    public void Dispose()
+    {
+        _buildLock.Dispose();
     }
 }
