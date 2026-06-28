@@ -120,27 +120,63 @@ public sealed partial class ProjectViewModel : ObservableObject
         var projectPath = ProjectPath;
         try
         {
-            // Enumerate files synchronously. For typical mod projects (tens to
-            // a few hundred files) this is fast enough and avoids dispatcher /
-            // SynchronizationContext issues in headless test environments.
-            var files = Directory.GetFiles(projectPath, "*", SearchOption.AllDirectories);
-            foreach (var file in files.OrderBy(f => f))
-            {
-                var relPath = Path.GetRelativePath(projectPath, file).Replace('\\', '/');
-                Files.Add(new FileTreeItem
-                {
-                    Name = Path.GetFileName(file),
-                    Path = relPath,
-                    IsLua = file.EndsWith(".lua"),
-                    IsXml = file.EndsWith(".xml")
-                });
-            }
+            BuildFileTree(projectPath, projectPath, Files);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to refresh files");
         }
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///   Recursively populates <paramref name="target"/> with directory and
+    ///   file nodes. Directories are listed first (sorted), then files
+    ///   (sorted). Common build artifacts (.git, bin, obj) are skipped.
+    /// </summary>
+    private static void BuildFileTree(string projectRoot, string currentDir, ObservableCollection<FileTreeItem> target)
+    {
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".git", "bin", "obj", ".vs", "node_modules"
+        };
+
+        // Directories first
+        foreach (var dir in Directory.GetDirectories(currentDir)
+                     .OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+        {
+            var dirName = Path.GetFileName(dir);
+            if (excluded.Contains(dirName)) continue;
+
+            var relPath = Path.GetRelativePath(projectRoot, dir).Replace('\\', '/');
+            var dirItem = new FileTreeItem
+            {
+                Name = dirName,
+                Path = relPath,
+                IsDirectory = true,
+                IsExpanded = true // expand top-level by default
+            };
+            BuildFileTree(projectRoot, dir, dirItem.Children);
+            // Skip empty directories (no files anywhere beneath)
+            if (!dirItem.Children.Any())
+                continue;
+            target.Add(dirItem);
+        }
+
+        // Then files
+        foreach (var file in Directory.GetFiles(currentDir)
+                     .OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        {
+            var fileName = Path.GetFileName(file);
+            var relPath = Path.GetRelativePath(projectRoot, file).Replace('\\', '/');
+            target.Add(new FileTreeItem
+            {
+                Name = fileName,
+                Path = relPath,
+                IsLua = file.EndsWith(".lua", StringComparison.OrdinalIgnoreCase),
+                IsXml = file.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
+            });
+        }
     }
 }
 
@@ -152,6 +188,37 @@ public sealed partial class FileTreeItem : ObservableObject
     [ObservableProperty]
     private string _path = "";
 
+    /// <summary>
+    ///   Relative path from the project root, using forward slashes.
+    ///   For directories this is the directory path; for files it is
+    ///   the full file path.
+    /// </summary>
+    public bool IsDirectory { get; set; }
+
     public bool IsLua { get; set; }
     public bool IsXml { get; set; }
+
+    /// <summary>
+    ///   Whether this directory node is expanded in the TreeView.
+    /// </summary>
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    public ObservableCollection<FileTreeItem> Children { get; } = [];
+
+    /// <summary>
+    ///   Flattens this node and all descendants into a list of file items
+    ///   (excluding directories). Useful for tests and searching.
+    /// </summary>
+    public IEnumerable<FileTreeItem> FlattenFiles()
+    {
+        if (!IsDirectory)
+        {
+            yield return this;
+            yield break;
+        }
+        foreach (var child in Children)
+            foreach (var f in child.FlattenFiles())
+                yield return f;
+    }
 }

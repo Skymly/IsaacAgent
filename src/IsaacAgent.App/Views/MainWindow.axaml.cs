@@ -79,7 +79,13 @@ public sealed partial class MainWindow : Window
 
     private void OnFileDoubleTapped(object? sender, Avalonia.Input.TappedEventArgs e)
     {
-        if (sender is ListBox lb && lb.SelectedItem is FileTreeItem item)
+        FileTreeItem? item = null;
+        if (sender is TreeView tv && tv.SelectedItem is FileTreeItem treeItem)
+            item = treeItem;
+        else if (sender is ListBox lb && lb.SelectedItem is FileTreeItem listItem)
+            item = listItem;
+
+        if (item is { IsDirectory: false })
         {
             var vm = DataContext as MainViewModel;
             vm?.Project.OpenFileCommand.Execute(item);
