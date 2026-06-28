@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 
 using Nuke.Common;
@@ -16,9 +17,25 @@ sealed class Build : NukeBuild
     [Parameter("Build configuration (Debug/Release)")]
     readonly string Configuration = IsLocalBuild ? "Debug" : "Release";
 
+    /// <summary>
+    ///   Version override. When set, passed to publish as -p:Version.
+    ///   When null, MinVer derives the version from the latest git tag.
+    /// </summary>
+    [Parameter("Version override (defaults to MinVer git-tag-based version)")]
+    readonly string? Version = Environment.GetEnvironmentVariable("VERSION");
+
+    /// <summary>
+    ///   Target runtime for self-contained publish (default: win-x64).
+    /// </summary>
+    [Parameter("Target runtime identifier for publish (e.g. win-x64, linux-x64)")]
+    readonly string Runtime = "win-x64";
+
     AbsolutePath Root => RootDirectory;
     AbsolutePath SolutionFile => Root / "IsaacAgent.sln";
+    AbsolutePath AppProject => Root / "src" / "IsaacAgent.App" / "IsaacAgent.App.csproj";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
+    AbsolutePath ArtifactsDirectory => Root / "artifacts";
+    AbsolutePath PublishDirectory => ArtifactsDirectory / "publish" / Runtime;
 
     static readonly string[] TestProjectRelativePaths =
     [
@@ -36,6 +53,11 @@ sealed class Build : NukeBuild
             }
 
             TestResultsDirectory.CreateDirectory();
+
+            if (ArtifactsDirectory.DirectoryExists())
+            {
+                ArtifactsDirectory.DeleteDirectory();
+            }
         });
 
     Target Restore => _ => _
@@ -72,7 +94,8 @@ sealed class Build : NukeBuild
                     .SetConfiguration(Configuration)
                     .SetNoBuild(true)
                     .SetResultsDirectory(TestResultsDirectory)
-                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
+                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx")
+                    .SetDataCollector("XPlat Code Coverage"));
             }
         });
 
@@ -99,9 +122,16 @@ sealed class Build : NukeBuild
                     .SetProjectFile(projectFile)
                     .SetConfiguration(Configuration)
                     .SetResultsDirectory(TestResultsDirectory)
-                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx"));
+                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx")
+                    .SetDataCollector("XPlat Code Coverage"));
             }
         });
+
+    /// <summary>
+    ///   Convenience alias for UnitTest.
+    /// </summary>
+    Target Test => _ => _
+        .DependsOn(UnitTest);
 
     Target Format => _ => _
         .Executes(() =>
@@ -113,6 +143,61 @@ sealed class Build : NukeBuild
         .Executes(() =>
         {
             DotNet($"format \"{SolutionFile}\" --verbosity normal");
+        });
+
+    /// <summary>
+    ///   Publishes a self-contained single-file executable.
+    ///   Output: artifacts/publish/{Runtime}/
+    /// </summary>
+    Target Publish => _ => _
+        .DependsOn(Clean)
+        .Executes(() =>
+        {
+            PublishDirectory.CreateOrCleanDirectory();
+
+            DotNetPublish(s =>
+            {
+                s = s
+                    .SetProject(AppProject)
+                    .SetConfiguration(Configuration)
+                    .SetRuntime(Runtime)
+                    .SetSelfContained(true)
+                    .SetOutput(PublishDirectory)
+                    .SetProperty("PublishSingleFile", "true")
+                    .SetProperty("IncludeNativeLibrariesForSelfExtract", "true");
+
+                if (!string.IsNullOrWhiteSpace(Version))
+                {
+                    s = s.SetProperty("Version", Version);
+                }
+
+                return s;
+            });
+        });
+
+    /// <summary>
+    ///   Verifies the published executable exists and has a reasonable size
+    ///   for a self-contained deployment (ONNX runtime + Avalonia natives
+    ///   typically produce >50 MB).
+    /// </summary>
+    Target PublishVerify => _ => _
+        .DependsOn(Publish)
+        .Executes(() =>
+        {
+            AbsolutePath exe = PublishDirectory / "IsaacAgent.exe";
+            AbsolutePath dll = PublishDirectory / "IsaacAgent.dll";
+
+            // On non-Windows runtimes the output is .dll; on Windows it's .exe.
+            AbsolutePath entryPoint = exe.FileExists() ? exe : dll;
+            Assert.FileExists(entryPoint,
+                $"Published entry point not found. Expected {exe} or {dll} in {PublishDirectory}");
+
+            var sizeMb = new FileInfo(entryPoint).Length / (1024.0 * 1024.0);
+            Assert.True(sizeMb > 50,
+                $"Published executable is only {sizeMb:F1} MB — expected >50 MB for a self-contained deployment. " +
+                "Native libraries (ONNX runtime, Avalonia) may be missing.");
+
+            Console.WriteLine($"Publish verified: {entryPoint.Name} ({sizeMb:F1} MB) at {PublishDirectory}");
         });
 
     /// <summary>
@@ -145,5 +230,17 @@ sealed class Build : NukeBuild
         .Executes(() =>
         {
             Console.WriteLine("Full verification (format + CI) completed successfully.");
+        });
+
+    /// <summary>
+    ///   Full release pipeline: CiAll → Publish → PublishVerify.
+    ///   Run on tag pushes (v*) or manually with --target Release.
+    /// </summary>
+    Target Release => _ => _
+        .DependsOn(CiAll)
+        .DependsOn(PublishVerify)
+        .Executes(() =>
+        {
+            Console.WriteLine("Release pipeline completed successfully.");
         });
 }

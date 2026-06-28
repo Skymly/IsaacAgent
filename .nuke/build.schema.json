@@ -31,7 +31,11 @@
         "Compile",
         "Format",
         "FormatFix",
+        "Publish",
+        "PublishVerify",
+        "Release",
         "Restore",
+        "Test",
         "UnitTest",
         "UnitTestLib"
       ]
@@ -110,6 +114,14 @@
         "Configuration": {
           "type": "string",
           "description": "Build configuration (Debug/Release)"
+        },
+        "Runtime": {
+          "type": "string",
+          "description": "Target runtime identifier for publish (e.g. win-x64, linux-x64)"
+        },
+        "Version": {
+          "type": "string",
+          "description": "Version override (defaults to MinVer git-tag-based version)"
         }
       }
     },

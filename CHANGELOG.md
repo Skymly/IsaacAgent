@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Nuke build overhaul: publish is now orchestrated by Nuke instead of
+  raw `dotnet publish` in CI YAML. New targets: `Publish` (self-contained
+  single-file exe → `artifacts/publish/{Runtime}/`), `PublishVerify`
+  (verifies exe exists and size >50 MB), `Release` (full pipeline:
+  CiAll + PublishVerify), `Test` (alias for UnitTest). New parameters:
+  `Version` (override MinVer), `Runtime` (default `win-x64`).
+- UnitTest and UnitTestLib now collect code coverage via
+  `XPlat Code Coverage` data collector.
+- CI release job calls `Nuke --target Release` instead of inline
+  `dotnet publish`. CI jobs upload coverage artifacts.
+- Output directory standardized to `artifacts/publish/{Runtime}/`
+  (was ad-hoc `publish/`).
+
 ### Fixed
 - `MC_HUD_UPDATE` (ID 1020) and `MC_HUD_POST_UPDATE` (ID 1021) moved from
   `RepentogonModifiedIds` to `RepentogonCallbacks`. They are REPENTOGON-only

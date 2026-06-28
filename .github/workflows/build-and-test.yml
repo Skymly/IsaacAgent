@@ -55,6 +55,14 @@ jobs:
           path: TestResults/
           if-no-files-found: warn
 
+      - name: Upload code coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-${{ matrix.os }}
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
   # Full CI on Windows: format check + full solution build (incl. App) + tests.
   ci-windows:
     runs-on: windows-latest
@@ -96,6 +104,14 @@ jobs:
           path: TestResults/
           if-no-files-found: warn
 
+      - name: Upload code coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-windows
+          path: TestResults/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
   # Release build: publish self-contained Windows executable on tag pushes.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
@@ -122,28 +138,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
-      - name: Publish self-contained executable
-        run: |
-          $tag = ${env:GITHUB_REF}.Replace('refs/tags/', '')
-          dotnet publish src/IsaacAgent.App/IsaacAgent.App.csproj `
-            -c Release `
-            -r win-x64 `
-            --self-contained true `
-            -p:PublishSingleFile=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
-            -o publish
+      - name: Run release pipeline via Nuke (Release)
+        run: dotnet run --project build/_build.csproj -- --root . --target Release --configuration Release
 
       - name: Upload publish artifact
         uses: actions/upload-artifact@v4
         with:
           name: IsaacAgent-win-x64
-          path: publish/
+          path: artifacts/publish/win-x64/
           if-no-files-found: error
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: publish/IsaacAgent.exe
+          files: artifacts/publish/win-x64/IsaacAgent.exe
           draft: true
           generate_release_notes: true
           fail_on_unmatched_files: true
