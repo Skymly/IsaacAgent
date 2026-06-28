@@ -323,3 +323,220 @@ public class ValidateProjectSkillTests
         Assert.Equal("/validate", skill.SlashCommand);
     }
 }
+
+public class CreateFamiliarSkillTests
+{
+    [Fact]
+    public void ShouldActivate_CreateFamiliar_ReturnsTrue()
+    {
+        var skill = new CreateFamiliarSkill();
+        Assert.True(skill.ShouldActivate("Create a familiar that orbits the player", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_AddCompanion_ReturnsTrue()
+    {
+        var skill = new CreateFamiliarSkill();
+        Assert.True(skill.ShouldActivate("Add a companion that follows me", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_MakeShootingFamiliar_ReturnsTrue()
+    {
+        var skill = new CreateFamiliarSkill();
+        Assert.True(skill.ShouldActivate("Make a shooting familiar", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_UnrelatedMessage_ReturnsFalse()
+    {
+        var skill = new CreateFamiliarSkill();
+        Assert.False(skill.ShouldActivate("Create a custom item", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_SlashCommand_ReturnsFalse()
+    {
+        var skill = new CreateFamiliarSkill();
+        Assert.False(skill.ShouldActivate("/create-familiar an orbiting one", null));
+    }
+
+    [Fact]
+    public void GetPromptAugmentation_ReturnsWorkflowSteps()
+    {
+        var skill = new CreateFamiliarSkill();
+        var augment = skill.GetPromptAugmentation();
+
+        Assert.NotNull(augment);
+        Assert.Contains("Create Custom Familiar", augment);
+        Assert.Contains("MC_FAMILIAR_INIT", augment);
+        Assert.Contains("entities2.xml", augment);
+    }
+
+    [Fact]
+    public void SlashCommand_IsCreateFamiliar()
+    {
+        var skill = new CreateFamiliarSkill();
+        Assert.Equal("/create-familiar", skill.SlashCommand);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_NullRetriever_ReturnsEmpty()
+    {
+        var skill = new CreateFamiliarSkill();
+        var result = await skill.PreFetchContextAsync("create a familiar", null);
+        Assert.Empty(result);
+    }
+}
+
+public class AddCallbackSkillTests
+{
+    [Fact]
+    public void ShouldActivate_AddCallback_ReturnsTrue()
+    {
+        var skill = new AddCallbackSkill();
+        Assert.True(skill.ShouldActivate("Add a callback for when player takes damage", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_RegisterCallback_ReturnsTrue()
+    {
+        var skill = new AddCallbackSkill();
+        Assert.True(skill.ShouldActivate("Register callback MC_POST_NEW_ROOM", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_HookInto_ReturnsTrue()
+    {
+        var skill = new AddCallbackSkill();
+        Assert.True(skill.ShouldActivate("Hook into the MC_EVALUATE_CACHE callback", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_UnrelatedMessage_ReturnsFalse()
+    {
+        var skill = new AddCallbackSkill();
+        Assert.False(skill.ShouldActivate("Create a new item", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_SlashCommand_ReturnsFalse()
+    {
+        var skill = new AddCallbackSkill();
+        Assert.False(skill.ShouldActivate("/add-callback MC_POST_UPDATE", null));
+    }
+
+    [Fact]
+    public void GetPromptAugmentation_ReturnsWorkflowSteps()
+    {
+        var skill = new AddCallbackSkill();
+        var augment = skill.GetPromptAugmentation();
+
+        Assert.NotNull(augment);
+        Assert.Contains("Add Callback", augment);
+        Assert.Contains("get_callback_info", augment);
+        Assert.Contains("diff_apply", augment);
+    }
+
+    [Fact]
+    public void SlashCommand_IsAddCallback()
+    {
+        var skill = new AddCallbackSkill();
+        Assert.Equal("/add-callback", skill.SlashCommand);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_WithCallbackName_PreFetchesInfo()
+    {
+        var mockRetriever = new Mock<IRetriever>();
+        mockRetriever.Setup(r => r.IsReady).Returns(true);
+        mockRetriever.Setup(r => r.SearchAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([
+                new RetrievalResult { Chunk = new KnowledgeChunk { Id = "1", Source = "test", Category = "callback", Title = "MC_POST_UPDATE", Content = "Called every frame" }, Score = 0.9f }
+            ]);
+
+        var skill = new AddCallbackSkill();
+        var result = await skill.PreFetchContextAsync("add callback MC_POST_UPDATE to main.lua", mockRetriever.Object);
+
+        Assert.Single(result);
+        Assert.Contains("MC_POST_UPDATE", result[0].Content);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_WithoutCallbackName_ReturnsEmpty()
+    {
+        var mockRetriever = new Mock<IRetriever>();
+        mockRetriever.Setup(r => r.IsReady).Returns(true);
+
+        var skill = new AddCallbackSkill();
+        var result = await skill.PreFetchContextAsync("add a callback for player damage", mockRetriever.Object);
+
+        Assert.Empty(result);
+    }
+}
+
+public class AddSaveDataSkillTests
+{
+    [Fact]
+    public void ShouldActivate_AddSaveData_ReturnsTrue()
+    {
+        var skill = new AddSaveDataSkill();
+        Assert.True(skill.ShouldActivate("Add save data to track total runs", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_ImplementPersistence_ReturnsTrue()
+    {
+        var skill = new AddSaveDataSkill();
+        Assert.True(skill.ShouldActivate("Implement persistence across runs", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_EnableSaveFile_ReturnsTrue()
+    {
+        var skill = new AddSaveDataSkill();
+        Assert.True(skill.ShouldActivate("Enable save file for my mod settings", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_UnrelatedMessage_ReturnsFalse()
+    {
+        var skill = new AddSaveDataSkill();
+        Assert.False(skill.ShouldActivate("Create a custom boss", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_SlashCommand_ReturnsFalse()
+    {
+        var skill = new AddSaveDataSkill();
+        Assert.False(skill.ShouldActivate("/add-save-data to track wins", null));
+    }
+
+    [Fact]
+    public void GetPromptAugmentation_ReturnsWorkflowSteps()
+    {
+        var skill = new AddSaveDataSkill();
+        var augment = skill.GetPromptAugmentation();
+
+        Assert.NotNull(augment);
+        Assert.Contains("Add Save Data", augment);
+        Assert.Contains("SaveModData", augment);
+        Assert.Contains("MC_POST_GAME_STARTED", augment);
+        Assert.Contains("MC_PRE_GAME_EXIT", augment);
+    }
+
+    [Fact]
+    public void SlashCommand_IsAddSaveData()
+    {
+        var skill = new AddSaveDataSkill();
+        Assert.Equal("/add-save-data", skill.SlashCommand);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_NullRetriever_ReturnsEmpty()
+    {
+        var skill = new AddSaveDataSkill();
+        var result = await skill.PreFetchContextAsync("add save data", null);
+        Assert.Empty(result);
+    }
+}

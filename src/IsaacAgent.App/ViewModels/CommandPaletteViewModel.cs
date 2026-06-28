@@ -60,8 +60,11 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
             new CommandItem { Title = "About IsaacAgent", Category = "Help", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.ShowAbout()) },
             // Skills
             new CommandItem { Title = "Create Collectible", Category = "Skill", Shortcut = "/create-item", Action = () => InvokeSkill("/create-item ") },
+            new CommandItem { Title = "Create Familiar", Category = "Skill", Shortcut = "/create-familiar", Action = () => InvokeSkill("/create-familiar ") },
             new CommandItem { Title = "Debug from Log", Category = "Skill", Shortcut = "/debug", Action = () => InvokeSkill("/debug ") },
             new CommandItem { Title = "Validate Project", Category = "Skill", Shortcut = "/validate", Action = () => InvokeSkill("/validate") },
+            new CommandItem { Title = "Add Callback", Category = "Skill", Shortcut = "/add-callback", Action = () => InvokeSkill("/add-callback ") },
+            new CommandItem { Title = "Add Save Data", Category = "Skill", Shortcut = "/add-save-data", Action = () => InvokeSkill("/add-save-data ") },
         ]);
     }
 

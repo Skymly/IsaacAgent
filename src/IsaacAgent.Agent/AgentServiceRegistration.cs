@@ -23,8 +23,11 @@ public static class AgentServiceRegistration
             var registry = new SkillRegistry(logger);
             registry.RegisterAll([
                 new CreateCollectibleSkill(),
+                new CreateFamiliarSkill(),
                 new DebugFromLogSkill(),
-                new ValidateProjectSkill()
+                new ValidateProjectSkill(),
+                new AddCallbackSkill(),
+                new AddSaveDataSkill()
             ]);
             return registry;
         });
