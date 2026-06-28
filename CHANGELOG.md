@@ -13,6 +13,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   callbacks (not vanilla overrides) and were misclassified.
 
 ### Added
+- Agent loop end-to-end tests (`AgentSessionE2ETests`): 12 tests using a
+  scripted fake LLM (`ScriptedChatService` returns different chunks per
+  iteration) and verifiable fake tools (`FakeTool` records invocations).
+  Covers multi-turn tool chains (A→B→final), parallel tool calls, argument
+  passing, tool result feedback to LLM, tool result sanitization boundary
+  markers, throwing tool error handling, event firing (OnToolCall/
+  OnToolResult/OnTextGenerated), and skill activation (slash command
+  stripping, auto-activation, pre-fetched context injection). No real LLM
+  or Ollama dependency — runs in CI.
 - Knowledge-base accuracy guard tests (`ModCallbacksAccuracyGuardTests`):
   parse the embedded `ModCallbacks.md` tables and assert that every C#
   callback ID matches the official documentation. Covers vanilla callbacks
