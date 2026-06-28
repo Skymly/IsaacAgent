@@ -27,7 +27,11 @@ public static class AgentServiceRegistration
                 new DebugFromLogSkill(),
                 new ValidateProjectSkill(),
                 new AddCallbackSkill(),
-                new AddSaveDataSkill()
+                new AddSaveDataSkill(),
+                new AddTrinketSkill(),
+                new AddCardSkill(),
+                new AddPillSkill(),
+                new AddBossSkill()
             ]);
             return registry;
         });

@@ -65,6 +65,10 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
             new CommandItem { Title = "Validate Project", Category = "Skill", Shortcut = "/validate", Action = () => InvokeSkill("/validate") },
             new CommandItem { Title = "Add Callback", Category = "Skill", Shortcut = "/add-callback", Action = () => InvokeSkill("/add-callback ") },
             new CommandItem { Title = "Add Save Data", Category = "Skill", Shortcut = "/add-save-data", Action = () => InvokeSkill("/add-save-data ") },
+            new CommandItem { Title = "Add Trinket", Category = "Skill", Shortcut = "/add-trinket", Action = () => InvokeSkill("/add-trinket ") },
+            new CommandItem { Title = "Add Card / Rune", Category = "Skill", Shortcut = "/add-card", Action = () => InvokeSkill("/add-card ") },
+            new CommandItem { Title = "Add Pill", Category = "Skill", Shortcut = "/add-pill", Action = () => InvokeSkill("/add-pill ") },
+            new CommandItem { Title = "Add Boss", Category = "Skill", Shortcut = "/add-boss", Action = () => InvokeSkill("/add-boss ") },
         ]);
     }
 

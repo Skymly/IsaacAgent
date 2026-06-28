@@ -540,3 +540,235 @@ public class AddSaveDataSkillTests
         Assert.Empty(result);
     }
 }
+
+public class AddTrinketSkillTests
+{
+    [Fact]
+    public void ShouldActivate_AddTrinket_ReturnsTrue()
+    {
+        var skill = new AddTrinketSkill();
+        Assert.True(skill.ShouldActivate("Add a trinket that gives luck", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_CreateTrinket_ReturnsTrue()
+    {
+        var skill = new AddTrinketSkill();
+        Assert.True(skill.ShouldActivate("Create a pocket active trinket", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_UnrelatedMessage_ReturnsFalse()
+    {
+        var skill = new AddTrinketSkill();
+        Assert.False(skill.ShouldActivate("Create a custom item", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_SlashCommand_ReturnsFalse()
+    {
+        var skill = new AddTrinketSkill();
+        Assert.False(skill.ShouldActivate("/add-trinket luck boost", null));
+    }
+
+    [Fact]
+    public void GetPromptAugmentation_ReturnsWorkflowSteps()
+    {
+        var skill = new AddTrinketSkill();
+        var augment = skill.GetPromptAugmentation();
+
+        Assert.NotNull(augment);
+        Assert.Contains("Add Custom Trinket", augment);
+        Assert.Contains("items.xml", augment);
+        Assert.Contains("MC_POST_TRINKET_INIT", augment);
+    }
+
+    [Fact]
+    public void SlashCommand_IsAddTrinket()
+    {
+        var skill = new AddTrinketSkill();
+        Assert.Equal("/add-trinket", skill.SlashCommand);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_NullRetriever_ReturnsEmpty()
+    {
+        var skill = new AddTrinketSkill();
+        var result = await skill.PreFetchContextAsync("add a trinket", null);
+        Assert.Empty(result);
+    }
+}
+
+public class AddCardSkillTests
+{
+    [Fact]
+    public void ShouldActivate_AddCard_ReturnsTrue()
+    {
+        var skill = new AddCardSkill();
+        Assert.True(skill.ShouldActivate("Add a card that teleports the player", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_CreateRune_ReturnsTrue()
+    {
+        var skill = new AddCardSkill();
+        Assert.True(skill.ShouldActivate("Create a rune that buffs damage", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_UnrelatedMessage_ReturnsFalse()
+    {
+        var skill = new AddCardSkill();
+        Assert.False(skill.ShouldActivate("Create a custom trinket", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_SlashCommand_ReturnsFalse()
+    {
+        var skill = new AddCardSkill();
+        Assert.False(skill.ShouldActivate("/add-card teleport", null));
+    }
+
+    [Fact]
+    public void GetPromptAugmentation_ReturnsWorkflowSteps()
+    {
+        var skill = new AddCardSkill();
+        var augment = skill.GetPromptAugmentation();
+
+        Assert.NotNull(augment);
+        Assert.Contains("Add Custom Card", augment);
+        Assert.Contains("MC_USE_CARD", augment);
+        Assert.Contains("items.xml", augment);
+    }
+
+    [Fact]
+    public void SlashCommand_IsAddCard()
+    {
+        var skill = new AddCardSkill();
+        Assert.Equal("/add-card", skill.SlashCommand);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_NullRetriever_ReturnsEmpty()
+    {
+        var skill = new AddCardSkill();
+        var result = await skill.PreFetchContextAsync("add a card", null);
+        Assert.Empty(result);
+    }
+}
+
+public class AddPillSkillTests
+{
+    [Fact]
+    public void ShouldActivate_AddPill_ReturnsTrue()
+    {
+        var skill = new AddPillSkill();
+        Assert.True(skill.ShouldActivate("Add a pill effect that heals", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_CreatePill_ReturnsTrue()
+    {
+        var skill = new AddPillSkill();
+        Assert.True(skill.ShouldActivate("Create a horse pill that poisons enemies", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_UnrelatedMessage_ReturnsFalse()
+    {
+        var skill = new AddPillSkill();
+        Assert.False(skill.ShouldActivate("Create a custom card", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_SlashCommand_ReturnsFalse()
+    {
+        var skill = new AddPillSkill();
+        Assert.False(skill.ShouldActivate("/add-pill heal", null));
+    }
+
+    [Fact]
+    public void GetPromptAugmentation_ReturnsWorkflowSteps()
+    {
+        var skill = new AddPillSkill();
+        var augment = skill.GetPromptAugmentation();
+
+        Assert.NotNull(augment);
+        Assert.Contains("Add Custom Pill", augment);
+        Assert.Contains("MC_USE_PILL", augment);
+        Assert.Contains("pills.xml", augment);
+    }
+
+    [Fact]
+    public void SlashCommand_IsAddPill()
+    {
+        var skill = new AddPillSkill();
+        Assert.Equal("/add-pill", skill.SlashCommand);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_NullRetriever_ReturnsEmpty()
+    {
+        var skill = new AddPillSkill();
+        var result = await skill.PreFetchContextAsync("add a pill", null);
+        Assert.Empty(result);
+    }
+}
+
+public class AddBossSkillTests
+{
+    [Fact]
+    public void ShouldActivate_AddBoss_ReturnsTrue()
+    {
+        var skill = new AddBossSkill();
+        Assert.True(skill.ShouldActivate("Add a boss that shoots lasers", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_CreateBoss_ReturnsTrue()
+    {
+        var skill = new AddBossSkill();
+        Assert.True(skill.ShouldActivate("Create a custom boss fight with 3 phases", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_UnrelatedMessage_ReturnsFalse()
+    {
+        var skill = new AddBossSkill();
+        Assert.False(skill.ShouldActivate("Create a custom familiar", null));
+    }
+
+    [Fact]
+    public void ShouldActivate_SlashCommand_ReturnsFalse()
+    {
+        var skill = new AddBossSkill();
+        Assert.False(skill.ShouldActivate("/add-boss laser boss", null));
+    }
+
+    [Fact]
+    public void GetPromptAugmentation_ReturnsWorkflowSteps()
+    {
+        var skill = new AddBossSkill();
+        var augment = skill.GetPromptAugmentation();
+
+        Assert.NotNull(augment);
+        Assert.Contains("Add Custom Boss", augment);
+        Assert.Contains("MC_NPC_UPDATE", augment);
+        Assert.Contains("entities2.xml", augment);
+    }
+
+    [Fact]
+    public void SlashCommand_IsAddBoss()
+    {
+        var skill = new AddBossSkill();
+        Assert.Equal("/add-boss", skill.SlashCommand);
+    }
+
+    [Fact]
+    public async Task PreFetchContextAsync_NullRetriever_ReturnsEmpty()
+    {
+        var skill = new AddBossSkill();
+        var result = await skill.PreFetchContextAsync("add a boss", null);
+        Assert.Empty(result);
+    }
+}
