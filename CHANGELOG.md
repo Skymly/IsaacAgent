@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-28
+
+UI layer improvements: dynamic version display, DI consistency, shared
+theme system, Markdown table rendering, recursive file tree, and expanded
+test coverage.
+
+### Added
+
+- Markdown table rendering: GFM-style tables (`| col | col |` with
+  `|---|---|` separator) are now rendered as monospace, column-aligned
+  text with a dashed separator line. Supports auto-sized columns,
+  colon-aligned separators, escaped pipes, and missing trailing pipes.
+- Shared theme system (`Styles/Theme.axaml`): 24 semantic color and 24
+  brush resources centralized in a single resource dictionary, replacing
+  30+ hardcoded color values across AXAML and C#.
+- Recursive file tree: project files are displayed in a TreeView with
+  expandable/collapsible directory nodes instead of a flat list. Build
+  artifacts (.git, bin, obj) are excluded; empty directories are skipped;
+  top-level directories are expanded by default.
+- Unit tests for ChatTabViewModel (16 tests): send/cancel, streaming
+  accumulation, error handling, IsGenerating state, ClearMessages,
+  OnProjectChanged, ToggleExpand, Dispose.
+- Unit tests for ChatViewModel (16 tests): multi-tab management, active
+  tab switching, close behavior, project change propagation.
+- Unit tests for MarkdownRenderer (20 tests): table rendering, existing
+  markdown features regression, edge cases.
+- `RenderToText` internal helper on MarkdownRenderer for testability.
+- Shared Avalonia test infrastructure (`AvaloniaTestHelper` +
+  `AvaloniaFixture` + `AvaloniaTestCollection`): serializes
+  Avalonia-dependent tests via xUnit collection fixture to fix
+  thread-safety issues with StyledElement static constructors under
+  parallel test execution.
+
+### Changed
+
+- About dialog now reads the version from `AssemblyInformationalVersion`
+  (set by MinVer from git tags) instead of a hardcoded string.
+- `TemplateGalleryViewModel` is now registered in the DI container and
+  resolved via `GetRequiredService`, matching the pattern used by all
+  other view models.
+- All hardcoded color values in AXAML views, converters,
+  ChatMessageViewModel, and MarkdownRenderer now resolve brushes via
+  `Application.Current.Resources` with semantic resource keys.
+- File tree double-click only opens files (not directories) for preview.
+- `OnFileDoubleTapped` handles both TreeView and ListBox sources.
+
+### Fixed
+
+- Avalonia headless test initialization race condition: multiple test
+  classes initializing the headless application via static constructors
+  could race under parallel test execution, causing
+  `StyledElement..cctor` failures. Consolidated into a single
+  collection fixture.
+
 ## [0.1.0] - 2026-06-28
 
 First public release. An AI coding agent for The Binding of Isaac: Repentance
