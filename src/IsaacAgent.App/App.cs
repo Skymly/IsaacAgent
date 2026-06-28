@@ -84,6 +84,7 @@ public sealed class App : Application
         services.AddSingleton<DiffService>();
         services.AddSingleton<DiffViewerViewModel>();
         services.AddSingleton<TemplateGalleryViewModel>();
+        services.AddSingleton<ToastService>();
 
         return services.BuildServiceProvider();
     }
@@ -121,12 +122,14 @@ public sealed class App : Application
                     {
                         await retriever.RebuildIndexAsync(_shutdownCts.Token);
                         settings?.SetIndexStatus("Index rebuilt successfully.");
+                        Services.GetService<ToastService>()?.ShowSuccess("Knowledge index rebuilt successfully.");
                     }
                     catch (Exception ex)
                     {
                         var logger = Services.GetRequiredService<ILogger<App>>();
                         logger.LogError(ex, "Index rebuild failed");
                         settings?.SetIndexStatus($"Index rebuild failed: {ex.Message}");
+                        Services.GetService<ToastService>()?.ShowError($"Index rebuild failed: {ex.Message}");
                     }
                     finally
                     {
@@ -154,6 +157,7 @@ public sealed class App : Application
             // why search_knowledge may be slow or unavailable on first use.
             var settings = Services.GetService<SettingsViewModel>();
             settings?.SetIndexStatus($"Knowledge index build failed: {ex.Message}. Will retry on first search.");
+            Services.GetService<ToastService>()?.ShowWarning("Knowledge index build failed — will retry on first search.");
         }
     }
 }

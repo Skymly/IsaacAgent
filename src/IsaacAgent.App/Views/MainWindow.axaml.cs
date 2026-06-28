@@ -1,6 +1,8 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
@@ -42,6 +44,10 @@ public sealed partial class MainWindow : Window
             _scrollTab.Messages.CollectionChanged += OnMessagesChanged;
 
         RestoreWindowState();
+
+        // Enable drag-drop: folders open as project, files are read into chat context.
+        AddHandler(DragDrop.DragOverEvent, OnDragOver);
+        AddHandler(DragDrop.DropEvent, OnDrop);
     }
 
     private void OnChatPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -122,6 +128,62 @@ public sealed partial class MainWindow : Window
     private void InitializeComponent()
     {
         AvaloniaXamlLoader.Load(this);
+    }
+
+    // ── Drag-and-drop ──────────────────────────────────────────
+
+    private void OnDragOver(object? sender, DragEventArgs e)
+    {
+        var data = e.Data;
+        if (data.Contains(DataFormats.Files))
+        {
+            e.DragEffects = DragDropEffects.Copy;
+        }
+        else
+        {
+            e.DragEffects = DragDropEffects.None;
+        }
+        e.Handled = true;
+    }
+
+    private async void OnDrop(object? sender, DragEventArgs e)
+    {
+        e.Handled = true;
+        if (!e.Data.Contains(DataFormats.Files)) return;
+
+        var items = e.Data.GetFiles()?.ToList();
+        if (items is null || items.Count == 0) return;
+
+        // First folder dropped opens as project
+        var folder = items.FirstOrDefault(f => f.Path.IsAbsoluteUri && Directory.Exists(f.Path.LocalPath));
+        if (folder is not null)
+        {
+            var path = folder.Path.LocalPath;
+            if (_mainVm is not null)
+                await _mainVm.Project.LoadProjectAsync(path);
+            return;
+        }
+
+        // Otherwise, read dropped files and inject as chat context
+        var file = items.FirstOrDefault(f => f.Path.IsAbsoluteUri && File.Exists(f.Path.LocalPath));
+        if (file is not null && _mainVm is not null)
+        {
+            var filePath = file.Path.LocalPath;
+            try
+            {
+                var content = await File.ReadAllTextAsync(filePath);
+                var fileName = Path.GetFileName(filePath);
+                var tab = _mainVm.Chat.ActiveTab;
+                if (tab is not null)
+                {
+                    tab.InputText = $"Here is the content of `{fileName}`:\n\n```lua\n{content}\n```";
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Drop file read failed: {ex.Message}");
+            }
+        }
     }
 
     private void OnMessagesChanged(object? sender, NotifyCollectionChangedEventArgs e)

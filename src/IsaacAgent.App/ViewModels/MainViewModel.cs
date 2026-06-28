@@ -18,6 +18,7 @@ public sealed partial class MainViewModel : ObservableObject
     public ProjectViewModel Project { get; }
     public QuickReferenceViewModel QuickReference { get; }
     public LogMonitorService LogMonitor { get; }
+    public ToastService Toasts { get; }
 
     [ObservableProperty]
     private string _statusText = "Ready";
@@ -33,6 +34,7 @@ public sealed partial class MainViewModel : ObservableObject
         Project = services.GetRequiredService<ProjectViewModel>();
         QuickReference = services.GetRequiredService<QuickReferenceViewModel>();
         LogMonitor = services.GetRequiredService<LogMonitorService>();
+        Toasts = services.GetRequiredService<ToastService>();
 
         Project.ProjectLoaded += path =>
         {
@@ -40,6 +42,8 @@ public sealed partial class MainViewModel : ObservableObject
             StatusText = string.IsNullOrEmpty(path)
                 ? "No project"
                 : $"Project: {Project.ProjectName}";
+            if (!string.IsNullOrEmpty(path))
+                Toasts.ShowSuccess($"Project loaded: {Project.ProjectName}");
         };
     }
 

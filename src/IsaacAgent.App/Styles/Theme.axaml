@@ -77,4 +77,15 @@
     <SolidColorBrush x:Key="IsaacMarkdownQuoteBrush" Color="{StaticResource IsaacMarkdownQuoteColor}" />
     <SolidColorBrush x:Key="IsaacMarkdownHrBrush" Color="{StaticResource IsaacMarkdownHrColor}" />
 
+    <!-- Toast notification colors -->
+    <Color x:Key="IsaacToastInfoColor">#4A9EFF</Color>
+    <Color x:Key="IsaacToastSuccessColor">#4CAF50</Color>
+    <Color x:Key="IsaacToastWarningColor">#FF9800</Color>
+    <Color x:Key="IsaacToastErrorColor">#F44336</Color>
+
+    <SolidColorBrush x:Key="ToastInfoBrush" Color="{StaticResource IsaacToastInfoColor}" />
+    <SolidColorBrush x:Key="ToastSuccessBrush" Color="{StaticResource IsaacToastSuccessColor}" />
+    <SolidColorBrush x:Key="ToastWarningBrush" Color="{StaticResource IsaacToastWarningColor}" />
+    <SolidColorBrush x:Key="ToastErrorBrush" Color="{StaticResource IsaacToastErrorColor}" />
+
 </ResourceDictionary>
