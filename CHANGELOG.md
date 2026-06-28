@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-28
+
+UX improvements: window state persistence, drag-and-drop, toast
+notifications, About dialog as AXAML, and expanded test coverage.
+
+### Added
+
+- Window state persistence: MainWindow size, position, and maximized
+  state are saved to AppConfiguration on close and restored on next
+  launch. Multi-monitor negative coordinates are handled; sanity guards
+  prevent restoring invalid geometry.
+- Drag-and-drop support: dropping a folder onto the window opens it as
+  a project; dropping a file reads its content and injects it into the
+  active chat tab's input box as a fenced code block for LLM context.
+- Toast notification system: transient overlay notifications (Info,
+  Success, Warning, Error) displayed in the bottom-right corner with
+  auto-dismiss. Triggered on project load, index rebuild success/failure,
+  and index prewarm failure. Severity-colored icons (ℹ ✓ ⚠ ✗) via
+  shared theme brushes.
+- AboutWindow.axaml: dedicated AXAML window for the About dialog,
+  replacing the inline code-built Window. Version is bound from
+  AssemblyInformationalVersion (MinVer).
+- Unit tests for QuickReferenceViewModel (9 tests): callbacks, classes,
+  mod structure loading, sorting, no duplicates, REPENTOGON callbacks.
+- Unit tests for TemplateGalleryViewModel (11 tests): template loading,
+  scaffold validation, file creation, placeholder substitution, Lua
+  string escaping, default name fallback.
+- Unit tests for ToastService (12 tests): show info/success/warning/
+  error, multiple toasts, dismiss, notification properties, icon
+  mapping, custom duration.
+- 4 toast colors added to Theme.axaml (info/success/warning/error).
+
+### Changed
+
+- AppConfiguration.Save() now persists window state fields alongside
+  existing LLM/embedding settings.
+- MainViewModel exposes ToastService via `Toasts` property for UI
+  binding.
+- MainWindow.OnAbout simplified to create AboutWindow instead of
+  building a Window inline.
+
 ## [0.1.1] - 2026-06-28
 
 UI layer improvements: dynamic version display, DI consistency, shared
