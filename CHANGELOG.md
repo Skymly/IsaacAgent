@@ -25,6 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   prevent LLM injection via forged tool output.
 
 ### Added
+- Skills system: higher-level workflows that augment the agent's behavior
+  for specific Isaac modding tasks. Each skill injects task-specific prompt
+  guidance and pre-fetches relevant RAG context before the LLM processes
+  the request. Skills activate automatically via keyword detection or
+  explicitly via slash commands.
+  - `ISkill` interface and `SkillRegistry` (singleton, DI-registered).
+  - 10 built-in skills: Create Collectible (`/create-item`), Create Familiar
+    (`/create-familiar`), Debug from Log (`/debug`), Validate Project
+    (`/validate`), Add Callback (`/add-callback`), Add Save Data
+    (`/add-save-data`), Add Trinket (`/add-trinket`), Add Card / Rune
+    (`/add-card`), Add Pill (`/add-pill`), Add Boss (`/add-boss`).
+  - Slash commands are invocable from the chat box or the command palette.
+- `ISkill.DisplayName` property: each skill owns its short command-palette
+  title. The command palette now enumerates `SkillRegistry` instead of
+  maintaining a parallel hardcoded list — new skills appear automatically.
 - Four new agent tools for enhanced project interaction:
   - `git_status` — shows git status, recent commits, and uncommitted diff
   - `diff_apply` — applies unified diff patches to files (more precise than
@@ -135,6 +150,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `QuickReferenceViewModel` lists REPENTOGON callbacks alongside vanilla.
 
 ### Changed
+- `CommandPaletteViewModel` accepts an optional `SkillRegistry` and derives
+  skill entries from it (single source of truth), eliminating the duplicated
+  skill list that could drift out of sync with `AgentServiceRegistration`.
+- `SkillDescriptor` record now carries `DisplayName` alongside Name,
+  Description, and SlashCommand.
 - `FileToolPathSafety` changed from `file static class` to `internal static
   class` so it can be shared across tool implementation files.
 - CI workflow restructured from single windows-latest job to three jobs:

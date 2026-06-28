@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class AddSaveDataSkill : ISkill
 {
     public string Name => "add-save-data";
+    public string DisplayName => "Add Save Data";
     public string Description => "Add persistent save data to an existing mod using Isaac.SaveModData/LoadModData";
     public string? SlashCommand => "/add-save-data";
 

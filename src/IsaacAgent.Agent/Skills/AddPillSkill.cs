@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class AddPillSkill : ISkill
 {
     public string Name => "add-pill";
+    public string DisplayName => "Add Pill";
     public string Description => "Add a custom pill effect to an existing mod with use effect and pill pool registration";
     public string? SlashCommand => "/add-pill";
 

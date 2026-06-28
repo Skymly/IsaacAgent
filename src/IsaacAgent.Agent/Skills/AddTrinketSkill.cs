@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class AddTrinketSkill : ISkill
 {
     public string Name => "add-trinket";
+    public string DisplayName => "Add Trinket";
     public string Description => "Add a custom trinket to an existing mod with pocket-active effect and pickup metadata";
     public string? SlashCommand => "/add-trinket";
 

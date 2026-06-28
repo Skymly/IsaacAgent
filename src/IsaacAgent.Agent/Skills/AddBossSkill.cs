@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class AddBossSkill : ISkill
 {
     public string Name => "add-boss";
+    public string DisplayName => "Add Boss";
     public string Description => "Add a custom boss to an existing mod with AI, attacks, boss room spawning, and boss portrait";
     public string? SlashCommand => "/add-boss";
 

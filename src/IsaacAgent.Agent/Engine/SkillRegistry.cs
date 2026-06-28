@@ -58,7 +58,7 @@ public sealed class SkillRegistry
     /// Returns all skill descriptions for the command palette.
     /// </summary>
     public List<SkillDescriptor> GetDescriptors() =>
-        _skills.Select(s => new SkillDescriptor(s.Name, s.Description, s.SlashCommand)).ToList();
+        _skills.Select(s => new SkillDescriptor(s.Name, s.DisplayName, s.Description, s.SlashCommand)).ToList();
 }
 
-public sealed record SkillDescriptor(string Name, string Description, string? SlashCommand);
+public sealed record SkillDescriptor(string Name, string DisplayName, string Description, string? SlashCommand);

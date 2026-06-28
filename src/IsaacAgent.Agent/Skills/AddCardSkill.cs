@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class AddCardSkill : ISkill
 {
     public string Name => "add-card";
+    public string DisplayName => "Add Card / Rune";
     public string Description => "Add a custom card or rune to an existing mod with use effect and pickup metadata";
     public string? SlashCommand => "/add-card";
 

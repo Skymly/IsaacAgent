@@ -12,6 +12,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class DebugFromLogSkill : ISkill
 {
     public string Name => "debug-from-log";
+    public string DisplayName => "Debug from Log";
     public string Description => "Debug a runtime error by parsing log.txt, diagnosing Lua, and proposing a fix";
     public string? SlashCommand => "/debug";
 

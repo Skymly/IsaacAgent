@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class ValidateProjectSkill : ISkill
 {
     public string Name => "validate-project";
+    public string DisplayName => "Validate Project";
     public string Description => "Validate the entire mod project: check all XML files against schemas and run Lua diagnostics";
     public string? SlashCommand => "/validate";
 

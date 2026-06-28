@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Views;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,6 +27,7 @@ public sealed class CommandItem
 public sealed partial class CommandPaletteViewModel : ObservableObject
 {
     private readonly List<CommandItem> _allCommands = [];
+    private readonly SkillRegistry? _skills;
     private Action? _closeAction;
 
     [ObservableProperty]
@@ -36,8 +38,14 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
 
     public ObservableCollection<CommandItem> FilteredCommands { get; } = [];
 
-    public CommandPaletteViewModel()
+    /// <summary>
+    /// Constructs the palette. When <paramref name="skills"/> is null the
+    /// registry is resolved from <see cref="App.Services"/> at registration
+    /// time (production); tests may pass a registry explicitly.
+    /// </summary>
+    public CommandPaletteViewModel(SkillRegistry? skills = null)
     {
+        _skills = skills;
         RegisterCommands();
         UpdateFilteredCommands();
     }
@@ -58,18 +66,34 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
             new CommandItem { Title = "Cancel Generation", Category = "Chat", Action = () => InvokeMain(vm => vm.Chat.ActiveTab?.CancelCommand.Execute(null)) },
             new CommandItem { Title = "Open File", Category = "Project", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.FocusFileList()) },
             new CommandItem { Title = "About IsaacAgent", Category = "Help", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.ShowAbout()) },
-            // Skills
-            new CommandItem { Title = "Create Collectible", Category = "Skill", Shortcut = "/create-item", Action = () => InvokeSkill("/create-item ") },
-            new CommandItem { Title = "Create Familiar", Category = "Skill", Shortcut = "/create-familiar", Action = () => InvokeSkill("/create-familiar ") },
-            new CommandItem { Title = "Debug from Log", Category = "Skill", Shortcut = "/debug", Action = () => InvokeSkill("/debug ") },
-            new CommandItem { Title = "Validate Project", Category = "Skill", Shortcut = "/validate", Action = () => InvokeSkill("/validate") },
-            new CommandItem { Title = "Add Callback", Category = "Skill", Shortcut = "/add-callback", Action = () => InvokeSkill("/add-callback ") },
-            new CommandItem { Title = "Add Save Data", Category = "Skill", Shortcut = "/add-save-data", Action = () => InvokeSkill("/add-save-data ") },
-            new CommandItem { Title = "Add Trinket", Category = "Skill", Shortcut = "/add-trinket", Action = () => InvokeSkill("/add-trinket ") },
-            new CommandItem { Title = "Add Card / Rune", Category = "Skill", Shortcut = "/add-card", Action = () => InvokeSkill("/add-card ") },
-            new CommandItem { Title = "Add Pill", Category = "Skill", Shortcut = "/add-pill", Action = () => InvokeSkill("/add-pill ") },
-            new CommandItem { Title = "Add Boss", Category = "Skill", Shortcut = "/add-boss", Action = () => InvokeSkill("/add-boss ") },
         ]);
+
+        // Skills — enumerated from the SkillRegistry (single source of truth).
+        // New skills registered in AgentServiceRegistration appear here
+        // automatically; no parallel hardcoded list to keep in sync.
+        var registry = _skills ?? App.Services?.GetService<SkillRegistry>();
+        if (registry is not null)
+        {
+            foreach (var skill in registry.All)
+            {
+                var slash = skill.SlashCommand;
+                if (string.IsNullOrEmpty(slash)) continue;
+
+                // Trailing space lets the user type their request after the
+                // command. "/validate" takes no argument, so no trailing space.
+                var invocation = slash.Equals("/validate", StringComparison.OrdinalIgnoreCase)
+                    ? slash
+                    : slash + " ";
+
+                _allCommands.Add(new CommandItem
+                {
+                    Title = skill.DisplayName,
+                    Category = "Skill",
+                    Shortcut = slash,
+                    Action = () => InvokeSkill(invocation)
+                });
+            }
+        }
     }
 
     private static void InvokeSkill(string slashCommand)

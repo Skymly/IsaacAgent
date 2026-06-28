@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/Skymly/IsaacAgent/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/Skymly/IsaacAgent/actions/workflows/build-and-test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[!.NET](https://img.shields.io/badge/.NET-8.0-512BD4.svg)
-[![Avalonia](https://img.shields.io/badge/Avalonia-11-01A0E9.svg)
-[![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4.svg)
+![Avalonia](https://img.shields.io/badge/Avalonia-11-01A0E9.svg)
+![Platform](https://img.shields.io/badge/Platform-Windows-blue.svg)
 
 An AI coding agent for **The Binding of Isaac: Repentance** Lua mod development.
 It provides a Cursor/OpenCode-like desktop experience with Isaac-specific
@@ -87,7 +87,7 @@ For embeddings (RAG), choose **ONNX** (local, no setup) or **Ollama**.
 
 ### Agent Tools
 
-The agent has access to 15 tools across two modules:
+The agent has access to 16 tools across two modules:
 
 **IsaacAgent.Tools** (file operations, scaffolding, API knowledge, project commands):
 
@@ -114,6 +114,28 @@ The agent has access to 15 tools across two modules:
 | `get_pattern` | Find code patterns for common tasks |
 | `validate_xml` | Validate XML against official XSD schemas (35 schemas) |
 | `parse_log` | Extract errors/warnings from `log.txt` |
+
+### Skills
+
+Skills are higher-level workflows that augment the agent's behavior for specific
+Isaac modding tasks. They sit between the system prompt and atomic tools:
+each skill injects task-specific guidance and pre-fetches relevant RAG context
+before the LLM processes the request. Skills activate automatically when the
+user's message matches a keyword pattern, or explicitly via a slash command
+(type `/` in the chat box or pick one from the command palette).
+
+| Skill | Slash command | Description |
+|-------|---------------|-------------|
+| Create Collectible | `/create-item` | Custom passive/active item with callbacks, items.xml, validation |
+| Create Familiar | `/create-familiar` | Companion with orbit/follow/shoot behavior, entities2.xml |
+| Debug from Log | `/debug` | Parse log.txt, diagnose Lua, propose a fix |
+| Validate Project | `/validate` | Validate all XML against schemas and run Lua diagnostics |
+| Add Callback | `/add-callback` | Add a specific Isaac callback to main.lua |
+| Add Save Data | `/add-save-data` | Persistent save data via SaveModData/LoadModData |
+| Add Trinket | `/add-trinket` | Custom trinket with pocket-active effect and pickup metadata |
+| Add Card / Rune | `/add-card` | Custom card or rune with use effect and pickup metadata |
+| Add Pill | `/add-pill` | Custom pill effect with pill pool registration |
+| Add Boss | `/add-boss` | Custom boss with AI, attacks, boss room spawning, portrait |
 
 ### Knowledge Base
 

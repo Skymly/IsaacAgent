@@ -13,6 +13,13 @@ public interface ISkill
     /// <summary>Unique kebab-case identifier (e.g. "create-collectible").</summary>
     string Name { get; }
 
+    /// <summary>
+    /// Short human-readable label shown as the command-palette title
+    /// (e.g. "Create Collectible"). Distinct from <see cref="Description"/>,
+    /// which is a longer sentence.
+    /// </summary>
+    string DisplayName { get; }
+
     /// <summary>Human-readable description shown in the command palette.</summary>
     string Description { get; }
 

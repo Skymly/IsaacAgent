@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class AddCallbackSkill : ISkill
 {
     public string Name => "add-callback";
+    public string DisplayName => "Add Callback";
     public string Description => "Add a specific Isaac callback to main.lua with proper signature and parameters";
     public string? SlashCommand => "/add-callback";
 

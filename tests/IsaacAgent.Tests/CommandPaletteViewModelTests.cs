@@ -1,5 +1,7 @@
 using Avalonia;
 using Avalonia.Headless;
+using IsaacAgent.Agent.Engine;
+using IsaacAgent.Agent.Skills;
 using IsaacAgent.App.ViewModels;
 using Xunit;
 
@@ -16,6 +18,29 @@ public class CommandPaletteViewModelTests
                 .SetupWithoutStarting();
         }
         catch { /* Already initialized */ }
+    }
+
+    /// <summary>
+    /// Builds a palette populated with the full built-in skill set, mirroring
+    /// AgentServiceRegistration. Skills are the single source of palette
+    /// entries, so tests that assert skill commands must supply a registry.
+    /// </summary>
+    private static CommandPaletteViewModel NewPaletteWithSkills()
+    {
+        var registry = new SkillRegistry();
+        registry.RegisterAll([
+            new CreateCollectibleSkill(),
+            new CreateFamiliarSkill(),
+            new DebugFromLogSkill(),
+            new ValidateProjectSkill(),
+            new AddCallbackSkill(),
+            new AddSaveDataSkill(),
+            new AddTrinketSkill(),
+            new AddCardSkill(),
+            new AddPillSkill(),
+            new AddBossSkill()
+        ]);
+        return new CommandPaletteViewModel(registry);
     }
 
     [Fact]
@@ -53,10 +78,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_Skill_FiltersSkillCommands()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "create collectible"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "create collectible";
 
         Assert.NotEmpty(vm.FilteredCommands);
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Create Collectible"));
@@ -65,10 +88,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_FuzzyMatch_MatchesSubsequence()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "cc" // matches "Create Collectible"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "cc"; // matches "Create Collectible"
 
         // Fuzzy match: "cc" should match "Create Collectible" (c...c...)
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Create Collectible"));
@@ -88,10 +109,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_CategoryMatch_FiltersByCategory()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "skill"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "skill";
 
         Assert.NotEmpty(vm.FilteredCommands);
         Assert.All(vm.FilteredCommands, c => Assert.True(c.Title.Contains("Create") || c.Title.Contains("Debug") || c.Title.Contains("Validate") || c.Title.Contains("Add")));
@@ -123,10 +142,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_Debug_FindsDebugCommand()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "debug"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "debug";
 
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Debug"));
     }
@@ -134,10 +151,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_Validate_FindsValidateCommand()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "validate"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "validate";
 
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Validate"));
     }
@@ -145,10 +160,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_Add_FindsAllAddCommands()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "add"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "add";
 
         // Should find Add Callback, Add Save Data, Add Trinket, Add Card, Add Pill, Add Boss
         var addCommands = vm.FilteredCommands.Where(c => c.Title.StartsWith("Add")).ToList();
@@ -158,10 +171,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_Trinket_FindsAddTrinketCommand()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "trinket"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "trinket";
 
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Trinket"));
     }
@@ -169,10 +180,8 @@ public class CommandPaletteViewModelTests
     [Fact]
     public void SearchText_Boss_FindsAddBossCommand()
     {
-        var vm = new CommandPaletteViewModel
-        {
-            SearchText = "boss"
-        };
+        var vm = NewPaletteWithSkills();
+        vm.SearchText = "boss";
 
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Boss"));
     }

@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class CreateCollectibleSkill : ISkill
 {
     public string Name => "create-collectible";
+    public string DisplayName => "Create Collectible";
     public string Description => "Create a custom collectible (passive/active item) with proper callbacks, items.xml, and validation";
     public string? SlashCommand => "/create-item";
 

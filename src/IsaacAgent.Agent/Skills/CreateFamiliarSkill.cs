@@ -11,6 +11,7 @@ namespace IsaacAgent.Agent.Skills;
 public sealed class CreateFamiliarSkill : ISkill
 {
     public string Name => "create-familiar";
+    public string DisplayName => "Create Familiar";
     public string Description => "Create a custom familiar (companion) with orbit/follow/shoot behavior, entities2.xml, and callbacks";
     public string? SlashCommand => "/create-familiar";
 
