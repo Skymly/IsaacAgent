@@ -58,6 +58,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - E2E test project (`IsaacAgent.E2ETest`) added to the solution.
 - Comprehensive agent tools table in README with module attribution
   (expanded to 16 tools across Tools and Rag modules).
+- 14 new code patterns added to the RAG pattern library (11 → 25 total):
+  item pool modification, custom curse, achievement tracking, custom HUD,
+  custom tear effect, advanced familiars (orbit/shoot/buff), custom shop,
+  custom devil room, custom door, custom pedestal, custom status effect,
+  custom music, custom cutscene, multiplayer sync.
+- 5 few-shot workflow examples added to the system prompt to guide
+  multi-step tool orchestration: create collectible, debug runtime error,
+  validate project, add save data, create familiar.
+- 8 tool descriptions enhanced with usage guidance and available pattern
+  names to improve LLM tool selection accuracy.
+- `AssemblyName` set to `IsaacAgent` for the App project so the published
+  executable is `IsaacAgent.exe` (was `IsaacAgent.App.exe`).
+- Release workflow now uses `fail_on_unmatched_files: true` to catch
+  missing asset errors in CI.
+- MIT LICENSE file added; README updated with license section.
+- CONTRIBUTING.md with development setup, code style, and PR workflow.
+- GitHub issue templates (bug report, feature request) and PR template.
+- README enhanced with CI badges, quick start guide, UI feature table,
+  and tool/knowledge base statistics.
+- Command palette (Ctrl+Shift+P) with fuzzy search and keyboard navigation.
+- Mod template gallery (Ctrl+Shift+T) with 5 built-in templates.
+- Live log monitor with real-time Isaac log.txt parsing and error highlighting.
+- Visual diff viewer (Ctrl+Shift+D) with side-by-side git diff visualization.
 
 ### Fixed
 - `OnnxEmbeddingProvider.session.Run` now serialized with a lock to fix

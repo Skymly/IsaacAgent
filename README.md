@@ -118,12 +118,13 @@ The agent has access to 15 tools across two modules:
 ### Knowledge Base
 
 - **470+ Markdown docs** — vanilla + REPENTOGON API documentation
-- **11 code patterns** — collectible, familiar, boss, room, challenge, character, save data, etc.
+- **25 code patterns** — collectible (passive/active), familiar (basic + advanced), boss, room, challenge, character, trinket, card/pill, curse, door, pedestal, shop, devil room, tear effect, HUD, music, cutscene, status effect, save data, achievement tracking, item pool modification, multiplayer sync, REPENTOGON ImGui menu
 - **35 XSD schemas** — official Isaac XML validation schemas
 - **74 vanilla callbacks** with canonical IDs (0-73)
 - **130+ REPENTOGON callbacks** (IDs 1000+) with override tracking
 - **Isaac classes** with method listings
 - **Enums** with value descriptions
+- **5 few-shot workflows** — create collectible, debug runtime error, validate project, add save data, create familiar (embedded in system prompt to guide multi-step tool orchestration)
 
 ## Tech Stack
 
