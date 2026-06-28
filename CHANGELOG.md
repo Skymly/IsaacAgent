@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `MC_HUD_UPDATE` (ID 1020) and `MC_HUD_POST_UPDATE` (ID 1021) moved from
+  `RepentogonModifiedIds` to `RepentogonCallbacks`. They are REPENTOGON-only
+  callbacks (not vanilla overrides) and were misclassified.
+
+### Added
+- Knowledge-base accuracy guard tests (`ModCallbacksAccuracyGuardTests`):
+  parse the embedded `ModCallbacks.md` tables and assert that every C#
+  callback ID matches the official documentation. Covers vanilla callbacks
+  (bidirectional exact match, all 74 IDs) and REPENTOGON callbacks
+  (one-directional: every C# entry must appear in the markdown). Prevents
+  recurrence of KB-1, a systematic ID mapping error.
+
 ### Security
 - `ScaffoldModTool` constructor now normalizes the project path with
   `Path.GetFullPath`, closing a path-traversal gap.

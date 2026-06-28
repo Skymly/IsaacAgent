@@ -111,8 +111,6 @@ public static class ModCallbacks
         ["MC_PRE_PROJECTILE_COLLISION"] = 1244,
         ["MC_PRE_NPC_COLLISION"] = 1246,
         ["MC_ENTITY_TAKE_DMG"] = 1007,
-        ["MC_HUD_UPDATE"] = 1020,
-        ["MC_HUD_POST_UPDATE"] = 1021,
     };
 
     /// <summary>
@@ -129,6 +127,8 @@ public static class ModCallbacks
         ["MC_POST_GRID_ROCK_DESTROY"] = new(1011, "GridEntityRock, bool", "nil", "REPENTOGON: Called after a grid rock is destroyed."),
         ["MC_GRID_HURT_DAMAGE"] = new(1012, "GridEntity, float, DamageFlags, EntityRef, int", "nil", "REPENTOGON: Called when a grid entity takes damage."),
         ["MC_POST_GRID_HURT_DAMAGE"] = new(1013, "GridEntity, float, DamageFlags, EntityRef, int", "nil", "REPENTOGON: Called after a grid entity takes damage."),
+        ["MC_HUD_UPDATE"] = new(1020, "nil", "nil", "REPENTOGON: Called when the HUD is updated."),
+        ["MC_HUD_POST_UPDATE"] = new(1021, "nil", "nil", "REPENTOGON: Called after the HUD is updated."),
         ["MC_HUD_RENDER"] = new(1022, "nil", "nil", "REPENTOGON: Called when the HUD is rendered."),
         ["MC_MAIN_MENU_RENDER"] = new(1023, "nil", "nil", "REPENTOGON: Called when the main menu is rendered."),
         ["MC_PRE_PAUSE_SCREEN_RENDER"] = new(1218, "nil", "nil", "REPENTOGON: Called before the pause screen is rendered."),
