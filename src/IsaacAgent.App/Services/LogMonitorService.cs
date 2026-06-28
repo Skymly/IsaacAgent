@@ -187,7 +187,7 @@ public sealed partial class LogMonitorService : ObservableObject, IDisposable
         }
     }
 
-    private static LogEntry? ParseLine(string line, int lineNumber)
+    internal static LogEntry? ParseLine(string line, int lineNumber)
     {
         if (string.IsNullOrWhiteSpace(line)) return null;
 

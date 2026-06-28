@@ -147,7 +147,7 @@ public sealed partial class DiffService : ObservableObject
         return await proc.StandardOutput.ReadToEndAsync(ct);
     }
 
-    private void ParseDiff(string diffOutput)
+    internal void ParseDiff(string diffOutput)
     {
         DiffFile? currentFile = null;
         var oldLineNum = 0;
@@ -195,7 +195,7 @@ public sealed partial class DiffService : ObservableObject
                 if (match.Success)
                 {
                     oldLineNum = int.Parse(match.Groups[1].Value) - 1;
-                    newLineNum = int.Parse(match.Groups[3].Value) - 1;
+                    newLineNum = int.Parse(match.Groups[2].Value) - 1;
                 }
                 currentFile.Lines.Add(new DiffLine { Type = DiffLine.LineType.Header, Content = line });
                 continue;
