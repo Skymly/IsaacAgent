@@ -1,5 +1,3 @@
-using Avalonia;
-using Avalonia.Headless;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -8,20 +6,9 @@ using Xunit;
 
 namespace IsaacAgent.Tests;
 
+[Collection("Avalonia")]
 public class ProjectViewModelTests
 {
-    static ProjectViewModelTests()
-    {
-        // Initialize Avalonia headless application once for all tests.
-        // This enables Dispatcher.UIThread and other UI-thread-dependent features.
-        try
-        {
-            AppBuilder.Configure<HeadlessApp>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                .SetupWithoutStarting();
-        }
-        catch { /* Already initialized */ }
-    }
 
     private static ProjectViewModel CreateViewModel()
     {

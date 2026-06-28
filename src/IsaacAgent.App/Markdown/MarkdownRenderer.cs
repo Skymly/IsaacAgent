@@ -38,6 +38,22 @@ public static class MarkdownRenderer
         textBlock.Inlines = ParseMarkdown(markdown);
     }
 
+    /// <summary>
+    ///   Extracts plain text from an InlineCollection for testing.
+    ///   Concatenates all Run text content.
+    /// </summary>
+    internal static string RenderToText(string markdown)
+    {
+        var inlines = ParseMarkdown(markdown);
+        var sb = new System.Text.StringBuilder();
+        foreach (var inline in inlines)
+        {
+            if (inline is Run run)
+                sb.Append(run.Text);
+        }
+        return sb.ToString();
+    }
+
     private static InlineCollection ParseMarkdown(string markdown)
     {
         var inlines = new InlineCollection();
@@ -145,6 +161,21 @@ public static class MarkdownRenderer
                 continue;
             }
 
+            // Table (header row | separator row | data rows)
+            if (IsTableRow(line) && i + 1 < lines.Length && IsTableSeparator(lines[i + 1]))
+            {
+                var tableLines = new List<string> { line, lines[i + 1] };
+                var dataStart = i + 2;
+                while (dataStart < lines.Length && IsTableRow(lines[dataStart]))
+                {
+                    tableLines.Add(lines[dataStart]);
+                    dataStart++;
+                }
+                AddTable(inlines, tableLines);
+                i = dataStart - 1; // skip consumed lines
+                continue;
+            }
+
             // Regular paragraph line
             ParseInlineFormatting(inlines, line);
             if (i < lines.Length - 1)
@@ -232,6 +263,144 @@ public static class MarkdownRenderer
         indent++;
         if (indent >= line.Length || line[indent] != ' ') return false;
         return true;
+    }
+
+    // ── Table support ──────────────────────────────────────────
+
+    private static bool IsTableRow(string line)
+    {
+        var trimmed = line.Trim();
+        return trimmed.Contains('|') && trimmed.Length > 1;
+    }
+
+    private static bool IsTableSeparator(string line)
+    {
+        var trimmed = line.Trim();
+        if (!trimmed.Contains('|') || !trimmed.Contains('-'))
+            return false;
+        // Each cell between pipes must be only dashes, colons, and spaces.
+        var cells = trimmed.Split('|', StringSplitOptions.RemoveEmptyEntries);
+        if (cells.Length == 0) return false;
+        foreach (var cell in cells)
+        {
+            var c = cell.Trim();
+            if (c.Length == 0) return false;
+            if (!c.All(ch => ch == '-' || ch == ':' || ch == ' '))
+                return false;
+            if (!c.Contains('-'))
+                return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    ///   Splits a table row into cell contents, stripping leading/trailing
+    ///   pipes and whitespace. Handles escaped pipes (\|) inside cells.
+    /// </summary>
+    private static string[] SplitTableRow(string line)
+    {
+        var trimmed = line.Trim().TrimStart('|').TrimEnd('|');
+        // Split on | but not \|
+        var cells = new List<string>();
+        var current = new System.Text.StringBuilder();
+        for (var j = 0; j < trimmed.Length; j++)
+        {
+            if (trimmed[j] == '\\' && j + 1 < trimmed.Length && trimmed[j + 1] == '|')
+            {
+                current.Append('|');
+                j++;
+            }
+            else if (trimmed[j] == '|')
+            {
+                cells.Add(current.ToString().Trim());
+                current.Clear();
+            }
+            else
+            {
+                current.Append(trimmed[j]);
+            }
+        }
+        cells.Add(current.ToString().Trim());
+        return cells.ToArray();
+    }
+
+    /// <summary>
+    ///   Renders a table as monospace, padded text with a separator line.
+    ///   Columns are auto-sized to the widest cell.
+    /// </summary>
+    private static void AddTable(InlineCollection inlines, List<string> rows)
+    {
+        // Parse all rows into cells
+        var allCells = rows.Select(SplitTableRow).ToArray();
+        var numCols = allCells.Max(c => c.Length);
+
+        // Calculate column widths
+        var colWidths = new int[numCols];
+        for (var col = 0; col < numCols; col++)
+        {
+            colWidths[col] = 0;
+            for (var row = 0; row < allCells.Length; row++)
+            {
+                if (col < allCells[row].Length)
+                    colWidths[col] = Math.Max(colWidths[col], allCells[row][col].Length);
+            }
+            colWidths[col] = Math.Max(colWidths[col], 3); // minimum width
+        }
+
+        // Render header row
+        var headerCells = allCells[0];
+        var headerLine = BuildTableRow(headerCells, colWidths);
+        inlines.Add(new Run(headerLine + "\n")
+        {
+            FontFamily = MonoFont,
+            FontSize = 12,
+            FontWeight = FontWeight.Bold,
+        });
+
+        // Render separator line
+        var sepLine = BuildTableSeparator(colWidths);
+        inlines.Add(new Run(sepLine + "\n")
+        {
+            FontFamily = MonoFont,
+            FontSize = 12,
+            Foreground = HrColorBrush,
+        });
+
+        // Render data rows (skip header at 0 and separator at 1)
+        for (var row = 2; row < allCells.Length; row++)
+        {
+            var dataLine = BuildTableRow(allCells[row], colWidths);
+            inlines.Add(new Run(dataLine + "\n")
+            {
+                FontFamily = MonoFont,
+                FontSize = 12,
+            });
+        }
+    }
+
+    private static string BuildTableRow(string[] cells, int[] colWidths)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (var col = 0; col < colWidths.Length; col++)
+        {
+            var cellText = col < cells.Length ? cells[col] : "";
+            sb.Append(" ").Append(cellText.PadRight(colWidths[col])).Append(" ");
+            if (col < colWidths.Length - 1)
+                sb.Append("|");
+        }
+        return sb.ToString().TrimEnd();
+    }
+
+    private static string BuildTableSeparator(int[] colWidths)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (var col = 0; col < colWidths.Length; col++)
+        {
+            sb.Append(" ").Append(new string('-', colWidths[col])).Append(" ");
+            if (col < colWidths.Length - 1)
+                sb.Append("|");
+        }
+        return sb.ToString().TrimEnd();
     }
 
     private static readonly Regex InlineFormatRegex = new(

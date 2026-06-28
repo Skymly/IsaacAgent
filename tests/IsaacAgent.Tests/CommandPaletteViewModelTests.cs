@@ -1,5 +1,3 @@
-using Avalonia;
-using Avalonia.Headless;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.Agent.Skills;
 using IsaacAgent.App.ViewModels;
@@ -7,18 +5,9 @@ using Xunit;
 
 namespace IsaacAgent.Tests;
 
+[Collection("Avalonia")]
 public class CommandPaletteViewModelTests
 {
-    static CommandPaletteViewModelTests()
-    {
-        try
-        {
-            AppBuilder.Configure<HeadlessApp>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                .SetupWithoutStarting();
-        }
-        catch { /* Already initialized */ }
-    }
 
     /// <summary>
     /// Builds a palette populated with the full built-in skill set, mirroring

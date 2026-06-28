@@ -1,24 +1,11 @@
-using Avalonia;
-using Avalonia.Headless;
 using IsaacAgent.App.ViewModels;
 using Xunit;
 
 namespace IsaacAgent.Tests;
 
+[Collection("Avalonia")]
 public class ChatMessageViewModelTests
 {
-    static ChatMessageViewModelTests()
-    {
-        // Initialize Avalonia headless application once for all tests.
-        // This enables DispatcherTimer and other UI-thread-dependent features.
-        try
-        {
-            AppBuilder.Configure<HeadlessApp>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                .SetupWithoutStarting();
-        }
-        catch { /* Already initialized */ }
-    }
 
     [Fact]
     public void RoleLabel_User_ReturnsYou()
@@ -162,12 +149,4 @@ public class ChatMessageViewModelTests
         vm.IsExpanded = false;
         Assert.False(vm.IsExpanded);
     }
-}
-
-/// <summary>
-/// Minimal Avalonia application for headless testing.
-/// </summary>
-internal sealed class HeadlessApp : Avalonia.Application
-{
-    public override void Initialize() { }
 }
