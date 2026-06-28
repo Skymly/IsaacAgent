@@ -225,6 +225,14 @@ public sealed partial class MainWindow : Window
         ChatInputBox.Focus();
     }
 
+    internal void FocusChatInput()
+    {
+        ChatInputBox.Focus();
+        // Move caret to end so the user can continue typing after a slash command
+        if (ChatInputBox.Text is { } text && text.Length > 0)
+            ChatInputBox.CaretIndex = text.Length;
+    }
+
     private void OnSettings(object? sender, RoutedEventArgs e)
     {
         var dialog = new SettingsWindow

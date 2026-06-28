@@ -1,5 +1,6 @@
 using IsaacAgent.Core.Services;
 using IsaacAgent.Agent.Engine;
+using IsaacAgent.Agent.Skills;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,20 @@ public static class AgentServiceRegistration
         // gets its own instance via the factory so multiple tabs don't share
         // (and clobber) the same tool set when switching projects.
         services.AddSingleton<IAgentSessionFactory, AgentSessionFactory>();
+
+        // SkillRegistry is a singleton — skills are stateless and shared
+        // across all sessions/tabs.
+        services.AddSingleton<SkillRegistry>(sp =>
+        {
+            var logger = sp.GetService<ILogger<SkillRegistry>>();
+            var registry = new SkillRegistry(logger);
+            registry.RegisterAll([
+                new CreateCollectibleSkill(),
+                new DebugFromLogSkill(),
+                new ValidateProjectSkill()
+            ]);
+            return registry;
+        });
 
         return services;
     }
@@ -42,7 +57,8 @@ internal sealed class AgentSessionFactory : IAgentSessionFactory
         var toolLogger = _services.GetRequiredService<ILogger<ToolRegistry>>();
         var retriever = _services.GetService<IRetriever>();
         var tools = new ToolRegistry(toolLogger, retriever);
+        var skills = _services.GetRequiredService<SkillRegistry>();
         var logger = _services.GetRequiredService<ILogger<AgentSession>>();
-        return new AgentSession(chat, tools, projectDir, logger);
+        return new AgentSession(chat, tools, projectDir, logger, skills, retriever);
     }
 }

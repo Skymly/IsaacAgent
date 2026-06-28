@@ -58,7 +58,22 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
             new CommandItem { Title = "Cancel Generation", Category = "Chat", Action = () => InvokeMain(vm => vm.Chat.ActiveTab?.CancelCommand.Execute(null)) },
             new CommandItem { Title = "Open File", Category = "Project", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.FocusFileList()) },
             new CommandItem { Title = "About IsaacAgent", Category = "Help", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.ShowAbout()) },
+            // Skills
+            new CommandItem { Title = "Create Collectible", Category = "Skill", Shortcut = "/create-item", Action = () => InvokeSkill("/create-item ") },
+            new CommandItem { Title = "Debug from Log", Category = "Skill", Shortcut = "/debug", Action = () => InvokeSkill("/debug ") },
+            new CommandItem { Title = "Validate Project", Category = "Skill", Shortcut = "/validate", Action = () => InvokeSkill("/validate") },
         ]);
+    }
+
+    private static void InvokeSkill(string slashCommand)
+    {
+        var vm = App.Services?.GetService<MainViewModel>();
+        if (vm?.Chat.ActiveTab is { } tab && !tab.IsGenerating)
+        {
+            tab.InputText = slashCommand;
+            // Focus the chat input so the user can type their request after the command
+            App.Services?.GetService<MainWindow>()?.FocusChatInput();
+        }
     }
 
     private static void InvokeMain(Action<MainViewModel> action)

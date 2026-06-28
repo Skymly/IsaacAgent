@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text;
 using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
 using IsaacAgent.Agent.Prompts;
@@ -10,6 +11,8 @@ public sealed class AgentSession : IDisposable
 {
     private readonly IChatService _chat;
     private readonly ToolRegistry _tools;
+    private readonly SkillRegistry? _skills;
+    private readonly IRetriever? _retriever;
     private readonly ILogger<AgentSession> _logger;
     private string? _projectDir;
     private readonly List<ChatMessage> _history = [];
@@ -33,10 +36,13 @@ public sealed class AgentSession : IDisposable
     public event Action<int, int>? OnTokenUsage;
     public event Action<string, IReadOnlyList<RetrievalResult>>? OnRetrievalResults;
 
-    public AgentSession(IChatService chat, ToolRegistry tools, string? projectDir, ILogger<AgentSession> logger)
+    public AgentSession(IChatService chat, ToolRegistry tools, string? projectDir, ILogger<AgentSession> logger,
+        SkillRegistry? skills = null, IRetriever? retriever = null)
     {
         _chat = chat;
         _tools = tools;
+        _skills = skills;
+        _retriever = retriever;
         _projectDir = projectDir;
         _logger = logger;
 
@@ -54,9 +60,87 @@ public sealed class AgentSession : IDisposable
         ClearHistory();
     }
 
+    /// <summary>
+    /// Checks if the user message starts with a registered slash command
+    /// and returns the matching skill, or null.
+    /// </summary>
+    private ISkill? TryResolveSlashCommand(string userMessage)
+    {
+        if (_skills is null || !userMessage.StartsWith('/')) return null;
+        var parts = userMessage.Split(' ', 2);
+        var cmd = parts[0];
+        return _skills.FindBySlashCommand(cmd);
+    }
+
+    /// <summary>
+    /// Strips the slash command prefix from the user message, leaving
+    /// the rest of the message for the LLM to process.
+    /// </summary>
+    private static string StripSlashCommand(string userMessage)
+    {
+        var parts = userMessage.Split(' ', 2);
+        return parts.Length > 1 ? parts[1].Trim() : "";
+    }
+
     public async IAsyncEnumerable<string> SendMessageAsync(string userMessage, [EnumeratorCancellation] CancellationToken ct = default)
     {
+        // --- Skill activation ---
+        var activeSkills = new List<ISkill>();
+        var skillContextMessages = new List<ChatMessage>();
+        var skillPromptAugment = new StringBuilder();
+
+        if (_skills is not null)
+        {
+            // Check for explicit slash command first
+            var slashSkill = TryResolveSlashCommand(userMessage);
+
+            if (slashSkill is not null)
+            {
+                activeSkills.Add(slashSkill);
+                // Strip the slash command from the user message
+                userMessage = StripSlashCommand(userMessage);
+            }
+
+            // Then check for auto-activation (excluding already-triggered skills)
+            var autoSkills = _skills.GetAutoActivatedSkills(userMessage, _projectDir)
+                .Where(s => !activeSkills.Contains(s));
+            activeSkills.AddRange(autoSkills);
+
+            // Build prompt augmentation and pre-fetch context for all active skills
+            foreach (var skill in activeSkills)
+            {
+                var augment = skill.GetPromptAugmentation();
+                if (!string.IsNullOrEmpty(augment))
+                {
+                    skillPromptAugment.AppendLine(augment);
+                    skillPromptAugment.AppendLine();
+                }
+
+                try
+                {
+                    var context = await skill.PreFetchContextAsync(userMessage, _retriever, ct);
+                    skillContextMessages.AddRange(context);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    _logger.LogWarning(ex, "Skill {SkillName} pre-fetch failed", skill.Name);
+                }
+            }
+        }
+
+        // Inject skill context as system messages before the user message
+        foreach (var ctxMsg in skillContextMessages)
+        {
+            _history.Add(ctxMsg);
+        }
+
         _history.Add(ChatMessage.User(userMessage));
+
+        // If skills are active, inject the augmentation as a system message
+        if (skillPromptAugment.Length > 0)
+        {
+            _history.Add(ChatMessage.System(skillPromptAugment.ToString()));
+        }
 
         for (var iteration = 0; iteration < _maxIterations; iteration++)
         {
