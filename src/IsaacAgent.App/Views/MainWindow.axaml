@@ -74,10 +74,10 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:FileTreeItem">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="Lua" Foreground="#569CD6"
+                                    <TextBlock Text="Lua" Foreground="{DynamicResource IsaacLuaTagBrush}"
                                                IsVisible="{Binding IsLua}"
                                                FontSize="10" VerticalAlignment="Center" />
-                                    <TextBlock Text="XML" Foreground="#CE9178"
+                                    <TextBlock Text="XML" Foreground="{DynamicResource IsaacXmlTagBrush}"
                                                IsVisible="{Binding IsXml}"
                                                FontSize="10" VerticalAlignment="Center" />
                                     <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
@@ -106,7 +106,7 @@
                                     <Panel>
                                         <!-- Active tab: highlighted with accent border -->
                                         <Border Padding="8,4" CornerRadius="4,4,0,0"
-                                                BorderBrush="#569CD6" BorderThickness="0,0,0,2"
+                                                BorderBrush="{DynamicResource IsaacAccentBrush}" BorderThickness="0,0,0,2"
                                                 IsVisible="{Binding IsActive}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <Button Background="Transparent" BorderThickness="0" Padding="0"

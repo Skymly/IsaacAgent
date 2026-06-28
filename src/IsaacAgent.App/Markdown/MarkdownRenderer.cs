@@ -19,10 +19,17 @@ public static class MarkdownRenderer
     public static string GetMarkdown(Avalonia.Controls.SelectableTextBlock element) => element.GetValue(MarkdownProperty);
     public static void SetMarkdown(Avalonia.Controls.SelectableTextBlock element, string value) => element.SetValue(MarkdownProperty, value);
 
-    private static readonly SolidColorBrush CodeColor = new(Color.Parse("#CE9178"));
-    private static readonly SolidColorBrush QuoteColor = new(Color.Parse("#808080"));
-    private static readonly SolidColorBrush LinkColor = new(Color.Parse("#569CD6"));
-    private static readonly SolidColorBrush HrBrush = new(Color.Parse("#404040"));
+    private static IBrush ResolveBrush(string key)
+    {
+        if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is IBrush b)
+            return b;
+        return new SolidColorBrush(Colors.Transparent);
+    }
+
+    private static IBrush CodeBrush => ResolveBrush("IsaacCodeBrush");
+    private static IBrush QuoteBrush => ResolveBrush("IsaacMarkdownQuoteBrush");
+    private static IBrush LinkBrush => ResolveBrush("IsaacLinkBrush");
+    private static IBrush HrColorBrush => ResolveBrush("IsaacMarkdownHrBrush");
     private static readonly FontFamily MonoFont = FontFamily.Parse("Cascadia Code,Consolas,monospace");
 
     private static void OnMarkdownChanged(Avalonia.Controls.SelectableTextBlock textBlock, AvaloniaPropertyChangedEventArgs e)
@@ -76,7 +83,7 @@ public static class MarkdownRenderer
                 inlines.Add(new Run("\n"));
                 inlines.Add(new Run(new string('\u2014', 40))
                 {
-                    Foreground = HrBrush,
+                    Foreground = HrColorBrush,
                     FontSize = 12,
                 });
                 inlines.Add(new Run("\n"));
@@ -113,7 +120,7 @@ public static class MarkdownRenderer
                 StyleLastRun(inlines, r =>
                 {
                     r.FontStyle = FontStyle.Italic;
-                    r.Foreground = QuoteColor;
+                    r.Foreground = QuoteBrush;
                 });
                 inlines.Add(new Run("\n"));
                 continue;
@@ -170,7 +177,7 @@ public static class MarkdownRenderer
             {
                 FontFamily = MonoFont,
                 FontSize = 11,
-                Foreground = QuoteColor,
+                Foreground = QuoteBrush,
                 FontStyle = FontStyle.Italic,
             });
         }
@@ -178,7 +185,7 @@ public static class MarkdownRenderer
         {
             FontFamily = MonoFont,
             FontSize = 12,
-            Foreground = CodeColor,
+            Foreground = CodeBrush,
         });
     }
 
@@ -248,7 +255,7 @@ public static class MarkdownRenderer
                 inlines.Add(new Run(match.Groups[4].Value)
                 {
                     FontFamily = MonoFont,
-                    Foreground = CodeColor,
+                    Foreground = CodeBrush,
                 });
             }
             else if (match.Groups[6].Success) // *italic*
@@ -259,7 +266,7 @@ public static class MarkdownRenderer
             {
                 inlines.Add(new Run(match.Groups[8].Value)
                 {
-                    Foreground = LinkColor,
+                    Foreground = LinkBrush,
                     TextDecorations = TextDecorations.Underline,
                 });
             }

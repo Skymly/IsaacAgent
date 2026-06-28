@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia;
 using Avalonia.Layout;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -99,14 +100,30 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
 
 public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
 {
-    private static readonly SolidColorBrush _userBrush = new(Color.Parse("#1e4d8b"));
-    private static readonly SolidColorBrush _assistantBrush = new(Color.Parse("#2d2d30"));
-    private static readonly SolidColorBrush _toolBrush = new(Color.Parse("#3d3520"));
-    private static readonly SolidColorBrush _toolResultBrush = new(Color.Parse("#1a3a1a"));
-    private static readonly SolidColorBrush _retrievalBrush = new(Color.Parse("#1a2a3a"));
-    private static readonly SolidColorBrush _errorBrush = new(Color.Parse("#5c1a1a"));
-    private static readonly SolidColorBrush _systemBrush = new(Color.Parse("#3a3a3a"));
-    private static readonly SolidColorBrush _defaultBrush = new(Color.Parse("#2d2d30"));
+    private static IBrush? _userBrush;
+    private static IBrush? _assistantBrush;
+    private static IBrush? _toolBrush;
+    private static IBrush? _toolResultBrush;
+    private static IBrush? _retrievalBrush;
+    private static IBrush? _errorBrush;
+    private static IBrush? _systemBrush;
+    private static IBrush? _defaultBrush;
+
+    private static IBrush ResolveBrush(string key)
+    {
+        if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is IBrush b)
+            return b;
+        return new SolidColorBrush(Colors.Transparent);
+    }
+
+    private static IBrush UserBrush => _userBrush ??= ResolveBrush("IsaacChatUserBgBrush");
+    private static IBrush AssistantBrush => _assistantBrush ??= ResolveBrush("IsaacChatAssistantBgBrush");
+    private static IBrush ToolBrush => _toolBrush ??= ResolveBrush("IsaacChatToolBgBrush");
+    private static IBrush ToolResultBrush => _toolResultBrush ??= ResolveBrush("IsaacChatToolResultBgBrush");
+    private static IBrush RetrievalBrush => _retrievalBrush ??= ResolveBrush("IsaacChatRetrievalBgBrush");
+    private static IBrush ErrorBrush => _errorBrush ??= ResolveBrush("IsaacChatErrorBgBrush");
+    private static IBrush SystemBrush => _systemBrush ??= ResolveBrush("IsaacChatSystemBgBrush");
+    private static IBrush DefaultBrush => _defaultBrush ??= ResolveBrush("IsaacChatAssistantBgBrush");
 
     [ObservableProperty]
     private string _role = "";
@@ -192,14 +209,14 @@ public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
 
     public IBrush BackgroundBrush => Role switch
     {
-        "user" => _userBrush,
-        "assistant" => _assistantBrush,
-        "tool" => _toolBrush,
-        "tool_result" => _toolResultBrush,
-        "retrieval" => _retrievalBrush,
-        "error" => _errorBrush,
-        "system" => _systemBrush,
-        _ => _defaultBrush
+        "user" => UserBrush,
+        "assistant" => AssistantBrush,
+        "tool" => ToolBrush,
+        "tool_result" => ToolResultBrush,
+        "retrieval" => RetrievalBrush,
+        "error" => ErrorBrush,
+        "system" => SystemBrush,
+        _ => DefaultBrush
     };
 
     public HorizontalAlignment HorizontalAlign => Role == "user" ? HorizontalAlignment.Right : HorizontalAlignment.Left;

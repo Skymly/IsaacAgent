@@ -3,6 +3,7 @@ using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using IsaacAgent.App.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IsaacAgent.App.Views;
 
@@ -13,7 +14,7 @@ public sealed partial class TemplateGalleryWindow : Window
     public TemplateGalleryWindow()
     {
         InitializeComponent();
-        _vm = new TemplateGalleryViewModel();
+        _vm = App.Services.GetRequiredService<TemplateGalleryViewModel>();
         DataContext = _vm;
     }
 

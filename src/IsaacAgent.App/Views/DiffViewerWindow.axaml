@@ -32,7 +32,7 @@
         </StackPanel>
 
         <!-- Diff content -->
-        <Border Grid.Row="1" Background="#1e1e1e" CornerRadius="4" Padding="0">
+        <Border Grid.Row="1" Background="{DynamicResource IsaacCodeBlockBgBrush}" CornerRadius="4" Padding="0">
             <ScrollViewer HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding SelectedFile.Lines}" Padding="4">
@@ -41,12 +41,12 @@
                             <Grid ColumnDefinitions="40,40,*">
                                 <TextBlock Grid.Column="0"
                                            Text="{Binding OldLineNumber}"
-                                           Foreground="#858585" FontSize="11"
+                                           Foreground="{DynamicResource IsaacDiffLineNumberBrush}" FontSize="11"
                                            FontFamily="Cascadia Code,Consolas,monospace"
                                            Padding="4,0" />
                                 <TextBlock Grid.Column="1"
                                            Text="{Binding NewLineNumber}"
-                                           Foreground="#858585" FontSize="11"
+                                           Foreground="{DynamicResource IsaacDiffLineNumberBrush}" FontSize="11"
                                            FontFamily="Cascadia Code,Consolas,monospace"
                                            Padding="4,0" />
                                 <TextBlock Grid.Column="2"
@@ -66,11 +66,11 @@
         <!-- Footer -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="16" Margin="0,8,0,0">
             <TextBlock FontSize="11" Opacity="0.5">
-                <Run Foreground="#4EC9B0" Text="+ added" />
+                <Run Foreground="{DynamicResource IsaacDiffAddedBrush}" Text="+ added" />
                 <Run Text="  " />
-                <Run Foreground="#F48771" Text="- removed" />
+                <Run Foreground="{DynamicResource IsaacDiffRemovedBrush}" Text="- removed" />
                 <Run Text="  " />
-                <Run Foreground="#858585" Text="  context" />
+                <Run Foreground="{DynamicResource IsaacDiffLineNumberBrush}" Text="  context" />
             </TextBlock>
         </StackPanel>
     </Grid>

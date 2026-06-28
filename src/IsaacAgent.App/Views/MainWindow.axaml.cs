@@ -1,3 +1,6 @@
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
@@ -6,8 +9,6 @@ using Avalonia.Threading;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Specialized;
-using System.ComponentModel;
 
 namespace IsaacAgent.App.Views;
 
@@ -258,11 +259,18 @@ public sealed partial class MainWindow : Window
                 {
                     new TextBlock { Text = "IsaacAgent", FontSize = 24, FontWeight = Avalonia.Media.FontWeight.Bold },
                     new TextBlock { Text = "AI Coding Agent for Binding of Isaac: Repentance Modding", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-                    new TextBlock { Text = "Version 0.1.0", Opacity = 0.6 },
+                    new TextBlock { Text = $"Version {GetAppVersion()}", Opacity = 0.6 },
                     new TextBlock { Text = "Built with Avalonia + .NET 8", Opacity = 0.6 }
                 }
             }
         };
         dialog.ShowDialog(this);
+    }
+
+    private static string GetAppVersion()
+    {
+        var attr = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>();
+        return attr?.InformationalVersion ?? "0.0.0";
     }
 }

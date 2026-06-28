@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using System.Globalization;
@@ -11,9 +12,12 @@ public sealed class LogLevelToBrushConverter : IValueConverter
 {
     public static readonly LogLevelToBrushConverter Instance = new();
 
-    private static readonly IBrush ErrorBrush = new SolidColorBrush(Color.Parse("#F48771"));
-    private static readonly IBrush WarningBrush = new SolidColorBrush(Color.Parse("#CCA700"));
-    private static readonly IBrush InfoBrush = new SolidColorBrush(Color.Parse("#608B4E"));
+    private static IBrush ResolveBrush(string key)
+    {
+        if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is IBrush b)
+            return b;
+        return new SolidColorBrush(Colors.Transparent);
+    }
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
@@ -21,12 +25,12 @@ public sealed class LogLevelToBrushConverter : IValueConverter
         {
             return level switch
             {
-                LogEntry.EntryLevel.Error => ErrorBrush,
-                LogEntry.EntryLevel.Warning => WarningBrush,
-                _ => InfoBrush
+                LogEntry.EntryLevel.Error => ResolveBrush("IsaacLogErrorBrush"),
+                LogEntry.EntryLevel.Warning => ResolveBrush("IsaacLogWarningBrush"),
+                _ => ResolveBrush("IsaacLogInfoBrush")
             };
         }
-        return InfoBrush;
+        return ResolveBrush("IsaacLogInfoBrush");
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

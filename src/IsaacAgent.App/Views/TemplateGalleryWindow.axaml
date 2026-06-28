@@ -66,12 +66,12 @@
                     <TextBlock Text="Preview"
                                FontWeight="SemiBold" FontSize="12"
                                Margin="0,8,0,4" />
-                    <Border Background="#1e1e1e" CornerRadius="4" Padding="12">
+                    <Border Background="{DynamicResource IsaacCodeBlockBgBrush}" CornerRadius="4" Padding="12">
                         <SelectableTextBlock Text="{Binding SelectedTemplate.Preview}"
                                              FontFamily="Cascadia Code,Consolas,monospace"
                                              FontSize="12"
                                              TextWrapping="Wrap"
-                                             Foreground="#d4d4d4" />
+                                             Foreground="{DynamicResource IsaacCodeFgBrush}" />
                     </Border>
                 </StackPanel>
             </ScrollViewer>

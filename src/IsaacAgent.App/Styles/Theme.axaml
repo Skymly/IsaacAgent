@@ -1,0 +1,80 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Semantic color palette for IsaacAgent.
+         All views and code-behind should reference these via
+         {DynamicResource ...} or Application.Current.FindResource().
+         ============================================================ -->
+
+    <!-- Accent / links / highlights -->
+    <Color x:Key="IsaacAccentColor">#569CD6</Color>
+    <Color x:Key="IsaacLinkColor">#569CD6</Color>
+    <Color x:Key="IsaacLuaTagColor">#569CD6</Color>
+
+    <!-- Syntax / code -->
+    <Color x:Key="IsaacXmlTagColor">#CE9178</Color>
+    <Color x:Key="IsaacCodeColor">#CE9178</Color>
+    <Color x:Key="IsaacCodeBlockBgColor">#1e1e1e</Color>
+    <Color x:Key="IsaacCodeFgColor">#d4d4d4</Color>
+
+    <!-- Chat message backgrounds -->
+    <Color x:Key="IsaacChatUserBgColor">#1e4d8b</Color>
+    <Color x:Key="IsaacChatAssistantBgColor">#2d2d30</Color>
+    <Color x:Key="IsaacChatToolBgColor">#3d3520</Color>
+    <Color x:Key="IsaacChatToolResultBgColor">#1a3a1a</Color>
+    <Color x:Key="IsaacChatRetrievalBgColor">#1a2a3a</Color>
+    <Color x:Key="IsaacChatErrorBgColor">#5c1a1a</Color>
+    <Color x:Key="IsaacChatSystemBgColor">#3a3a3a</Color>
+
+    <!-- Diff viewer -->
+    <Color x:Key="IsaacDiffAddedColor">#4EC9B0</Color>
+    <Color x:Key="IsaacDiffRemovedColor">#F48771</Color>
+    <Color x:Key="IsaacDiffContextColor">#D4D4D4</Color>
+    <Color x:Key="IsaacDiffLineNumberColor">#858585</Color>
+
+    <!-- Log levels -->
+    <Color x:Key="IsaacLogHeaderColor">#569CD6</Color>
+    <Color x:Key="IsaacLogErrorColor">#F48771</Color>
+    <Color x:Key="IsaacLogWarningColor">#CCA700</Color>
+    <Color x:Key="IsaacLogInfoColor">#608B4E</Color>
+
+    <!-- Markdown renderer -->
+    <Color x:Key="IsaacMarkdownQuoteColor">#808080</Color>
+    <Color x:Key="IsaacMarkdownHrColor">#404040</Color>
+
+    <!-- ============================================================
+         Brushes (reference the colors above so both the raw Color
+         and the Brush are available as resources).
+         ============================================================ -->
+
+    <SolidColorBrush x:Key="IsaacAccentBrush" Color="{StaticResource IsaacAccentColor}" />
+    <SolidColorBrush x:Key="IsaacLinkBrush" Color="{StaticResource IsaacLinkColor}" />
+    <SolidColorBrush x:Key="IsaacLuaTagBrush" Color="{StaticResource IsaacLuaTagColor}" />
+    <SolidColorBrush x:Key="IsaacXmlTagBrush" Color="{StaticResource IsaacXmlTagColor}" />
+    <SolidColorBrush x:Key="IsaacCodeBrush" Color="{StaticResource IsaacCodeColor}" />
+    <SolidColorBrush x:Key="IsaacCodeBlockBgBrush" Color="{StaticResource IsaacCodeBlockBgColor}" />
+    <SolidColorBrush x:Key="IsaacCodeFgBrush" Color="{StaticResource IsaacCodeFgColor}" />
+
+    <SolidColorBrush x:Key="IsaacChatUserBgBrush" Color="{StaticResource IsaacChatUserBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatAssistantBgBrush" Color="{StaticResource IsaacChatAssistantBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatToolBgBrush" Color="{StaticResource IsaacChatToolBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatToolResultBgBrush" Color="{StaticResource IsaacChatToolResultBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatRetrievalBgBrush" Color="{StaticResource IsaacChatRetrievalBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatErrorBgBrush" Color="{StaticResource IsaacChatErrorBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatSystemBgBrush" Color="{StaticResource IsaacChatSystemBgColor}" />
+
+    <SolidColorBrush x:Key="IsaacDiffAddedBrush" Color="{StaticResource IsaacDiffAddedColor}" />
+    <SolidColorBrush x:Key="IsaacDiffRemovedBrush" Color="{StaticResource IsaacDiffRemovedColor}" />
+    <SolidColorBrush x:Key="IsaacDiffContextBrush" Color="{StaticResource IsaacDiffContextColor}" />
+    <SolidColorBrush x:Key="IsaacDiffLineNumberBrush" Color="{StaticResource IsaacDiffLineNumberColor}" />
+
+    <SolidColorBrush x:Key="IsaacLogHeaderBrush" Color="{StaticResource IsaacLogHeaderColor}" />
+    <SolidColorBrush x:Key="IsaacLogErrorBrush" Color="{StaticResource IsaacLogErrorColor}" />
+    <SolidColorBrush x:Key="IsaacLogWarningBrush" Color="{StaticResource IsaacLogWarningColor}" />
+    <SolidColorBrush x:Key="IsaacLogInfoBrush" Color="{StaticResource IsaacLogInfoColor}" />
+
+    <SolidColorBrush x:Key="IsaacMarkdownQuoteBrush" Color="{StaticResource IsaacMarkdownQuoteColor}" />
+    <SolidColorBrush x:Key="IsaacMarkdownHrBrush" Color="{StaticResource IsaacMarkdownHrColor}" />
+
+</ResourceDictionary>

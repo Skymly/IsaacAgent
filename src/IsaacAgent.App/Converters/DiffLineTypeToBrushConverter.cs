@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using System.Globalization;
@@ -12,10 +13,12 @@ public sealed class DiffLineTypeToBrushConverter : IValueConverter
 {
     public static readonly DiffLineTypeToBrushConverter Instance = new();
 
-    private static readonly IBrush AddedBrush = new SolidColorBrush(Color.Parse("#4EC9B0"));
-    private static readonly IBrush RemovedBrush = new SolidColorBrush(Color.Parse("#F48771"));
-    private static readonly IBrush ContextBrush = new SolidColorBrush(Color.Parse("#D4D4D4"));
-    private static readonly IBrush HeaderBrush = new SolidColorBrush(Color.Parse("#569CD6"));
+    private static IBrush ResolveBrush(string key)
+    {
+        if (Application.Current?.Resources.TryGetValue(key, out var v) == true && v is IBrush b)
+            return b;
+        return new SolidColorBrush(Colors.Transparent);
+    }
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
@@ -23,13 +26,13 @@ public sealed class DiffLineTypeToBrushConverter : IValueConverter
         {
             return type switch
             {
-                DiffLine.LineType.Added => AddedBrush,
-                DiffLine.LineType.Removed => RemovedBrush,
-                DiffLine.LineType.Header => HeaderBrush,
-                _ => ContextBrush
+                DiffLine.LineType.Added => ResolveBrush("IsaacDiffAddedBrush"),
+                DiffLine.LineType.Removed => ResolveBrush("IsaacDiffRemovedBrush"),
+                DiffLine.LineType.Header => ResolveBrush("IsaacAccentBrush"),
+                _ => ResolveBrush("IsaacDiffContextBrush")
             };
         }
-        return ContextBrush;
+        return ResolveBrush("IsaacDiffContextBrush");
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
