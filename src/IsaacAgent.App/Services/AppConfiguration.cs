@@ -36,6 +36,17 @@ public sealed class AppConfiguration
     public string? OnnxEmbeddingModelPath { get; set; }
     public string? OnnxEmbeddingVocabPath { get; set; }
 
+    /// <summary>Window width in pixels. 0 = use default.</summary>
+    public double WindowWidth { get; set; }
+    /// <summary>Window height in pixels. 0 = use default.</summary>
+    public double WindowHeight { get; set; }
+    /// <summary>Window X position. null = let OS decide.</summary>
+    public double? WindowX { get; set; }
+    /// <summary>Window Y position. null = let OS decide.</summary>
+    public double? WindowY { get; set; }
+    /// <summary>Whether the window was maximized.</summary>
+    public bool WindowMaximized { get; set; }
+
     public EmbeddingConfig ToEmbeddingConfig() => new()
     {
         Source = EmbeddingSource,
@@ -102,6 +113,11 @@ public sealed class AppConfiguration
             OllamaEmbeddingModel = OllamaEmbeddingModel,
             OnnxEmbeddingModelPath = OnnxEmbeddingModelPath,
             OnnxEmbeddingVocabPath = OnnxEmbeddingVocabPath,
+            WindowWidth = WindowWidth,
+            WindowHeight = WindowHeight,
+            WindowX = WindowX,
+            WindowY = WindowY,
+            WindowMaximized = WindowMaximized,
         };
 
         if (!string.IsNullOrEmpty(ApiKey))

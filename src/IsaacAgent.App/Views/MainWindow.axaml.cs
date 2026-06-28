@@ -1,11 +1,11 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +40,8 @@ public sealed partial class MainWindow : Window
         _scrollTab = vm.Chat.ActiveTab;
         if (_scrollTab is not null)
             _scrollTab.Messages.CollectionChanged += OnMessagesChanged;
+
+        RestoreWindowState();
     }
 
     private void OnChatPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -61,7 +63,60 @@ public sealed partial class MainWindow : Window
             _scrollTab.Messages.CollectionChanged -= OnMessagesChanged;
         _scrollTab = null;
         _mainVm = null;
+
+        SaveWindowState();
+
         base.OnClosed(e);
+    }
+
+    /// <summary>
+    ///   Restores window size, position, and maximized state from
+    ///   persisted AppConfiguration. Falls back to XAML defaults if
+    ///   no saved state exists or values are invalid.
+    /// </summary>
+    private void RestoreWindowState()
+    {
+        var config = App.Services.GetRequiredService<AppConfiguration>();
+        if (config.WindowMaximized)
+        {
+            WindowState = WindowState.Maximized;
+            return;
+        }
+
+        if (config.WindowWidth > 200 && config.WindowHeight > 200)
+        {
+            Width = config.WindowWidth;
+            Height = config.WindowHeight;
+        }
+
+        if (config.WindowX is { } x && config.WindowY is { } y
+            && x >= -10000 && y >= -10000)
+        {
+            Position = new Avalonia.PixelPoint((int)x, (int)y);
+        }
+    }
+
+    /// <summary>
+    ///   Saves the current window size, position, and maximized state
+    ///   to AppConfiguration so it can be restored on next launch.
+    /// </summary>
+    private void SaveWindowState()
+    {
+        var config = App.Services.GetRequiredService<AppConfiguration>();
+        var isMaximized = WindowState == WindowState.Maximized;
+
+        config.WindowMaximized = isMaximized;
+
+        if (!isMaximized)
+        {
+            config.WindowWidth = Width;
+            config.WindowHeight = Height;
+            var pos = Position;
+            config.WindowX = pos.X;
+            config.WindowY = pos.Y;
+        }
+
+        config.Save();
     }
 
     private void InitializeComponent()
@@ -251,32 +306,10 @@ public sealed partial class MainWindow : Window
 
     private void OnAbout(object? sender, RoutedEventArgs e)
     {
-        var dialog = new Window
+        var dialog = new AboutWindow
         {
-            Title = "About IsaacAgent",
-            Width = 400,
-            Height = 250,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Content = new StackPanel
-            {
-                Margin = new Avalonia.Thickness(20),
-                Spacing = 10,
-                Children =
-                {
-                    new TextBlock { Text = "IsaacAgent", FontSize = 24, FontWeight = Avalonia.Media.FontWeight.Bold },
-                    new TextBlock { Text = "AI Coding Agent for Binding of Isaac: Repentance Modding", TextWrapping = Avalonia.Media.TextWrapping.Wrap },
-                    new TextBlock { Text = $"Version {GetAppVersion()}", Opacity = 0.6 },
-                    new TextBlock { Text = "Built with Avalonia + .NET 8", Opacity = 0.6 }
-                }
-            }
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
         dialog.ShowDialog(this);
-    }
-
-    private static string GetAppVersion()
-    {
-        var attr = Assembly.GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>();
-        return attr?.InformationalVersion ?? "0.0.0";
     }
 }
