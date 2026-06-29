@@ -32,7 +32,16 @@ public sealed partial class ProjectViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasFilePreview;
 
+    [ObservableProperty]
+    private string _fileSearchText = "";
+
+    [ObservableProperty]
+    private bool _hasFileSearch;
+
     public ObservableCollection<FileTreeItem> Files { get; } = [];
+
+    /// <summary>Filtered file list for search results.</summary>
+    public ObservableCollection<FileTreeItem> FilteredFiles { get; } = [];
 
     public Func<Task<IStorageFolder?>>? PickFolderAsync { get; set; }
 
@@ -96,6 +105,222 @@ public sealed partial class ProjectViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to read file {Path}", item.Path);
+        }
+    }
+
+    /// <summary>
+    ///   Create a new file in the project. If a directory is selected,
+    ///   the file is created inside it; otherwise at the project root.
+    /// </summary>
+    [RelayCommand]
+    private async Task CreateNewFileAsync(FileTreeItem? targetDir)
+    {
+        if (string.IsNullOrEmpty(ProjectPath)) return;
+
+        var dirPath = targetDir is { IsDirectory: true }
+            ? Path.Combine(ProjectPath, targetDir.Path)
+            : ProjectPath;
+
+        var fileName = $"newfile_{DateTime.Now:HHmmss}.lua";
+        var fullPath = Path.Combine(dirPath, fileName);
+        try
+        {
+            await File.WriteAllTextAsync(fullPath, "-- New file\n");
+            await RefreshFilesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create file {Path}", fullPath);
+        }
+    }
+
+    /// <summary>
+    ///   Create a new folder in the project.
+    /// </summary>
+    [RelayCommand]
+    private async Task CreateNewFolderAsync(FileTreeItem? targetDir)
+    {
+        if (string.IsNullOrEmpty(ProjectPath)) return;
+
+        var dirPath = targetDir is { IsDirectory: true }
+            ? Path.Combine(ProjectPath, targetDir.Path)
+            : ProjectPath;
+
+        var folderName = $"newfolder_{DateTime.Now:HHmmss}";
+        var fullPath = Path.Combine(dirPath, folderName);
+        try
+        {
+            Directory.CreateDirectory(fullPath);
+            await RefreshFilesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create folder {Path}", fullPath);
+        }
+    }
+
+    /// <summary>
+    ///   Delete a file or folder from the project.
+    /// </summary>
+    [RelayCommand]
+    private async Task DeleteFileAsync(FileTreeItem? item)
+    {
+        if (item is null || string.IsNullOrEmpty(ProjectPath)) return;
+
+        var fullPath = Path.Combine(ProjectPath, item.Path);
+        try
+        {
+            if (item.IsDirectory)
+                Directory.Delete(fullPath, recursive: true);
+            else
+                File.Delete(fullPath);
+            await RefreshFilesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete {Path}", fullPath);
+        }
+    }
+
+    /// <summary>
+    ///   Rename a file or folder.
+    /// </summary>
+    [RelayCommand]
+    private async Task RenameFileAsync(FileTreeItem? item)
+    {
+        if (item is null || string.IsNullOrEmpty(ProjectPath)) return;
+
+        var fullPath = Path.Combine(ProjectPath, item.Path);
+        var dir = Path.GetDirectoryName(fullPath) ?? ProjectPath;
+        var newName = item.Name + "_renamed";
+        var newPath = Path.Combine(dir, newName);
+
+        try
+        {
+            if (item.IsDirectory)
+                Directory.Move(fullPath, newPath);
+            else
+                File.Move(fullPath, newPath);
+            await RefreshFilesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to rename {Path}", fullPath);
+        }
+    }
+
+    /// <summary>
+    ///   Copy the full path of a file or folder to the clipboard.
+    /// </summary>
+    [RelayCommand]
+    private async Task CopyPathAsync(FileTreeItem? item)
+    {
+        if (item is null || string.IsNullOrEmpty(ProjectPath)) return;
+        var fullPath = Path.Combine(ProjectPath, item.Path);
+
+        if (Avalonia.Application.Current?.ApplicationLifetime
+            is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var clipboard = desktop.MainWindow?.Clipboard;
+            if (clipboard is not null)
+                await clipboard.SetTextAsync(fullPath);
+        }
+    }
+
+    /// <summary>
+    ///   Open the containing folder in the system file explorer.
+    /// </summary>
+    [RelayCommand]
+    private void OpenInExplorer(FileTreeItem? item)
+    {
+        if (string.IsNullOrEmpty(ProjectPath)) return;
+
+        var targetPath = item is null
+            ? ProjectPath
+            : Path.Combine(ProjectPath, item.Path);
+
+        var dirToOpen = item is { IsDirectory: true }
+            ? targetPath
+            : Path.GetDirectoryName(targetPath) ?? ProjectPath;
+
+        try
+        {
+            // Cross-platform: use Process.Start with useShellExecute
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = dirToOpen,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open explorer for {Path}", dirToOpen);
+        }
+    }
+
+    /// <summary>
+    ///   Open a file in the system default editor.
+    /// </summary>
+    [RelayCommand]
+    private void OpenInExternalEditor(FileTreeItem? item)
+    {
+        if (item is null || item.IsDirectory || string.IsNullOrEmpty(ProjectPath)) return;
+
+        var fullPath = Path.Combine(ProjectPath, item.Path);
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = fullPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to open {Path} in external editor", fullPath);
+        }
+    }
+
+    partial void OnFileSearchTextChanged(string value)
+    {
+        UpdateFilteredFiles();
+    }
+
+    /// <summary>
+    ///   Update the filtered file list based on the search query.
+    /// </summary>
+    public void UpdateFilteredFiles()
+    {
+        FilteredFiles.Clear();
+        HasFileSearch = !string.IsNullOrWhiteSpace(FileSearchText);
+
+        if (!HasFileSearch) return;
+
+        var query = FileSearchText.ToLowerInvariant();
+        foreach (var file in FlattenAllFiles(Files))
+        {
+            if (file.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                file.Path.Contains(query, StringComparison.OrdinalIgnoreCase))
+            {
+                FilteredFiles.Add(file);
+            }
+        }
+    }
+
+    private static IEnumerable<FileTreeItem> FlattenAllFiles(
+        IEnumerable<FileTreeItem> items)
+    {
+        foreach (var item in items)
+        {
+            if (item.IsDirectory)
+            {
+                foreach (var child in FlattenAllFiles(item.Children))
+                    yield return child;
+            }
+            else
+            {
+                yield return item;
+            }
         }
     }
 

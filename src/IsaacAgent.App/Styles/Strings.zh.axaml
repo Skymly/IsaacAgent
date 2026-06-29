@@ -31,6 +31,14 @@
 
     <!-- Project panel -->
     <sys:String x:Key="PanelProjectFiles">项目文件</sys:String>
+    <sys:String x:Key="FileSearchWatermark">搜索文件...</sys:String>
+    <sys:String x:Key="FileNewFile">新建文件</sys:String>
+    <sys:String x:Key="FileNewFolder">新建文件夹</sys:String>
+    <sys:String x:Key="FileRename">重命名</sys:String>
+    <sys:String x:Key="FileDelete">删除</sys:String>
+    <sys:String x:Key="FileCopyPath">复制路径</sys:String>
+    <sys:String x:Key="FileOpenInExplorer">在资源管理器中打开</sys:String>
+    <sys:String x:Key="FileOpenExternal">在外部编辑器中打开</sys:String>
 
     <!-- Quick Reference panel -->
     <sys:String x:Key="PanelQuickReference">快速参考</sys:String>

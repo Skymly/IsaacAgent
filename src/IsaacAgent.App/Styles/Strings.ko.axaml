@@ -31,6 +31,14 @@
 
     <!-- Project panel -->
     <sys:String x:Key="PanelProjectFiles">프로젝트 파일</sys:String>
+    <sys:String x:Key="FileSearchWatermark">파일 검색...</sys:String>
+    <sys:String x:Key="FileNewFile">새 파일</sys:String>
+    <sys:String x:Key="FileNewFolder">새 폴더</sys:String>
+    <sys:String x:Key="FileRename">이름 변경</sys:String>
+    <sys:String x:Key="FileDelete">삭제</sys:String>
+    <sys:String x:Key="FileCopyPath">경로 복사</sys:String>
+    <sys:String x:Key="FileOpenInExplorer">탐색기에서 열기</sys:String>
+    <sys:String x:Key="FileOpenExternal">외부 편집기에서 열기</sys:String>
 
     <!-- Quick Reference panel -->
     <sys:String x:Key="PanelQuickReference">빠른 참조</sys:String>

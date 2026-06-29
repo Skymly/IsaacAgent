@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-06-29
+
+Project file management: right-click context menu, file search, open
+in external editor, and copy path/explorer integration.
+
+### Added
+
+- Right-click context menu on file tree: New File, New Folder,
+  Rename, Delete, Copy Path, Open in Explorer, Open in External
+  Editor. Commands operate on the right-clicked item (file or
+  folder) or the project root if no item is selected.
+- File search: a search box above the file tree filters files in
+  real-time by name or path. When searching, the TreeView is
+  replaced by a flat ListBox of matching files. Case-insensitive.
+- Open in External Editor: opens a file using the system default
+  application via Process.Start with UseShellExecute.
+- Open in Explorer: opens the containing folder in the system file
+  explorer.
+- Copy Path: copies the full absolute path of a file or folder to
+  the clipboard.
+- i18n strings for all file management UI elements in 4 languages
+  (FileSearchWatermark, FileNewFile, FileNewFolder, FileRename,
+  FileDelete, FileCopyPath, FileOpenInExplorer, FileOpenExternal).
+- ProjectViewModelFileManagementTests: 11 tests (create file/folder,
+  delete file/folder, rename, search match/empty/case-insensitive,
+  null parameter safety).
+
+### Changed
+
+- ProjectViewModel: added FileSearchText, HasFileSearch,
+  FilteredFiles properties. Added CreateNewFile, CreateNewFolder,
+  DeleteFile, RenameFile, CopyPath, OpenInExplorer,
+  OpenInExternalEditor commands. Added UpdateFilteredFiles and
+  FlattenAllFiles helper methods.
+- MainWindow.axaml: file tree area now has a search box, a
+  ListBox for search results (shown when searching), and a
+  ContextMenu on the TreeView with 7 menu items.
+
+### Tests
+
+- Total: 579 tests (575 pass, 4 skip, 0 fail)
+
 ## [0.1.5] - 2026-06-29
 
 Chat interaction enhancements: message copy, edit/resend, stop

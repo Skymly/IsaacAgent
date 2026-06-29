@@ -31,6 +31,14 @@
 
     <!-- Project panel -->
     <sys:String x:Key="PanelProjectFiles">プロジェクトファイル</sys:String>
+    <sys:String x:Key="FileSearchWatermark">ファイルを検索...</sys:String>
+    <sys:String x:Key="FileNewFile">新規ファイル</sys:String>
+    <sys:String x:Key="FileNewFolder">新規フォルダ</sys:String>
+    <sys:String x:Key="FileRename">名前変更</sys:String>
+    <sys:String x:Key="FileDelete">削除</sys:String>
+    <sys:String x:Key="FileCopyPath">パスをコピー</sys:String>
+    <sys:String x:Key="FileOpenInExplorer">エクスプローラーで開く</sys:String>
+    <sys:String x:Key="FileOpenExternal">外部エディタで開く</sys:String>
 
     <!-- Quick Reference panel -->
     <sys:String x:Key="PanelQuickReference">クイックリファレンス</sys:String>

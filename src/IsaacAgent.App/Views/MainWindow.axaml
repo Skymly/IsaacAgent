@@ -47,6 +47,14 @@
                     <TextBlock DockPanel.Dock="Top" Text="{Binding Project.ProjectName}"
                                Opacity="0.6" Margin="10,0" />
 
+                    <!-- File search box -->
+                    <TextBox DockPanel.Dock="Top"
+                             Text="{Binding Project.FileSearchText}"
+                             Watermark="{DynamicResource FileSearchWatermark}"
+                             Margin="10,4,10,4"
+                             InnerLeftContent="🔍"
+                             FontSize="12" />
+
                     <Border DockPanel.Dock="Bottom" 
                             IsVisible="{Binding Project.HasFilePreview}"
                             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
@@ -71,12 +79,63 @@
                         </DockPanel>
                     </Border>
 
+                    <!-- File search results (shown when searching) -->
+                    <ListBox x:Name="FileSearchResults"
+                             ItemsSource="{Binding Project.FilteredFiles}"
+                             Margin="0,8,0,0"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             DoubleTapped="OnFileDoubleTapped"
+                             IsVisible="{Binding Project.HasFileSearch}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:FileTreeItem">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Text="Lua" Foreground="{DynamicResource IsaacLuaTagBrush}"
+                                               IsVisible="{Binding IsLua}"
+                                               FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="XML" Foreground="{DynamicResource IsaacXmlTagBrush}"
+                                               IsVisible="{Binding IsXml}"
+                                               FontSize="10" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Path}" VerticalAlignment="Center" FontSize="12" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
                     <TreeView x:Name="FileTreeView"
                               ItemsSource="{Binding Project.Files}"
                               Margin="0,8,0,0"
                               Background="Transparent"
                               BorderThickness="0"
-                              DoubleTapped="OnFileDoubleTapped">
+                              DoubleTapped="OnFileDoubleTapped"
+                              IsVisible="{Binding !Project.HasFileSearch}">
+                        <TreeView.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="{DynamicResource FileNewFile}"
+                                          Command="{Binding Project.CreateNewFileCommand}"
+                                          CommandParameter="{Binding $self}" />
+                                <MenuItem Header="{DynamicResource FileNewFolder}"
+                                          Command="{Binding Project.CreateNewFolderCommand}"
+                                          CommandParameter="{Binding $self}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource FileRename}"
+                                          Command="{Binding Project.RenameFileCommand}"
+                                          CommandParameter="{Binding $self}" />
+                                <MenuItem Header="{DynamicResource FileDelete}"
+                                          Command="{Binding Project.DeleteFileCommand}"
+                                          CommandParameter="{Binding $self}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource FileCopyPath}"
+                                          Command="{Binding Project.CopyPathCommand}"
+                                          CommandParameter="{Binding $self}" />
+                                <MenuItem Header="{DynamicResource FileOpenInExplorer}"
+                                          Command="{Binding Project.OpenInExplorerCommand}"
+                                          CommandParameter="{Binding $self}" />
+                                <MenuItem Header="{DynamicResource FileOpenExternal}"
+                                          Command="{Binding Project.OpenInExternalEditorCommand}"
+                                          CommandParameter="{Binding $self}" />
+                            </ContextMenu>
+                        </TreeView.ContextMenu>
                         <TreeView.ItemTemplate>
                             <TreeDataTemplate x:DataType="vm:FileTreeItem"
                                               ItemsSource="{Binding Children}">
