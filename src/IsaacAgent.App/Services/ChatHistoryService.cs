@@ -247,7 +247,10 @@ public sealed class ChatHistoryService
         var result = new StringBuilder(path.Length);
         foreach (var c in path)
             result.Append(invalid.Contains(c) ? '_' : c);
-        // Also replace colons and backslashes for cleaner filenames.
-        return result.ToString().Replace(':', '_').Replace('\\', '_').Replace('/', '_');
+        // Also replace path separators and colons for cleaner cross-platform filenames.
+        return result.ToString()
+            .Replace(':', '_')
+            .Replace('\\', '_')
+            .Replace('/', '_');
     }
 }

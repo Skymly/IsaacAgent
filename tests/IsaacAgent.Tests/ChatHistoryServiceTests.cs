@@ -89,12 +89,16 @@ public class ChatHistoryServiceTests
     [Fact]
     public void GetHistoryPath_SanitizesInvalidChars()
     {
-        var path = ChatHistoryService.GetHistoryPath("C:\\test:project?");
+        // Build a path containing chars that are invalid on the current platform
+        var invalidChar = Path.GetInvalidFileNameChars().FirstOrDefault(c => c != Path.DirectorySeparatorChar && c != Path.AltDirectorySeparatorChar);
+        if (invalidChar == '\0') return; // No invalid chars on this platform
+
+        var testPath = $"test{invalidChar}project";
+        var path = ChatHistoryService.GetHistoryPath(testPath);
         Assert.NotNull(path);
         var fileName = Path.GetFileName(path!);
-        // First char may be C, but colons and question marks should be gone
-        Assert.DoesNotContain(":", fileName[1..]);
-        Assert.DoesNotContain("?", fileName);
+        // The invalid char should have been replaced with underscore
+        Assert.DoesNotContain(invalidChar.ToString(), fileName);
     }
 
     // ── Save / Load ───────────────────────────────────────────
