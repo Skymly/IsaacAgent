@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-29
+
+Internationalization, theme switching, new keyboard shortcuts, and
+expanded ViewModel test coverage.
+
+### Added
+
+- Multi-language support (i18n): English and Chinese UI with runtime
+  switching via LocalizationService. All windows (MainWindow, Settings,
+  About, DiffViewer, TemplateGallery, CommandPalette) use
+  DynamicResource bindings. Language preference persisted in
+  AppConfiguration. 115 string keys in Strings.en.axaml and
+  Strings.zh.axaml.
+- Light/dark theme switching: ThemeService swaps Avalonia
+  RequestedThemeVariant and Isaac-specific color palette at runtime.
+  Theme.Light.axaml provides light-appropriate colors for all semantic
+  categories (accent, syntax, chat backgrounds, diff, log, markdown,
+  toast). Theme preference persisted in AppConfiguration.
+- Keyboard shortcuts: Ctrl+Tab (switch to next chat tab), Ctrl+W (close
+  active tab), F1 (open About dialog). ChatViewModel.SwitchToNextTab
+  command cycles through tabs with wraparound.
+- Settings window: language and theme selectors in a new Appearance
+  section at the top.
+- DiffViewerViewModelTests: 7 tests (constructor, SetProjectDir,
+  SelectedFile, RefreshAsync).
+- MainViewModelTests: 8 tests (constructor, ClearChat, StatusText,
+  IsBusy, DI instance verification).
+- SettingsViewModelTests: 14 tests (config loading, properties,
+  providers, embeddings, language/theme).
+- LocalizationServiceTests: 8 tests (default language, config loading,
+  supported languages).
+- ThemeServiceTests: 8 tests (default theme, config loading, supported
+  themes).
+- ChatViewModelTests: +2 SwitchToNextTab tests (single tab no-op,
+  multi-tab cycle).
+
+### Changed
+
+- AppConfiguration: added Language ("en"/"zh") and Theme
+  ("dark"/"light") fields with persistence.
+- MainViewModel: StatusText now loaded from i18n resources instead of
+  hardcoded English.
+- ChatTabViewModelTests: FlushDispatcher uses CheckAccess guard for
+  thread safety in headless test runner.
+- CI release workflow: draft: true changed to draft: false so GitHub
+  Releases are published automatically on tag push.
+
+### Tests
+
+- Total: 529 tests (525 pass, 4 skip, 0 fail)
+- 4 skipped tests are dispatcher-dependent (Dispatcher.UIThread.Post)
+  which cannot be reliably flushed in headless test runner when run as
+  part of full suite.
+
 ## [0.1.2] - 2026-06-28
 
 UX improvements: window state persistence, drag-and-drop, toast
