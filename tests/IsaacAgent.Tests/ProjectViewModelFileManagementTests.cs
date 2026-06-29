@@ -38,7 +38,7 @@ public class ProjectViewModelFileManagementTests
             var vm = CreateViewModel();
             await vm.LoadProjectAsync(dir);
 
-            vm.CreateNewFileCommand.Execute(null);
+            await vm.CreateNewFileCommand.ExecuteAsync(null);
 
             // Verify a new file was created
             var files = Directory.GetFiles(dir);
@@ -60,7 +60,7 @@ public class ProjectViewModelFileManagementTests
             var vm = CreateViewModel();
             await vm.LoadProjectAsync(dir);
 
-            vm.CreateNewFolderCommand.Execute(null);
+            await vm.CreateNewFolderCommand.ExecuteAsync(null);
 
             var dirs = Directory.GetDirectories(dir);
             Assert.Contains(dirs, d => d.Contains("newfolder_"));
@@ -81,7 +81,7 @@ public class ProjectViewModelFileManagementTests
             await vm.LoadProjectAsync(dir);
 
             var fileItem = vm.Files.First(f => !f.IsDirectory && f.Name == "main.lua");
-            vm.DeleteFileCommand.Execute(fileItem);
+            await vm.DeleteFileCommand.ExecuteAsync(fileItem);
 
             Assert.False(File.Exists(Path.Combine(dir, "main.lua")));
         }
@@ -101,7 +101,7 @@ public class ProjectViewModelFileManagementTests
             await vm.LoadProjectAsync(dir);
 
             var folderItem = vm.Files.First(f => f.IsDirectory && f.Name == "subfolder");
-            vm.DeleteFileCommand.Execute(folderItem);
+            await vm.DeleteFileCommand.ExecuteAsync(folderItem);
 
             Assert.False(Directory.Exists(Path.Combine(dir, "subfolder")));
         }
@@ -121,7 +121,7 @@ public class ProjectViewModelFileManagementTests
             await vm.LoadProjectAsync(dir);
 
             var fileItem = vm.Files.First(f => !f.IsDirectory && f.Name == "main.lua");
-            vm.RenameFileCommand.Execute(fileItem);
+            await vm.RenameFileCommand.ExecuteAsync(fileItem);
 
             // The renamed file should exist
             Assert.True(File.Exists(Path.Combine(dir, "main.lua_renamed")));
@@ -223,7 +223,7 @@ public class ProjectViewModelFileManagementTests
             var vm = CreateViewModel();
             await vm.LoadProjectAsync(dir);
 
-            vm.DeleteFileCommand.Execute(null);
+            await vm.DeleteFileCommand.ExecuteAsync(null);
 
             // Project should be unchanged
             Assert.True(File.Exists(Path.Combine(dir, "main.lua")));
@@ -243,7 +243,7 @@ public class ProjectViewModelFileManagementTests
             var vm = CreateViewModel();
             await vm.LoadProjectAsync(dir);
 
-            vm.RenameFileCommand.Execute(null);
+            await vm.RenameFileCommand.ExecuteAsync(null);
 
             Assert.True(File.Exists(Path.Combine(dir, "main.lua")));
         }
