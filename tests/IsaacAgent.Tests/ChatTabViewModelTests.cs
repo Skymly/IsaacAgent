@@ -107,7 +107,10 @@ public class ChatTabViewModelTests
     /// </summary>
     private static void FlushDispatcher()
     {
-        Dispatcher.UIThread.Invoke(() => { }, DispatcherPriority.Background);
+        if (Dispatcher.UIThread.CheckAccess())
+            Dispatcher.UIThread.RunJobs();
+        else
+            Dispatcher.UIThread.Invoke(() => { }, DispatcherPriority.Background);
     }
 
     private static (ChatTabViewModel tab, ScriptedChatService chat) CreateTab(
