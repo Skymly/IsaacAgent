@@ -1,0 +1,117 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Window titles -->
+    <sys:String x:Key="AppTitle">IsaacAgent - Isaac Modding アシスタント</sys:String>
+    <sys:String x:Key="SettingsTitle">設定</sys:String>
+
+    <!-- Menu: File -->
+    <sys:String x:Key="MenuFile">ファイル</sys:String>
+    <sys:String x:Key="MenuFileNewProject">新規プロジェクト...</sys:String>
+    <sys:String x:Key="MenuFileNewFromTemplate">テンプレートから新規...</sys:String>
+    <sys:String x:Key="MenuFileOpenProject">プロジェクトを開く...</sys:String>
+    <sys:String x:Key="MenuFileSettings">設定...</sys:String>
+    <sys:String x:Key="MenuFileExit">終了</sys:String>
+
+    <!-- Menu: Chat -->
+    <sys:String x:Key="MenuChat">チャット</sys:String>
+    <sys:String x:Key="MenuChatClear">チャットをクリア</sys:String>
+    <sys:String x:Key="MenuChatExportMarkdown">Markdown にエクスポート</sys:String>
+    <sys:String x:Key="MenuChatExportJson">JSON にエクスポート</sys:String>
+
+    <!-- Menu: View -->
+    <sys:String x:Key="MenuView">表示</sys:String>
+    <sys:String x:Key="MenuViewDiffViewer">差分ビューアー...</sys:String>
+
+    <!-- Menu: Help -->
+    <sys:String x:Key="MenuHelp">ヘルプ</sys:String>
+    <sys:String x:Key="MenuHelpCommandPalette">コマンドパレット...</sys:String>
+    <sys:String x:Key="MenuHelpAbout">IsaacAgent について</sys:String>
+
+    <!-- Project panel -->
+    <sys:String x:Key="PanelProjectFiles">プロジェクトファイル</sys:String>
+
+    <!-- Quick Reference panel -->
+    <sys:String x:Key="PanelQuickReference">クイックリファレンス</sys:String>
+    <sys:String x:Key="QuickRefCallbacks">主要コールバック</sys:String>
+    <sys:String x:Key="QuickRefClasses">主要クラス</sys:String>
+    <sys:String x:Key="QuickRefModStructure">Mod 構造</sys:String>
+
+    <!-- Chat -->
+    <sys:String x:Key="ChatSend">送信</sys:String>
+    <sys:String x:Key="ChatCancel">キャンセル</sys:String>
+    <sys:String x:Key="ChatInputWatermark">Isaac modding について質問... (Ctrl+Enter で送信)</sys:String>
+    <sys:String x:Key="ChatKnowledgeRetrieved">ナレッジを取得しました</sys:String>
+
+    <!-- Log Monitor -->
+    <sys:String x:Key="LogMonitorHeader">ゲームログモニター</sys:String>
+    <sys:String x:Key="LogMonitorStart">開始</sys:String>
+    <sys:String x:Key="LogMonitorStop">停止</sys:String>
+    <sys:String x:Key="LogMonitorClear">クリア</sys:String>
+    <sys:String x:Key="LogMonitorErrors">エラー</sys:String>
+    <sys:String x:Key="LogMonitorWarnings">警告</sys:String>
+    <sys:String x:Key="LogMonitorInfo">情報</sys:String>
+
+    <!-- Settings window -->
+    <sys:String x:Key="SettingsLLMProvider">LLM プロバイダー</sys:String>
+    <sys:String x:Key="SettingsEndpoint">エンドポイント</sys:String>
+    <sys:String x:Key="SettingsModel">モデル</sys:String>
+    <sys:String x:Key="SettingsApiKey">API キー</sys:String>
+    <sys:String x:Key="SettingsKnowledgeBase">ナレッジベース (RAG)</sys:String>
+    <sys:String x:Key="SettingsEmbeddingSource">エンベディングソース</sys:String>
+    <sys:String x:Key="SettingsOllamaEndpoint">Ollama エンドポイント</sys:String>
+    <sys:String x:Key="SettingsEmbeddingModel">エンベディングモデル</sys:String>
+    <sys:String x:Key="SettingsOnnxModelPath">ONNX モデルパス</sys:String>
+    <sys:String x:Key="SettingsTokenizerVocabPath">トークナイザー語彙パス</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">注意: エンベディングソースの変更は保存時に適用され、バックグラウンドでインデックスを再構築します。再起動は不要です。</sys:String>
+    <sys:String x:Key="SettingsAppearance">外観</sys:String>
+    <sys:String x:Key="SettingsLanguage">言語</sys:String>
+    <sys:String x:Key="SettingsTheme">テーマ</sys:String>
+    <sys:String x:Key="SettingsThemeDark">ダーク</sys:String>
+    <sys:String x:Key="SettingsThemeLight">ライト</sys:String>
+    <sys:String x:Key="SettingsSave">保存</sys:String>
+    <sys:String x:Key="SettingsCancel">キャンセル</sys:String>
+
+    <!-- Status -->
+    <sys:String x:Key="StatusReady">準備完了</sys:String>
+    <sys:String x:Key="StatusNoProject">プロジェクトなし</sys:String>
+    <sys:String x:Key="StatusChatCleared">チャットをクリアしました</sys:String>
+
+    <!-- Toast messages -->
+    <sys:String x:Key="ToastProjectLoaded">プロジェクトを読み込みました</sys:String>
+
+    <!-- About window -->
+    <sys:String x:Key="AboutTitle">IsaacAgent について</sys:String>
+    <sys:String x:Key="AboutAppName">IsaacAgent</sys:String>
+    <sys:String x:Key="AboutDescription">Binding of Isaac: Repentance Mod 開発用 AI コーディングエージェント</sys:String>
+    <sys:String x:Key="AboutBuiltWith">Avalonia + .NET 8 で構築</sys:String>
+    <sys:String x:Key="AboutTechStack">.NET 8 + Avalonia 11 + CommunityToolkit.Mvvm</sys:String>
+
+    <!-- Diff Viewer window -->
+    <sys:String x:Key="DiffViewerTitle">差分ビューアー</sys:String>
+    <sys:String x:Key="DiffViewerRefresh">更新</sys:String>
+    <sys:String x:Key="DiffViewerSelectFile">ファイルを選択...</sys:String>
+    <sys:String x:Key="DiffViewerAdded">+ 追加</sys:String>
+    <sys:String x:Key="DiffViewerRemoved">- 削除</sys:String>
+    <sys:String x:Key="DiffViewerContext">  コンテキスト</sys:String>
+
+    <!-- Template Gallery window -->
+    <sys:String x:Key="TemplateGalleryTitle">Mod テンプレートギャラリー</sys:String>
+    <sys:String x:Key="TemplateGalleryTemplates">テンプレート</sys:String>
+    <sys:String x:Key="TemplateGalleryModNameWatermark">Mod 名 (例: MyAwesomeMod)</sys:String>
+    <sys:String x:Key="TemplateGalleryModDescWatermark">Mod の説明</sys:String>
+    <sys:String x:Key="TemplateGalleryAuthorWatermark">作者名</sys:String>
+    <sys:String x:Key="TemplateGalleryScaffold">プロジェクトを生成</sys:String>
+    <sys:String x:Key="TemplateGalleryCancel">キャンセル</sys:String>
+    <sys:String x:Key="TemplateGalleryPreview">プレビュー</sys:String>
+    <sys:String x:Key="TemplateGallerySelectPrompt">プレビューするテンプレートを選択</sys:String>
+
+    <!-- Command Palette window -->
+    <sys:String x:Key="CommandPaletteTitle">コマンドパレット</sys:String>
+    <sys:String x:Key="CommandPaletteWatermark">コマンドを入力...</sys:String>
+    <sys:String x:Key="CommandPaletteNavigate">ナビゲート</sys:String>
+    <sys:String x:Key="CommandPaletteExecute">実行</sys:String>
+    <sys:String x:Key="CommandPaletteClose">閉じる</sys:String>
+
+</ResourceDictionary>

@@ -22,6 +22,17 @@ public sealed class ThemeService
     private string _currentTheme;
     private ResourceDictionary? _currentThemeColors;
 
+    /// <summary>Custom accent color hex string, or null to use theme default.</summary>
+    public string? CustomAccentColor
+    {
+        get => _config.AccentColor;
+        set
+        {
+            _config.AccentColor = value;
+            ApplyAccentColor(value);
+        }
+    }
+
     public ThemeService(AppConfiguration config)
     {
         _config = config;
@@ -86,5 +97,46 @@ public sealed class ThemeService
 
         _currentThemeColors = newDict;
         mergedDictionaries.Add(newDict);
+
+        // Re-apply custom accent color if set.
+        if (!string.IsNullOrEmpty(_config.AccentColor))
+            ApplyAccentColor(_config.AccentColor);
+    }
+
+    /// <summary>
+    ///   Override the IsaacAccentColor/Brush resources with a custom hex color.
+    ///   Pass null to reset to the theme default.
+    /// </summary>
+    public void ApplyAccentColor(string? hexColor)
+    {
+        if (Application.Current is null) return;
+
+        if (string.IsNullOrEmpty(hexColor))
+        {
+            // Remove custom override — the theme dictionary's value will show through.
+            Application.Current.Resources.Remove("IsaacAccentColor");
+            Application.Current.Resources.Remove("IsaacAccentBrush");
+            return;
+        }
+
+        try
+        {
+            var color = Avalonia.Media.Color.Parse(hexColor);
+            Application.Current.Resources["IsaacAccentColor"] = color;
+            Application.Current.Resources["IsaacAccentBrush"] = new Avalonia.Media.SolidColorBrush(color);
+        }
+        catch
+        {
+            // Invalid hex string — ignore.
+        }
+    }
+
+    /// <summary>
+    ///   Apply the saved accent color at startup.
+    /// </summary>
+    public void ApplyInitialAccentColor()
+    {
+        if (!string.IsNullOrEmpty(_config.AccentColor))
+            ApplyAccentColor(_config.AccentColor);
     }
 }

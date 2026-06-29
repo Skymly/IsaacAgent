@@ -13,8 +13,10 @@ public sealed class LocalizationService
 {
     public const string English = "en";
     public const string Chinese = "zh";
+    public const string Japanese = "ja";
+    public const string Korean = "ko";
 
-    private static readonly string[] SupportedLanguages = [English, Chinese];
+    private static readonly string[] SupportedLanguages = [English, Chinese, Japanese, Korean];
 
     private readonly AppConfiguration _config;
     private string _currentLanguage;
@@ -61,6 +63,8 @@ public sealed class LocalizationService
         var sourceUri = language switch
         {
             Chinese => "avares://IsaacAgent/Styles/Strings.zh.axaml",
+            Japanese => "avares://IsaacAgent/Styles/Strings.ja.axaml",
+            Korean => "avares://IsaacAgent/Styles/Strings.ko.axaml",
             _ => "avares://IsaacAgent/Styles/Strings.en.axaml"
         };
 

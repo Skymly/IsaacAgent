@@ -24,6 +24,9 @@
             </MenuItem>
             <MenuItem Header="{DynamicResource MenuChat}">
                 <MenuItem Header="{DynamicResource MenuChatClear}" Command="{Binding ClearChatCommand}" />
+                <Separator />
+                <MenuItem Header="{DynamicResource MenuChatExportMarkdown}" Command="{Binding ExportChatMarkdownCommand}" />
+                <MenuItem Header="{DynamicResource MenuChatExportJson}" Command="{Binding ExportChatJsonCommand}" />
             </MenuItem>
             <MenuItem Header="{DynamicResource MenuView}">
                 <MenuItem Header="{DynamicResource MenuViewDiffViewer}" Click="OnDiffViewer" InputGesture="Ctrl+Shift+D" />
@@ -221,6 +224,28 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
+
+                    <!-- Search panel (toggle with Ctrl+F) -->
+                    <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0"
+                            IsVisible="{Binding IsSearchVisible}"
+                            Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
+                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="0,1,0,0">
+                        <StackPanel Spacing="4">
+                            <TextBox Text="{Binding SearchQuery}" Watermark="Search messages..." />
+                            <ItemsControl ItemsSource="{Binding SearchResults}" MaxHeight="200">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,2" Spacing="2">
+                                            <TextBlock Text="{Binding Item1}" FontSize="11" Opacity="0.6" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding Item2.Content}" FontSize="11" Opacity="0.8"
+                                                       TextWrapping="Wrap" MaxLines="2" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
 
                     <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0"
                             IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">

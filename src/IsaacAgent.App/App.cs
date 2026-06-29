@@ -40,7 +40,13 @@ public sealed class App : Application
 
         // Apply saved language and theme preferences.
         Services.GetRequiredService<LocalizationService>().ApplyInitialLanguage();
-        Services.GetRequiredService<ThemeService>().ApplyInitialTheme();
+        var themeService = Services.GetRequiredService<ThemeService>();
+        themeService.ApplyInitialTheme();
+        themeService.ApplyInitialAccentColor();
+
+        // Apply saved font size.
+        var config = Services.GetRequiredService<AppConfiguration>();
+        FontSizeService.ApplyFontSize(string.IsNullOrEmpty(config.FontSize) ? "medium" : config.FontSize);
 
         // Pre-warm the RAG index in the background so the first search_knowledge
         // call doesn't block the UI for tens of seconds (especially with ONNX).
@@ -91,6 +97,7 @@ public sealed class App : Application
         services.AddSingleton<ToastService>();
         services.AddSingleton<LocalizationService>();
         services.AddSingleton<ThemeService>();
+        services.AddSingleton<ChatHistoryService>();
 
         return services.BuildServiceProvider();
     }

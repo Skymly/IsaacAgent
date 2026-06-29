@@ -55,6 +55,7 @@ public class MainViewModelTests
         services.AddSingleton<QuickReferenceViewModel>();
         services.AddSingleton<LogMonitorService>();
         services.AddSingleton<ToastService>();
+        services.AddSingleton<ChatHistoryService>();
         services.AddSingleton<MainViewModel>();
         var sp = services.BuildServiceProvider();
         return (sp.GetRequiredService<MainViewModel>(), sp);

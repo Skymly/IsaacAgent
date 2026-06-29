@@ -26,6 +26,13 @@
                           SelectedItem="{Binding SelectedTheme}"
                           ItemsSource="{Binding AvailableThemes}" />
 
+                <TextBlock Text="Accent Color" FontWeight="SemiBold" />
+                <TextBox Text="{Binding AccentColor}" Watermark="#569CD6 (leave empty for default)" />
+
+                <TextBlock Text="Font Size" FontWeight="SemiBold" />
+                <ComboBox SelectedItem="{Binding SelectedFontSize}"
+                          ItemsSource="{Binding AvailableFontSizes}" />
+
                 <Separator Height="1" Margin="0,8" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
 
                 <!-- LLM Section -->

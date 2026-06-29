@@ -306,6 +306,13 @@ public sealed partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
+            // Ctrl+F: Toggle search
+            if (e.Key == Avalonia.Input.Key.F && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control)
+            {
+                vm.ToggleSearchCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
         }
         base.OnKeyDown(e);
     }

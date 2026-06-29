@@ -42,11 +42,13 @@ public class LocalizationServiceTests
     }
 
     [Fact]
-    public void Languages_ContainsEnglishAndChinese()
+    public void Languages_ContainsAllFourLanguages()
     {
         Assert.Contains("en", LocalizationService.Languages);
         Assert.Contains("zh", LocalizationService.Languages);
-        Assert.Equal(2, LocalizationService.Languages.Count);
+        Assert.Contains("ja", LocalizationService.Languages);
+        Assert.Contains("ko", LocalizationService.Languages);
+        Assert.Equal(4, LocalizationService.Languages.Count);
     }
 
     [Fact]
@@ -59,5 +61,17 @@ public class LocalizationServiceTests
     public void ChineseConstant_IsZh()
     {
         Assert.Equal("zh", LocalizationService.Chinese);
+    }
+
+    [Fact]
+    public void JapaneseConstant_IsJa()
+    {
+        Assert.Equal("ja", LocalizationService.Japanese);
+    }
+
+    [Fact]
+    public void KoreanConstant_IsKo()
+    {
+        Assert.Equal("ko", LocalizationService.Korean);
     }
 }

@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-06-29
+
+Extended i18n (Japanese/Korean), custom accent color, font size
+scaling, chat history persistence/export/search, and Ctrl+F shortcut.
+
+### Added
+
+- Japanese (ja) and Korean (ko) UI translations: 115 string keys each
+  in Strings.ja.axaml and Strings.ko.axaml. LocalizationService now
+  supports 4 languages (en, zh, ja, ko).
+- Custom accent color: user can specify a hex color string in Settings
+  to override the theme's default accent color. Applied at runtime via
+  ThemeService.ApplyAccentColor. Persisted in AppConfiguration.
+- Font size scaling: small (0.85x), medium (1.0x), large (1.15x)
+  options via FontSizeService. Persisted in AppConfiguration.
+- Chat history persistence: ChatHistoryService saves all tabs and
+  messages as JSON per project directory. History is automatically
+  saved when switching projects and restored when opening a project.
+- Chat export: export active tab as Markdown or JSON via Chat menu.
+  Files saved to Documents/IsaacAgentExports/.
+- Chat search: Ctrl+F toggles a search panel that searches across all
+  chat tabs. Results show tab title and message content preview.
+- Ctrl+F keyboard shortcut for toggling search panel.
+- ChatHistoryServiceTests: 12 tests (path generation, save/load
+  round-trip, delete, export markdown/json, search empty/match/case-
+  insensitive/multi-tab).
+- FontSizeServiceTests: 9 tests (multiplier mapping, sizes list).
+- LocalizationServiceTests: +2 tests (Japanese/Korean constants).
+- SettingsViewModelTests: updated for 4 languages.
+
+### Changed
+
+- AppConfiguration: added AccentColor (hex string) and FontSize
+  ("small"/"medium"/"large") fields with persistence.
+- MainViewModel: added ChatHistory property, SearchQuery, IsSearchVisible,
+  ExportChatMarkdown/ExportChatJson/ToggleSearch commands. Project
+  switch now saves previous project's history and restores new
+  project's history.
+- ThemeService: added CustomAccentColor property, ApplyAccentColor
+  and ApplyInitialAccentColor methods.
+- SettingsWindow: added Accent Color text box and Font Size combo box
+  in Appearance section.
+- MainWindow: added search panel (toggle with Ctrl+F), export menu
+  items in Chat menu.
+
+### Tests
+
+- Total: 553 tests (549 pass, 4 skip, 0 fail)
+
 ## [0.1.3] - 2026-06-29
 
 Internationalization, theme switching, new keyboard shortcuts, and

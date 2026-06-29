@@ -17,6 +17,8 @@
     <!-- Menu: Chat -->
     <sys:String x:Key="MenuChat">聊天</sys:String>
     <sys:String x:Key="MenuChatClear">清空聊天</sys:String>
+    <sys:String x:Key="MenuChatExportMarkdown">导出为 Markdown</sys:String>
+    <sys:String x:Key="MenuChatExportJson">导出为 JSON</sys:String>
 
     <!-- Menu: View -->
     <sys:String x:Key="MenuView">视图</sys:String>

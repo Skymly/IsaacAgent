@@ -53,6 +53,12 @@ public sealed class AppConfiguration
     /// <summary>UI theme: "dark" or "light". Default "dark".</summary>
     public string Theme { get; set; } = "dark";
 
+    /// <summary>Custom accent color as hex string (e.g. "#569CD6"). null = use theme default.</summary>
+    public string? AccentColor { get; set; }
+
+    /// <summary>UI font size multiplier: "small", "medium", or "large". Default "medium".</summary>
+    public string FontSize { get; set; } = "medium";
+
     public EmbeddingConfig ToEmbeddingConfig() => new()
     {
         Source = EmbeddingSource,
@@ -126,6 +132,8 @@ public sealed class AppConfiguration
             WindowMaximized = WindowMaximized,
             Language = Language,
             Theme = Theme,
+            AccentColor = AccentColor,
+            FontSize = FontSize,
         };
 
         if (!string.IsNullOrEmpty(ApiKey))

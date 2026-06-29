@@ -1,0 +1,117 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Window titles -->
+    <sys:String x:Key="AppTitle">IsaacAgent - Isaac Modding 어시스턴트</sys:String>
+    <sys:String x:Key="SettingsTitle">설정</sys:String>
+
+    <!-- Menu: File -->
+    <sys:String x:Key="MenuFile">파일</sys:String>
+    <sys:String x:Key="MenuFileNewProject">새 프로젝트...</sys:String>
+    <sys:String x:Key="MenuFileNewFromTemplate">템플릿에서 새로 만들기...</sys:String>
+    <sys:String x:Key="MenuFileOpenProject">프로젝트 열기...</sys:String>
+    <sys:String x:Key="MenuFileSettings">설정...</sys:String>
+    <sys:String x:Key="MenuFileExit">종료</sys:String>
+
+    <!-- Menu: Chat -->
+    <sys:String x:Key="MenuChat">채팅</sys:String>
+    <sys:String x:Key="MenuChatClear">채팅 지우기</sys:String>
+    <sys:String x:Key="MenuChatExportMarkdown">Markdown로 내보내기</sys:String>
+    <sys:String x:Key="MenuChatExportJson">JSON으로 내보내기</sys:String>
+
+    <!-- Menu: View -->
+    <sys:String x:Key="MenuView">보기</sys:String>
+    <sys:String x:Key="MenuViewDiffViewer">Diff 뷰어...</sys:String>
+
+    <!-- Menu: Help -->
+    <sys:String x:Key="MenuHelp">도움말</sys:String>
+    <sys:String x:Key="MenuHelpCommandPalette">명령 팔레트...</sys:String>
+    <sys:String x:Key="MenuHelpAbout">IsaacAgent 정보</sys:String>
+
+    <!-- Project panel -->
+    <sys:String x:Key="PanelProjectFiles">프로젝트 파일</sys:String>
+
+    <!-- Quick Reference panel -->
+    <sys:String x:Key="PanelQuickReference">빠른 참조</sys:String>
+    <sys:String x:Key="QuickRefCallbacks">주요 콜백</sys:String>
+    <sys:String x:Key="QuickRefClasses">주요 클래스</sys:String>
+    <sys:String x:Key="QuickRefModStructure">Mod 구조</sys:String>
+
+    <!-- Chat -->
+    <sys:String x:Key="ChatSend">전송</sys:String>
+    <sys:String x:Key="ChatCancel">취소</sys:String>
+    <sys:String x:Key="ChatInputWatermark">Isaac modding에 대해 질문... (Ctrl+Enter로 전송)</sys:String>
+    <sys:String x:Key="ChatKnowledgeRetrieved">지식 검색 완료</sys:String>
+
+    <!-- Log Monitor -->
+    <sys:String x:Key="LogMonitorHeader">게임 로그 모니터</sys:String>
+    <sys:String x:Key="LogMonitorStart">시작</sys:String>
+    <sys:String x:Key="LogMonitorStop">중지</sys:String>
+    <sys:String x:Key="LogMonitorClear">지우기</sys:String>
+    <sys:String x:Key="LogMonitorErrors">오류</sys:String>
+    <sys:String x:Key="LogMonitorWarnings">경고</sys:String>
+    <sys:String x:Key="LogMonitorInfo">정보</sys:String>
+
+    <!-- Settings window -->
+    <sys:String x:Key="SettingsLLMProvider">LLM 제공자</sys:String>
+    <sys:String x:Key="SettingsEndpoint">엔드포인트</sys:String>
+    <sys:String x:Key="SettingsModel">모델</sys:String>
+    <sys:String x:Key="SettingsApiKey">API 키</sys:String>
+    <sys:String x:Key="SettingsKnowledgeBase">지식 베이스 (RAG)</sys:String>
+    <sys:String x:Key="SettingsEmbeddingSource">임베딩 소스</sys:String>
+    <sys:String x:Key="SettingsOllamaEndpoint">Ollama 엔드포인트</sys:String>
+    <sys:String x:Key="SettingsEmbeddingModel">임베딩 모델</sys:String>
+    <sys:String x:Key="SettingsOnnxModelPath">ONNX 모델 경로</sys:String>
+    <sys:String x:Key="SettingsTokenizerVocabPath">토크나이저 어휘 경로</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">참고: 임베딩 소스 변경 사항은 저장 시 적용되며 백그라운드 인덱스 재구축을 트리거합니다. 재시작이 필요하지 않습니다.</sys:String>
+    <sys:String x:Key="SettingsAppearance">외관</sys:String>
+    <sys:String x:Key="SettingsLanguage">언어</sys:String>
+    <sys:String x:Key="SettingsTheme">테마</sys:String>
+    <sys:String x:Key="SettingsThemeDark">다크</sys:String>
+    <sys:String x:Key="SettingsThemeLight">라이트</sys:String>
+    <sys:String x:Key="SettingsSave">저장</sys:String>
+    <sys:String x:Key="SettingsCancel">취소</sys:String>
+
+    <!-- Status -->
+    <sys:String x:Key="StatusReady">준비됨</sys:String>
+    <sys:String x:Key="StatusNoProject">프로젝트 없음</sys:String>
+    <sys:String x:Key="StatusChatCleared">채팅이 지워졌습니다</sys:String>
+
+    <!-- Toast messages -->
+    <sys:String x:Key="ToastProjectLoaded">프로젝트가 로드되었습니다</sys:String>
+
+    <!-- About window -->
+    <sys:String x:Key="AboutTitle">IsaacAgent 정보</sys:String>
+    <sys:String x:Key="AboutAppName">IsaacAgent</sys:String>
+    <sys:String x:Key="AboutDescription">Binding of Isaac: Repentance Mod 개발용 AI 코딩 에이전트</sys:String>
+    <sys:String x:Key="AboutBuiltWith">Avalonia + .NET 8로 구축</sys:String>
+    <sys:String x:Key="AboutTechStack">.NET 8 + Avalonia 11 + CommunityToolkit.Mvvm</sys:String>
+
+    <!-- Diff Viewer window -->
+    <sys:String x:Key="DiffViewerTitle">Diff 뷰어</sys:String>
+    <sys:String x:Key="DiffViewerRefresh">새로고침</sys:String>
+    <sys:String x:Key="DiffViewerSelectFile">파일 선택...</sys:String>
+    <sys:String x:Key="DiffViewerAdded">+ 추가</sys:String>
+    <sys:String x:Key="DiffViewerRemoved">- 삭제</sys:String>
+    <sys:String x:Key="DiffViewerContext">  컨텍스트</sys:String>
+
+    <!-- Template Gallery window -->
+    <sys:String x:Key="TemplateGalleryTitle">Mod 템플릿 갤러리</sys:String>
+    <sys:String x:Key="TemplateGalleryTemplates">템플릿</sys:String>
+    <sys:String x:Key="TemplateGalleryModNameWatermark">Mod 이름 (예: MyAwesomeMod)</sys:String>
+    <sys:String x:Key="TemplateGalleryModDescWatermark">Mod 설명</sys:String>
+    <sys:String x:Key="TemplateGalleryAuthorWatermark">작성자 이름</sys:String>
+    <sys:String x:Key="TemplateGalleryScaffold">프로젝트 생성</sys:String>
+    <sys:String x:Key="TemplateGalleryCancel">취소</sys:String>
+    <sys:String x:Key="TemplateGalleryPreview">미리보기</sys:String>
+    <sys:String x:Key="TemplateGallerySelectPrompt">미리보기할 템플릿 선택</sys:String>
+
+    <!-- Command Palette window -->
+    <sys:String x:Key="CommandPaletteTitle">명령 팔레트</sys:String>
+    <sys:String x:Key="CommandPaletteWatermark">명령 입력...</sys:String>
+    <sys:String x:Key="CommandPaletteNavigate">탐색</sys:String>
+    <sys:String x:Key="CommandPaletteExecute">실행</sys:String>
+    <sys:String x:Key="CommandPaletteClose">닫기</sys:String>
+
+</ResourceDictionary>

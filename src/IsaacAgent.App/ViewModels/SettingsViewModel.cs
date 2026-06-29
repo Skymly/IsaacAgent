@@ -52,12 +52,20 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _selectedLanguage = "en";
 
-    public ObservableCollection<string> AvailableLanguages { get; } = ["en", "zh"];
+    public ObservableCollection<string> AvailableLanguages { get; } = ["en", "zh", "ja", "ko"];
 
     [ObservableProperty]
     private string _selectedTheme = "dark";
 
     public ObservableCollection<string> AvailableThemes { get; } = ["dark", "light"];
+
+    [ObservableProperty]
+    private string? _accentColor;
+
+    [ObservableProperty]
+    private string _selectedFontSize = "medium";
+
+    public ObservableCollection<string> AvailableFontSizes { get; } = ["small", "medium", "large"];
 
     private readonly AppConfiguration _config;
 
@@ -75,6 +83,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _onnxEmbeddingVocabPath = config.OnnxEmbeddingVocabPath;
         _selectedLanguage = string.IsNullOrEmpty(config.Language) ? "en" : config.Language;
         _selectedTheme = string.IsNullOrEmpty(config.Theme) ? "dark" : config.Theme;
+        _accentColor = config.AccentColor;
+        _selectedFontSize = string.IsNullOrEmpty(config.FontSize) ? "medium" : config.FontSize;
     }
 
     public void Save()
@@ -94,8 +104,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         // Apply language and theme changes at runtime.
         var languageChanged = _config.Language != SelectedLanguage;
         var themeChanged = _config.Theme != SelectedTheme;
+        var accentChanged = _config.AccentColor != AccentColor;
         _config.Language = SelectedLanguage;
         _config.Theme = SelectedTheme;
+        _config.AccentColor = AccentColor;
+        _config.FontSize = SelectedFontSize;
 
         _config.Save();
         App.ReloadLlmProvider();
@@ -105,6 +118,10 @@ public sealed partial class SettingsViewModel : ObservableObject
             App.Services.GetRequiredService<LocalizationService>().SetLanguage(SelectedLanguage);
         if (themeChanged)
             App.Services.GetRequiredService<ThemeService>().SetTheme(SelectedTheme);
+        if (accentChanged)
+            App.Services.GetRequiredService<ThemeService>().ApplyAccentColor(AccentColor);
+
+        FontSizeService.ApplyFontSize(SelectedFontSize);
     }
 
     /// <summary>

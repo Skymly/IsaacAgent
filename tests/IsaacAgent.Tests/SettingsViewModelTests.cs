@@ -208,12 +208,14 @@ public class SettingsViewModelTests
     }
 
     [Fact]
-    public void AvailableLanguages_ContainsEnAndZh()
+    public void AvailableLanguages_ContainsAllFour()
     {
         var vm = CreateViewModel();
-        Assert.Equal(2, vm.AvailableLanguages.Count);
+        Assert.Equal(4, vm.AvailableLanguages.Count);
         Assert.Contains("en", vm.AvailableLanguages);
         Assert.Contains("zh", vm.AvailableLanguages);
+        Assert.Contains("ja", vm.AvailableLanguages);
+        Assert.Contains("ko", vm.AvailableLanguages);
     }
 
     [Fact]

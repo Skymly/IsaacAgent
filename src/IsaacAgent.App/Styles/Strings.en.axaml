@@ -17,6 +17,8 @@
     <!-- Menu: Chat -->
     <sys:String x:Key="MenuChat">Chat</sys:String>
     <sys:String x:Key="MenuChatClear">Clear Chat</sys:String>
+    <sys:String x:Key="MenuChatExportMarkdown">Export as Markdown</sys:String>
+    <sys:String x:Key="MenuChatExportJson">Export as JSON</sys:String>
 
     <!-- Menu: View -->
     <sys:String x:Key="MenuView">View</sys:String>
