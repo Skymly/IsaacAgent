@@ -43,6 +43,13 @@
     <Color x:Key="IsaacMarkdownQuoteColor">#808080</Color>
     <Color x:Key="IsaacMarkdownHrColor">#404040</Color>
 
+    <!-- Syntax highlighting -->
+    <Color x:Key="IsaacSyntaxKeywordColor">#569CD6</Color>
+    <Color x:Key="IsaacSyntaxStringColor">#CE9178</Color>
+    <Color x:Key="IsaacSyntaxCommentColor">#6A9955</Color>
+    <Color x:Key="IsaacSyntaxNumberColor">#B5CEA8</Color>
+    <Color x:Key="IsaacSyntaxFunctionColor">#DCDCAA</Color>
+
     <!-- ============================================================
          Brushes (reference the colors above so both the raw Color
          and the Brush are available as resources).
@@ -76,6 +83,11 @@
 
     <SolidColorBrush x:Key="IsaacMarkdownQuoteBrush" Color="{StaticResource IsaacMarkdownQuoteColor}" />
     <SolidColorBrush x:Key="IsaacMarkdownHrBrush" Color="{StaticResource IsaacMarkdownHrColor}" />
+    <SolidColorBrush x:Key="IsaacSyntaxKeywordBrush" Color="{StaticResource IsaacSyntaxKeywordColor}" />
+    <SolidColorBrush x:Key="IsaacSyntaxStringBrush" Color="{StaticResource IsaacSyntaxStringColor}" />
+    <SolidColorBrush x:Key="IsaacSyntaxCommentBrush" Color="{StaticResource IsaacSyntaxCommentColor}" />
+    <SolidColorBrush x:Key="IsaacSyntaxNumberBrush" Color="{StaticResource IsaacSyntaxNumberColor}" />
+    <SolidColorBrush x:Key="IsaacSyntaxFunctionBrush" Color="{StaticResource IsaacSyntaxFunctionColor}" />
 
     <!-- Toast notification colors -->
     <Color x:Key="IsaacToastInfoColor">#4A9EFF</Color>

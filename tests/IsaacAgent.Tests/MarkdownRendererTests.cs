@@ -291,4 +291,196 @@ public class MarkdownRendererTests
         var text = MarkdownRenderer.RenderToText("");
         Assert.Equal("", text);
     }
+
+    // ── Syntax highlighting ────────────────────────────────────
+
+    [Fact]
+    public void CodeBlock_Lua_RendersAllContent()
+    {
+        var md = """
+                 ```lua
+                 local x = 10
+                 function foo()
+                     print("hello")
+                 end
+                 ```
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("local", text);
+        Assert.Contains("x", text);
+        Assert.Contains("10", text);
+        Assert.Contains("function", text);
+        Assert.Contains("foo", text);
+        Assert.Contains("print", text);
+        Assert.Contains("hello", text);
+        Assert.Contains("end", text);
+    }
+
+    [Fact]
+    public void CodeBlock_LuaComment_RendersCommentText()
+    {
+        var md = """
+                 ```lua
+                 -- This is a comment
+                 local x = 1
+                 ```
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("This is a comment", text);
+        Assert.Contains("local", text);
+    }
+
+    [Fact]
+    public void CodeBlock_LuaString_RendersStringContent()
+    {
+        var md = """
+                 ```lua
+                 local s = "hello world"
+                 ```
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("hello world", text);
+    }
+
+    [Fact]
+    public void CodeBlock_LuaKeyword_RendersKeyword()
+    {
+        var md = """
+                 ```lua
+                 if true then
+                     return nil
+                 end
+                 ```
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("if", text);
+        Assert.Contains("true", text);
+        Assert.Contains("then", text);
+        Assert.Contains("return", text);
+        Assert.Contains("nil", text);
+        Assert.Contains("end", text);
+    }
+
+    [Fact]
+    public void CodeBlock_NoLanguage_RendersAsLuaHighlight()
+    {
+        var md = """
+                 ```
+                 local x = 1
+                 ```
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("local", text);
+        Assert.Contains("x", text);
+        Assert.Contains("1", text);
+    }
+
+    [Fact]
+    public void CodeBlock_NonLuaLanguage_RendersAsPlainCode()
+    {
+        var md = """
+                 ```python
+                 def foo():
+                     pass
+                 ```
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("def", text);
+        Assert.Contains("foo", text);
+        Assert.Contains("pass", text);
+    }
+
+    [Fact]
+    public void CodeBlock_LuaBlockComment_RendersComment()
+    {
+        var md = """
+                 ```lua
+                 --[[ block comment ]]
+                 local x = 1
+                 ```
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("block comment", text);
+        Assert.Contains("local", text);
+    }
+
+    // ── Task list ──────────────────────────────────────────────
+
+    [Fact]
+    public void TaskList_Unchecked_RendersWithBallotBox()
+    {
+        var md = """
+                 - [ ] Todo item
+                 - [ ] Another item
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("Todo item", text);
+        Assert.Contains("Another item", text);
+        Assert.Contains("\u2610", text); // ☐ unchecked
+    }
+
+    [Fact]
+    public void TaskList_Checked_RendersWithCheckedBox()
+    {
+        var md = """
+                 - [x] Done item
+                 - [X] Also done
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("Done item", text);
+        Assert.Contains("Also done", text);
+        Assert.Contains("\u2612", text); // ☒ checked
+    }
+
+    [Fact]
+    public void TaskList_Mixed_RendersBothCheckboxes()
+    {
+        var md = """
+                 - [ ] Not done
+                 - [x] Done
+                 """;
+        var text = MarkdownRenderer.RenderToText(md);
+        Assert.Contains("\u2610", text); // ☐
+        Assert.Contains("\u2612", text); // ☒
+        Assert.Contains("Not done", text);
+        Assert.Contains("Done", text);
+    }
+
+    // ── Strikethrough ──────────────────────────────────────────
+
+    [Fact]
+    public void Strikethrough_RendersText()
+    {
+        var text = MarkdownRenderer.RenderToText("~~deleted text~~");
+        Assert.Contains("deleted text", text);
+    }
+
+    [Fact]
+    public void Strikethrough_WithOtherFormatting_RendersAll()
+    {
+        var text = MarkdownRenderer.RenderToText("**bold** and ~~struck~~");
+        Assert.Contains("bold", text);
+        Assert.Contains("struck", text);
+        Assert.Contains("and", text);
+    }
+
+    // ── Clickable links (URL visible) ──────────────────────────
+
+    [Fact]
+    public void Link_RendersTextAndUrl()
+    {
+        var text = MarkdownRenderer.RenderToText("[Isaac Docs](https://isaacdocs.com)");
+        Assert.Contains("Isaac Docs", text);
+        Assert.Contains("https://isaacdocs.com", text);
+    }
+
+    [Fact]
+    public void Link_WithOtherText_RendersAll()
+    {
+        var text = MarkdownRenderer.RenderToText("See [docs](https://example.com) for info.");
+        Assert.Contains("See", text);
+        Assert.Contains("docs", text);
+        Assert.Contains("https://example.com", text);
+        Assert.Contains("for info", text);
+    }
 }

@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-06-30
+
+Markdown rendering enhancements: Lua syntax highlighting, task lists,
+strikethrough, and visible link URLs.
+
+### Added
+
+- Lua syntax highlighting in code blocks: keywords (function, local,
+  if, then, etc.) are bold blue, Isaac API globals (Isaac, Game,
+  Vector, etc.) are blue, strings are red/brown, comments are green
+  italic, numbers are green, and function calls are gold/yellow.
+  Applies to ```lua and unmarked code blocks.
+- Task list support: `- [ ]` renders as ☐ (unchecked) and `- [x]` /
+  `- [X]` renders as ☒ (checked). Works with nested indentation.
+- Strikethrough support: `~~text~~` renders with strikethrough
+  decoration and dimmed color.
+- Link URLs visible: `[text](url)` now renders as "text (url)" with
+  the URL shown in a smaller, dimmed font after the link text. This
+  allows users to see and copy the URL (truly clickable links in
+  SelectableTextBlock would break text selection in Avalonia 11).
+- Syntax highlighting color brushes in both light and dark themes:
+  IsaacSyntaxKeywordBrush, IsaacSyntaxStringBrush,
+  IsaacSyntaxCommentBrush, IsaacSyntaxNumberBrush,
+  IsaacSyntaxFunctionBrush.
+- 14 new MarkdownRendererTests: Lua code rendering (keywords, strings,
+  comments, numbers, block comments, no-language, non-Lua), task lists
+  (unchecked, checked, mixed), strikethrough (alone, with other
+  formatting), link rendering (text + URL, with surrounding text).
+
+### Changed
+
+- MarkdownRenderer.AddCodeBlock: now calls AddHighlightedLuaCode for
+  Lua/unmarked code blocks instead of rendering as plain monospace.
+- MarkdownRenderer.ParseInlineFormatting: regex updated to include
+  strikethrough (~~text~~) and link rendering now shows URL inline.
+- MarkdownRenderer.ParseMarkdown: unordered list parsing now detects
+  task list markers ([ ] and [x]) before regular bullet points.
+
+### Tests
+
+- Total: 593 tests (589 pass, 4 skip, 0 fail)
+
 ## [0.1.6] - 2026-06-29
 
 Project file management: right-click context menu, file search, open

@@ -30,7 +30,35 @@ public static class MarkdownRenderer
     private static IBrush QuoteBrush => ResolveBrush("IsaacMarkdownQuoteBrush");
     private static IBrush LinkBrush => ResolveBrush("IsaacLinkBrush");
     private static IBrush HrColorBrush => ResolveBrush("IsaacMarkdownHrBrush");
+    private static IBrush KeywordBrush => ResolveBrush("IsaacSyntaxKeywordBrush");
+    private static IBrush StringBrush => ResolveBrush("IsaacSyntaxStringBrush");
+    private static IBrush CommentBrush => ResolveBrush("IsaacSyntaxCommentBrush");
+    private static IBrush NumberBrush => ResolveBrush("IsaacSyntaxNumberBrush");
+    private static IBrush FunctionBrush => ResolveBrush("IsaacSyntaxFunctionBrush");
     private static readonly FontFamily MonoFont = FontFamily.Parse("Cascadia Code,Consolas,monospace");
+
+    /// <summary>
+    ///   Lua keywords for syntax highlighting.
+    /// </summary>
+    private static readonly HashSet<string> LuaKeywords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "and", "break", "do", "else", "elseif", "end", "false", "for",
+        "function", "goto", "if", "in", "local", "nil", "not", "or",
+        "repeat", "return", "then", "true", "until", "while"
+    };
+
+    /// <summary>
+    ///   Common Isaac modding API globals for syntax highlighting.
+    /// </summary>
+    private static readonly HashSet<string> LuaGlobals = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Isaac", "Game", "ModCallbacks", "EntityType", "PickupVariant",
+        "TearVariant", "FamiliarVariant", "EffectVariant", "EntityVariant",
+        "NpcState", "RoomShape", "BedroomMode", "LevelStage",
+        "CollectibleType", "TrinketType", "CardType", "PillEffect",
+        "Vector", "Color", "Sprite", "SFX", "MusicManager",
+        "Input", "Options", "Challenge", "Difficulty", "NullItemID"
+    };
 
     private static void OnMarkdownChanged(Avalonia.Controls.SelectableTextBlock textBlock, AvaloniaPropertyChangedEventArgs e)
     {
@@ -145,8 +173,27 @@ public static class MarkdownRenderer
             // Unordered list (- / * / + followed by space)
             if (IsUnorderedListItem(line, out var ulIndent))
             {
+                var content = line[(ulIndent + 2)..];
+
+                // Task list: - [ ] or - [x]
+                if (content.StartsWith("[ ] ") || content.StartsWith("[ ]\t"))
+                {
+                    inlines.Add(new Run(new string(' ', ulIndent * 2) + "\u2610 ")); // ☐ ballot box
+                    ParseInlineFormatting(inlines, content[4..]);
+                    inlines.Add(new Run("\n"));
+                    continue;
+                }
+                if (content.StartsWith("[x] ") || content.StartsWith("[X] ") ||
+                    content.StartsWith("[x]\t") || content.StartsWith("[X]\t"))
+                {
+                    inlines.Add(new Run(new string(' ', ulIndent * 2) + "\u2612 ")); // ☒ ballot box with X
+                    ParseInlineFormatting(inlines, content[4..]);
+                    inlines.Add(new Run("\n"));
+                    continue;
+                }
+
                 inlines.Add(new Run(new string(' ', ulIndent * 2) + "\u2022 "));
-                ParseInlineFormatting(inlines, line[(ulIndent + 2)..]);
+                ParseInlineFormatting(inlines, content);
                 inlines.Add(new Run("\n"));
                 continue;
             }
@@ -212,12 +259,154 @@ public static class MarkdownRenderer
                 FontStyle = FontStyle.Italic,
             });
         }
-        inlines.Add(new Run(code)
+
+        // Apply syntax highlighting for Lua code blocks
+        if (string.IsNullOrEmpty(lang) ||
+            lang.Equals("lua", StringComparison.OrdinalIgnoreCase))
         {
-            FontFamily = MonoFont,
-            FontSize = 12,
-            Foreground = CodeBrush,
-        });
+            AddHighlightedLuaCode(inlines, code);
+        }
+        else
+        {
+            inlines.Add(new Run(code)
+            {
+                FontFamily = MonoFont,
+                FontSize = 12,
+                Foreground = CodeBrush,
+            });
+        }
+    }
+
+    /// <summary>
+    ///   Renders Lua code with syntax highlighting: keywords, strings,
+    ///   comments, numbers, and function calls get distinct colors.
+    /// </summary>
+    private static void AddHighlightedLuaCode(InlineCollection inlines, string code)
+    {
+        // Tokenize: comments, strings, identifiers, numbers, and other
+        var regex = new Regex(
+            @"(?<comment>--\[\[[\s\S]*?\]\]|--[^\n]*)|" +
+            @"\[\[(?<longstring>[\s\S]*?)\]\]|" +
+            "(?<dstring>\"(\\\\.|[^\"\\\\])*\")|" +
+            @"(?<sstring>'(\\.|[^'\\])*')|" +
+            @"(?<number>\b\d+\.?\d*(?:[eE][+-]?\d+)?\b)|" +
+            @"(?<ident>[A-Za-z_]\w*)" +
+            @"|(?<whitespace>\s+)|" +
+            @"(?<other>.)",
+            RegexOptions.Compiled);
+
+        foreach (Match match in regex.Matches(code))
+        {
+            if (match.Groups["comment"].Success)
+            {
+                inlines.Add(new Run(match.Groups["comment"].Value)
+                {
+                    FontFamily = MonoFont,
+                    FontSize = 12,
+                    Foreground = CommentBrush,
+                    FontStyle = FontStyle.Italic,
+                });
+            }
+            else if (match.Groups["longstring"].Success)
+            {
+                inlines.Add(new Run(match.Groups["longstring"].Value)
+                {
+                    FontFamily = MonoFont,
+                    FontSize = 12,
+                    Foreground = StringBrush,
+                });
+            }
+            else if (match.Groups["dstring"].Success)
+            {
+                inlines.Add(new Run(match.Groups["dstring"].Value)
+                {
+                    FontFamily = MonoFont,
+                    FontSize = 12,
+                    Foreground = StringBrush,
+                });
+            }
+            else if (match.Groups["sstring"].Success)
+            {
+                inlines.Add(new Run(match.Groups["sstring"].Value)
+                {
+                    FontFamily = MonoFont,
+                    FontSize = 12,
+                    Foreground = StringBrush,
+                });
+            }
+            else if (match.Groups["number"].Success)
+            {
+                inlines.Add(new Run(match.Groups["number"].Value)
+                {
+                    FontFamily = MonoFont,
+                    FontSize = 12,
+                    Foreground = NumberBrush,
+                });
+            }
+            else if (match.Groups["ident"].Success)
+            {
+                var word = match.Groups["ident"].Value;
+                // Check if next character is '(' → function call
+                var nextChar = match.Index + match.Length < code.Length
+                    ? code[match.Index + match.Length]
+                    : '\0';
+
+                if (LuaKeywords.Contains(word))
+                {
+                    inlines.Add(new Run(word)
+                    {
+                        FontFamily = MonoFont,
+                        FontSize = 12,
+                        Foreground = KeywordBrush,
+                        FontWeight = FontWeight.Bold,
+                    });
+                }
+                else if (LuaGlobals.Contains(word))
+                {
+                    inlines.Add(new Run(word)
+                    {
+                        FontFamily = MonoFont,
+                        FontSize = 12,
+                        Foreground = KeywordBrush,
+                    });
+                }
+                else if (nextChar == '(')
+                {
+                    inlines.Add(new Run(word)
+                    {
+                        FontFamily = MonoFont,
+                        FontSize = 12,
+                        Foreground = FunctionBrush,
+                    });
+                }
+                else
+                {
+                    inlines.Add(new Run(word)
+                    {
+                        FontFamily = MonoFont,
+                        FontSize = 12,
+                        Foreground = CodeBrush,
+                    });
+                }
+            }
+            else if (match.Groups["whitespace"].Success)
+            {
+                inlines.Add(new Run(match.Groups["whitespace"].Value)
+                {
+                    FontFamily = MonoFont,
+                    FontSize = 12,
+                });
+            }
+            else if (match.Groups["other"].Success)
+            {
+                inlines.Add(new Run(match.Groups["other"].Value)
+                {
+                    FontFamily = MonoFont,
+                    FontSize = 12,
+                    Foreground = CodeBrush,
+                });
+            }
+        }
     }
 
     private static void StyleLastRun(InlineCollection inlines, Action<Run> styler)
@@ -404,7 +593,7 @@ public static class MarkdownRenderer
     }
 
     private static readonly Regex InlineFormatRegex = new(
-        @"(\*\*(.+?)\*\*)|(`(.+?)`)|(\*(.+?)\*)|(\[([^\]]+)\]\(([^)]+)\))",
+        @"(\*\*(.+?)\*\*)|(`(.+?)`)|(~~(.+?)~~)|(\*(.+?)\*)|(\[([^\]]+)\]\(([^)]+)\))",
         RegexOptions.Compiled);
 
     private static void ParseInlineFormatting(InlineCollection inlines, string text)
@@ -427,16 +616,34 @@ public static class MarkdownRenderer
                     Foreground = CodeBrush,
                 });
             }
-            else if (match.Groups[6].Success) // *italic*
+            else if (match.Groups[6].Success) // ~~strikethrough~~
             {
-                inlines.Add(new Run(match.Groups[6].Value) { FontStyle = FontStyle.Italic });
+                inlines.Add(new Run(match.Groups[6].Value)
+                {
+                    TextDecorations = TextDecorations.Strikethrough,
+                    Foreground = QuoteBrush,
+                });
             }
-            else if (match.Groups[8].Success) // [text](url)
+            else if (match.Groups[8].Success) // *italic*
             {
-                inlines.Add(new Run(match.Groups[8].Value)
+                inlines.Add(new Run(match.Groups[8].Value) { FontStyle = FontStyle.Italic });
+            }
+            else if (match.Groups[10].Success) // [text](url)
+            {
+                var linkText = match.Groups[10].Value;
+                var url = match.Groups[11].Value;
+                // Render as a styled run with the URL in a tooltip-like suffix.
+                // Truly clickable links in SelectableTextBlock require InlineUIContainer
+                // which breaks text selection, so we show the URL inline instead.
+                inlines.Add(new Run(linkText)
                 {
                     Foreground = LinkBrush,
                     TextDecorations = TextDecorations.Underline,
+                });
+                inlines.Add(new Run($" ({url})")
+                {
+                    FontSize = 10,
+                    Foreground = QuoteBrush,
                 });
             }
 
