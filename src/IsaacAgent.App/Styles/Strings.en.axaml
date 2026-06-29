@@ -79,4 +79,37 @@
     <!-- Toast messages -->
     <sys:String x:Key="ToastProjectLoaded">Project loaded</sys:String>
 
+    <!-- About window -->
+    <sys:String x:Key="AboutTitle">About IsaacAgent</sys:String>
+    <sys:String x:Key="AboutAppName">IsaacAgent</sys:String>
+    <sys:String x:Key="AboutDescription">AI Coding Agent for Binding of Isaac: Repentance Modding</sys:String>
+    <sys:String x:Key="AboutBuiltWith">Built with Avalonia + .NET 8</sys:String>
+    <sys:String x:Key="AboutTechStack">.NET 8 + Avalonia 11 + CommunityToolkit.Mvvm</sys:String>
+
+    <!-- Diff Viewer window -->
+    <sys:String x:Key="DiffViewerTitle">Diff Viewer</sys:String>
+    <sys:String x:Key="DiffViewerRefresh">Refresh</sys:String>
+    <sys:String x:Key="DiffViewerSelectFile">Select a file...</sys:String>
+    <sys:String x:Key="DiffViewerAdded">+ added</sys:String>
+    <sys:String x:Key="DiffViewerRemoved">- removed</sys:String>
+    <sys:String x:Key="DiffViewerContext">  context</sys:String>
+
+    <!-- Template Gallery window -->
+    <sys:String x:Key="TemplateGalleryTitle">Mod Template Gallery</sys:String>
+    <sys:String x:Key="TemplateGalleryTemplates">Templates</sys:String>
+    <sys:String x:Key="TemplateGalleryModNameWatermark">Mod name (e.g. MyAwesomeMod)</sys:String>
+    <sys:String x:Key="TemplateGalleryModDescWatermark">Mod description</sys:String>
+    <sys:String x:Key="TemplateGalleryAuthorWatermark">Author name</sys:String>
+    <sys:String x:Key="TemplateGalleryScaffold">Scaffold Project</sys:String>
+    <sys:String x:Key="TemplateGalleryCancel">Cancel</sys:String>
+    <sys:String x:Key="TemplateGalleryPreview">Preview</sys:String>
+    <sys:String x:Key="TemplateGallerySelectPrompt">Select a template to preview</sys:String>
+
+    <!-- Command Palette window -->
+    <sys:String x:Key="CommandPaletteTitle">Command Palette</sys:String>
+    <sys:String x:Key="CommandPaletteWatermark">Type a command...</sys:String>
+    <sys:String x:Key="CommandPaletteNavigate">Navigate</sys:String>
+    <sys:String x:Key="CommandPaletteExecute">Execute</sys:String>
+    <sys:String x:Key="CommandPaletteClose">Close</sys:String>
+
 </ResourceDictionary>

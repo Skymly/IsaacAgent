@@ -79,4 +79,37 @@
     <!-- Toast messages -->
     <sys:String x:Key="ToastProjectLoaded">项目已加载</sys:String>
 
+    <!-- About window -->
+    <sys:String x:Key="AboutTitle">关于 IsaacAgent</sys:String>
+    <sys:String x:Key="AboutAppName">IsaacAgent</sys:String>
+    <sys:String x:Key="AboutDescription">以撒:重生 Mod 开发的 AI 编程助手</sys:String>
+    <sys:String x:Key="AboutBuiltWith">基于 Avalonia + .NET 8 构建</sys:String>
+    <sys:String x:Key="AboutTechStack">.NET 8 + Avalonia 11 + CommunityToolkit.Mvvm</sys:String>
+
+    <!-- Diff Viewer window -->
+    <sys:String x:Key="DiffViewerTitle">差异查看器</sys:String>
+    <sys:String x:Key="DiffViewerRefresh">刷新</sys:String>
+    <sys:String x:Key="DiffViewerSelectFile">选择文件...</sys:String>
+    <sys:String x:Key="DiffViewerAdded">+ 新增</sys:String>
+    <sys:String x:Key="DiffViewerRemoved">- 删除</sys:String>
+    <sys:String x:Key="DiffViewerContext">  上下文</sys:String>
+
+    <!-- Template Gallery window -->
+    <sys:String x:Key="TemplateGalleryTitle">Mod 模板库</sys:String>
+    <sys:String x:Key="TemplateGalleryTemplates">模板</sys:String>
+    <sys:String x:Key="TemplateGalleryModNameWatermark">Mod 名称 (如 MyAwesomeMod)</sys:String>
+    <sys:String x:Key="TemplateGalleryModDescWatermark">Mod 描述</sys:String>
+    <sys:String x:Key="TemplateGalleryAuthorWatermark">作者名称</sys:String>
+    <sys:String x:Key="TemplateGalleryScaffold">生成项目</sys:String>
+    <sys:String x:Key="TemplateGalleryCancel">取消</sys:String>
+    <sys:String x:Key="TemplateGalleryPreview">预览</sys:String>
+    <sys:String x:Key="TemplateGallerySelectPrompt">选择模板以预览</sys:String>
+
+    <!-- Command Palette window -->
+    <sys:String x:Key="CommandPaletteTitle">命令面板</sys:String>
+    <sys:String x:Key="CommandPaletteWatermark">输入命令...</sys:String>
+    <sys:String x:Key="CommandPaletteNavigate">导航</sys:String>
+    <sys:String x:Key="CommandPaletteExecute">执行</sys:String>
+    <sys:String x:Key="CommandPaletteClose">关闭</sys:String>
+
 </ResourceDictionary>
