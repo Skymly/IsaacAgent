@@ -246,6 +246,108 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         _cts?.Cancel();
     }
 
+    /// <summary>
+    ///   Resend an edited user message: removes all messages after the
+    ///   edited message, updates its content, and sends again.
+    /// </summary>
+    [RelayCommand]
+    private async Task ResendAsync(ChatMessageViewModel? msg)
+    {
+        if (msg is null || !msg.IsUser || IsGenerating) return;
+        var newText = msg.EditText.Trim();
+        if (string.IsNullOrEmpty(newText)) return;
+
+        // Find the message index and remove all messages after it.
+        var idx = Messages.IndexOf(msg);
+        if (idx < 0) return;
+
+        msg.IsEditing = false;
+        msg.Content = newText;
+
+        // Remove all messages after the edited user message.
+        while (Messages.Count > idx + 1)
+        {
+            var last = Messages[^1];
+            last.Dispose();
+            Messages.RemoveAt(Messages.Count - 1);
+        }
+
+        // Trim session history back to this point — rebuild from remaining messages.
+        _session.ClearHistory();
+        foreach (var m in Messages)
+        {
+            if (m.Role is "user" or "assistant")
+                _session.History.Add(new ChatMessage { Role = m.Role, Content = m.Content });
+        }
+
+        // Now send the edited message.
+        _cts = new CancellationTokenSource();
+        IsGenerating = true;
+
+        var assistantMsg = new ChatMessageViewModel { Role = "assistant", Content = "" };
+        Messages.Add(assistantMsg);
+
+        try
+        {
+            await foreach (var chunk in _session.SendMessageAsync(newText, _cts.Token))
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() => assistantMsg.Content += chunk);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            if (string.IsNullOrEmpty(assistantMsg.Content))
+                Messages.Remove(assistantMsg);
+            Messages.Add(new ChatMessageViewModel { Role = "system", Content = "(cancelled)" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Resend failed");
+            if (string.IsNullOrEmpty(assistantMsg.Content))
+                Messages.Remove(assistantMsg);
+            Messages.Add(new ChatMessageViewModel
+            {
+                Role = "error",
+                Content = $"Error: {ex.Message}"
+            });
+        }
+        finally
+        {
+            IsGenerating = false;
+            _cts?.Dispose();
+            _cts = null;
+            var historyPath = GetHistoryPath(_currentProjectDir);
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _session.SaveHistoryAsync(historyPath, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to save chat history");
+                }
+            }, CancellationToken.None);
+        }
+    }
+
+    /// <summary>
+    ///   Insert a Lua code snippet into the input box at the cursor position.
+    /// </summary>
+    [RelayCommand]
+    private void InsertSnippet(string snippet)
+    {
+        if (string.IsNullOrEmpty(snippet)) return;
+        if (string.IsNullOrEmpty(InputText))
+        {
+            InputText = snippet;
+        }
+        else
+        {
+            InputText = InputText.TrimEnd() + "\n" + snippet;
+        }
+    }
+
     [RelayCommand]
     private void ToggleExpand(ChatMessageViewModel? msg)
     {

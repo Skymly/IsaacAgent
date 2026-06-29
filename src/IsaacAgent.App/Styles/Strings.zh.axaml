@@ -43,6 +43,10 @@
     <sys:String x:Key="ChatCancel">取消</sys:String>
     <sys:String x:Key="ChatInputWatermark">询问以撒 Mod 相关问题... (Ctrl+Enter 发送)</sys:String>
     <sys:String x:Key="ChatKnowledgeRetrieved">已检索知识</sys:String>
+    <sys:String x:Key="ChatCopy">复制</sys:String>
+    <sys:String x:Key="ChatEdit">编辑</sys:String>
+    <sys:String x:Key="ChatResend">重发</sys:String>
+    <sys:String x:Key="ChatInsertSnippet">插入 Lua 代码片段...</sys:String>
 
     <!-- Log Monitor -->
     <sys:String x:Key="LogMonitorHeader">游戏日志监控</sys:String>

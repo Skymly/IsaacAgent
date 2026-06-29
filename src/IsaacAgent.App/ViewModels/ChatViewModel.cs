@@ -149,6 +149,12 @@ public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isExpanded;
 
+    [ObservableProperty]
+    private bool _isEditing;
+
+    [ObservableProperty]
+    private string _editText = "";
+
     private const int RenderDebounceMs = 150;
 
     private string _debouncedMarkdown = "";
@@ -234,5 +240,34 @@ public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
     {
         _renderTimer.Stop();
         _renderTimer.Tick -= OnRenderTick;
+    }
+
+    /// <summary>Copy this message's content to the clipboard.</summary>
+    [RelayCommand]
+    private async Task CopyContentAsync()
+    {
+        if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var clipboard = desktop.MainWindow?.Clipboard;
+            if (clipboard is not null)
+                await clipboard.SetTextAsync(Content);
+        }
+    }
+
+    /// <summary>Start editing this message (user messages only).</summary>
+    [RelayCommand]
+    private void StartEdit()
+    {
+        if (!IsUser) return;
+        EditText = Content;
+        IsEditing = true;
+    }
+
+    /// <summary>Cancel editing.</summary>
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        EditText = "";
     }
 }

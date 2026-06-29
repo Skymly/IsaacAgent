@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-06-29
+
+Chat interaction enhancements: message copy, edit/resend, stop
+generation, and Lua snippet quick-insert.
+
+### Added
+
+- Message copy button: each regular message (user/assistant) has a
+  "Copy" button that copies the message content to the clipboard.
+- Message edit and resend: user messages have an "Edit" button that
+  enters edit mode. After editing, "Resend" removes all subsequent
+  messages, updates the user message content, rebuilds the session
+  history, and re-sends to get a fresh response.
+- Lua snippet quick-insert: a dropdown above the chat input box
+  provides 12 common Isaac modding Lua snippets (callbacks, utility
+  functions, entity spawning). Selecting a snippet inserts its code
+  into the input box. LuaSnippetService provides the static catalog.
+- Stop generation button: already existed as CancelCommand, now
+  properly labeled with i18n string and visible during generation.
+- i18n strings for new UI elements: ChatCopy, ChatEdit, ChatResend,
+  ChatInsertSnippet in all 4 languages (en, zh, ja, ko).
+- LuaSnippetServiceTests: 9 tests (catalog not empty, all have
+  name/code/category, category coverage, name uniqueness).
+- ChatTabViewModelTests: +6 tests (InsertSnippet empty/existing/empty-
+  snippet, StartEdit user/assistant, CancelEdit).
+
+### Changed
+
+- ChatMessageViewModel: added IsEditing, EditText properties,
+  CopyContentCommand, StartEditCommand, CancelEditCommand.
+- ChatTabViewModel: added ResendCommand (edit and resend user message),
+  InsertSnippetCommand (insert Lua code into input box).
+- MainWindow.axaml: message template now includes Copy and Edit buttons
+  for regular messages. Edit mode shows a TextBox with Resend/Cancel
+  buttons. Snippet dropdown added above chat input.
+- MainWindow.axaml.cs: OnSnippetSelected handler inserts snippet code
+  and resets dropdown selection.
+
+### Tests
+
+- Total: 568 tests (564 pass, 4 skip, 0 fail)
+
 ## [0.1.4] - 2026-06-29
 
 Extended i18n (Japanese/Korean), custom accent color, font size

@@ -45,6 +45,13 @@ public sealed partial class MainWindow : Window
 
         RestoreWindowState();
 
+        // Populate Lua snippet dropdown.
+        var snippetCombo = this.FindControl<ComboBox>("SnippetComboBox");
+        if (snippetCombo is not null)
+        {
+            snippetCombo.ItemsSource = LuaSnippetService.Snippets.ToList();
+        }
+
         // Enable drag-drop: folders open as project, files are read into chat context.
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
         AddHandler(DragDrop.DropEvent, OnDrop);
@@ -226,6 +233,21 @@ public sealed partial class MainWindow : Window
                 e.Handled = true;
             }
         }
+    }
+
+    private void OnSnippetSelected(object? sender, SelectionChangedEventArgs e)
+    {
+        if (sender is not ComboBox cb) return;
+        if (cb.SelectedItem is not LuaSnippet snippet) return;
+
+        var vm = DataContext as MainViewModel;
+        if (vm?.Chat.ActiveTab is { } tab)
+        {
+            tab.InsertSnippetCommand.Execute(snippet.Code);
+        }
+
+        // Reset selection so the same snippet can be selected again
+        cb.SelectedIndex = -1;
     }
 
     protected override void OnKeyDown(Avalonia.Input.KeyEventArgs e)

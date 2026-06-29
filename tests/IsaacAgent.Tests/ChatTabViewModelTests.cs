@@ -377,4 +377,66 @@ public class ChatTabViewModelTests
         tab.Dispose();
         tab.Dispose(); // idempotent
     }
+
+    // ── InsertSnippet ─────────────────────────────────────────
+
+    [Fact]
+    public void InsertSnippet_EmptyInput_SetsInputText()
+    {
+        var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
+        tab.InputText = "";
+        tab.InsertSnippetCommand.Execute("local x = 1");
+        Assert.Equal("local x = 1", tab.InputText);
+    }
+
+    [Fact]
+    public void InsertSnippet_ExistingInput_AppendsOnNewLine()
+    {
+        var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
+        tab.InputText = "existing text";
+        tab.InsertSnippetCommand.Execute("local x = 1");
+        Assert.Contains("existing text", tab.InputText);
+        Assert.Contains("local x = 1", tab.InputText);
+        Assert.Contains("\n", tab.InputText);
+    }
+
+    [Fact]
+    public void InsertSnippet_EmptySnippet_DoesNothing()
+    {
+        var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
+        tab.InputText = "hello";
+        tab.InsertSnippetCommand.Execute("");
+        Assert.Equal("hello", tab.InputText);
+    }
+
+    // ── ChatMessageViewModel editing ──────────────────────────
+
+    [Fact]
+    public void StartEdit_UserMessage_SetsIsEditingAndEditText()
+    {
+        var msg = new ChatMessageViewModel { Role = "user", Content = "Hello" };
+        msg.StartEditCommand.Execute(null);
+        Assert.True(msg.IsEditing);
+        Assert.Equal("Hello", msg.EditText);
+    }
+
+    [Fact]
+    public void StartEdit_AssistantMessage_DoesNotStartEditing()
+    {
+        var msg = new ChatMessageViewModel { Role = "assistant", Content = "Hi" };
+        msg.StartEditCommand.Execute(null);
+        Assert.False(msg.IsEditing);
+    }
+
+    [Fact]
+    public void CancelEdit_ResetsIsEditingAndEditText()
+    {
+        var msg = new ChatMessageViewModel { Role = "user", Content = "Hello" };
+        msg.StartEditCommand.Execute(null);
+        Assert.True(msg.IsEditing);
+
+        msg.CancelEditCommand.Execute(null);
+        Assert.False(msg.IsEditing);
+        Assert.Equal("", msg.EditText);
+    }
 }

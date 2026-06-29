@@ -43,6 +43,10 @@
     <sys:String x:Key="ChatCancel">キャンセル</sys:String>
     <sys:String x:Key="ChatInputWatermark">Isaac modding について質問... (Ctrl+Enter で送信)</sys:String>
     <sys:String x:Key="ChatKnowledgeRetrieved">ナレッジを取得しました</sys:String>
+    <sys:String x:Key="ChatCopy">コピー</sys:String>
+    <sys:String x:Key="ChatEdit">編集</sys:String>
+    <sys:String x:Key="ChatResend">再送信</sys:String>
+    <sys:String x:Key="ChatInsertSnippet">Lua スニペットを挿入...</sys:String>
 
     <!-- Log Monitor -->
     <sys:String x:Key="LogMonitorHeader">ゲームログモニター</sys:String>

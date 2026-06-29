@@ -43,6 +43,10 @@
     <sys:String x:Key="ChatCancel">Cancel</sys:String>
     <sys:String x:Key="ChatInputWatermark">Ask about Isaac modding... (Ctrl+Enter to send)</sys:String>
     <sys:String x:Key="ChatKnowledgeRetrieved">Knowledge Retrieved</sys:String>
+    <sys:String x:Key="ChatCopy">Copy</sys:String>
+    <sys:String x:Key="ChatEdit">Edit</sys:String>
+    <sys:String x:Key="ChatResend">Resend</sys:String>
+    <sys:String x:Key="ChatInsertSnippet">Insert Lua snippet...</sys:String>
 
     <!-- Log Monitor -->
     <sys:String x:Key="LogMonitorHeader">Game Log Monitor</sys:String>

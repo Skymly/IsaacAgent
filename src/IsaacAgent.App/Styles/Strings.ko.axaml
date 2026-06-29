@@ -43,6 +43,10 @@
     <sys:String x:Key="ChatCancel">취소</sys:String>
     <sys:String x:Key="ChatInputWatermark">Isaac modding에 대해 질문... (Ctrl+Enter로 전송)</sys:String>
     <sys:String x:Key="ChatKnowledgeRetrieved">지식 검색 완료</sys:String>
+    <sys:String x:Key="ChatCopy">복사</sys:String>
+    <sys:String x:Key="ChatEdit">편집</sys:String>
+    <sys:String x:Key="ChatResend">재전송</sys:String>
+    <sys:String x:Key="ChatInsertSnippet">Lua 스니펫 삽입...</sys:String>
 
     <!-- Log Monitor -->
     <sys:String x:Key="LogMonitorHeader">게임 로그 모니터</sys:String>
