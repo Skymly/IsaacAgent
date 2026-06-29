@@ -5,7 +5,7 @@
         xmlns:conv="using:IsaacAgent.App.Converters"
         xmlns:md="using:IsaacAgent.App.Markdown"
         x:Class="IsaacAgent.App.Views.MainWindow"
-        Title="IsaacAgent - Binding of Isaac Modding Assistant"
+        Title="{DynamicResource AppTitle}"
         Width="1200" Height="800"
         WindowState="Maximized"
         x:DataType="vm:MainViewModel">
@@ -13,25 +13,25 @@
     <Grid RowDefinitions="Auto,*,Auto,Auto">
 
         <Menu Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltMediumBrush}">
-            <MenuItem Header="File">
-                <MenuItem Header="New Project..." Command="{Binding NewProjectAsyncCommand}" />
-                <MenuItem Header="New from Template..." Click="OnTemplateGallery" InputGesture="Ctrl+Shift+T" />
-                <MenuItem Header="Open Project..." Command="{Binding OpenProjectAsyncCommand}" />
+            <MenuItem Header="{DynamicResource MenuFile}">
+                <MenuItem Header="{DynamicResource MenuFileNewProject}" Command="{Binding NewProjectAsyncCommand}" />
+                <MenuItem Header="{DynamicResource MenuFileNewFromTemplate}" Click="OnTemplateGallery" InputGesture="Ctrl+Shift+T" />
+                <MenuItem Header="{DynamicResource MenuFileOpenProject}" Command="{Binding OpenProjectAsyncCommand}" />
                 <Separator />
-                <MenuItem Header="Settings..." Click="OnSettings" />
+                <MenuItem Header="{DynamicResource MenuFileSettings}" Click="OnSettings" />
                 <Separator />
-                <MenuItem Header="Exit" Click="OnExit" />
+                <MenuItem Header="{DynamicResource MenuFileExit}" Click="OnExit" />
             </MenuItem>
-            <MenuItem Header="Chat">
-                <MenuItem Header="Clear Chat" Command="{Binding ClearChatCommand}" />
+            <MenuItem Header="{DynamicResource MenuChat}">
+                <MenuItem Header="{DynamicResource MenuChatClear}" Command="{Binding ClearChatCommand}" />
             </MenuItem>
-            <MenuItem Header="View">
-                <MenuItem Header="Diff Viewer..." Click="OnDiffViewer" InputGesture="Ctrl+Shift+D" />
+            <MenuItem Header="{DynamicResource MenuView}">
+                <MenuItem Header="{DynamicResource MenuViewDiffViewer}" Click="OnDiffViewer" InputGesture="Ctrl+Shift+D" />
             </MenuItem>
-            <MenuItem Header="Help">
-                <MenuItem Header="Command Palette..." Click="OnCommandPalette" InputGesture="Ctrl+Shift+P" />
+            <MenuItem Header="{DynamicResource MenuHelp}">
+                <MenuItem Header="{DynamicResource MenuHelpCommandPalette}" Click="OnCommandPalette" InputGesture="Ctrl+Shift+P" />
                 <Separator />
-                <MenuItem Header="About IsaacAgent" Click="OnAbout" />
+                <MenuItem Header="{DynamicResource MenuHelpAbout}" Click="OnAbout" />
             </MenuItem>
         </Menu>
 
@@ -39,7 +39,7 @@
 
             <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,1,0">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="Project Files"
+                    <TextBlock DockPanel.Dock="Top" Text="{DynamicResource PanelProjectFiles}"
                                FontWeight="Bold" Margin="10,8" />
                     <TextBlock DockPanel.Dock="Top" Text="{Binding Project.ProjectName}"
                                Opacity="0.6" Margin="10,0" />
@@ -197,7 +197,7 @@
 
                                             <!-- Retrieval results: knowledge sources card -->
                                             <StackPanel Spacing="4" IsVisible="{Binding IsRetrieval}">
-                                                <TextBlock Text="📚 Knowledge Retrieved"
+                                                <TextBlock Text="{DynamicResource ChatKnowledgeRetrieved}"
                                                            FontSize="11" Opacity="0.7"
                                                            FontFamily="Cascadia Code,Consolas,monospace" />
                                                 <SelectableTextBlock TextWrapping="Wrap"
@@ -227,19 +227,19 @@
                         <Grid ColumnDefinitions="*,Auto,Auto">
                             <TextBox x:Name="ChatInputBox" Grid.Column="0"
                                      Text="{Binding Chat.ActiveTab.InputText}"
-                                     Watermark="Ask about Isaac modding... (Ctrl+Enter to send)"
+                                     Watermark="{DynamicResource ChatInputWatermark}"
                                      AcceptsReturn="True"
                                      MinHeight="40"
                                      IsEnabled="{Binding !Chat.ActiveTab.IsGenerating}"
                                      KeyDown="OnInputKeyDown" />
                             <Button Grid.Column="1"
-                                    Content="Send"
+                                    Content="{DynamicResource ChatSend}"
                                     Command="{Binding Chat.ActiveTab.SendCommand}"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Stretch"
                                     IsEnabled="{Binding !Chat.ActiveTab.IsGenerating}" />
                             <Button Grid.Column="2"
-                                    Content="Cancel"
+                                    Content="{DynamicResource ChatCancel}"
                                     Command="{Binding Chat.ActiveTab.CancelCommand}"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Stretch"
@@ -251,11 +251,11 @@
 
             <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1,0,0,0">
                 <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="Quick Reference"
+                    <TextBlock DockPanel.Dock="Top" Text="{DynamicResource PanelQuickReference}"
                                FontWeight="Bold" Margin="10,8" />
                     <ScrollViewer>
                         <StackPanel Spacing="4" Margin="10,0">
-                            <TextBlock Text="Common Callbacks" FontWeight="SemiBold" Margin="0,8,0,4" />
+                            <TextBlock Text="{DynamicResource QuickRefCallbacks}" FontWeight="SemiBold" Margin="0,8,0,4" />
                             <ItemsControl ItemsSource="{Binding QuickReference.Callbacks}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -264,7 +264,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Text="Key Classes" FontWeight="SemiBold" Margin="0,12,0,4" />
+                            <TextBlock Text="{DynamicResource QuickRefClasses}" FontWeight="SemiBold" Margin="0,12,0,4" />
                             <ItemsControl ItemsSource="{Binding QuickReference.Classes}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -273,7 +273,7 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <TextBlock Text="Mod Structure" FontWeight="SemiBold" Margin="0,12,0,4" />
+                            <TextBlock Text="{DynamicResource QuickRefModStructure}" FontWeight="SemiBold" Margin="0,12,0,4" />
                             <ItemsControl ItemsSource="{Binding QuickReference.ModStructure}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -288,21 +288,21 @@
         </Grid>
 
         <!-- Log Monitor Panel (collapsible) -->
-        <Expander Grid.Row="2" Header="Game Log Monitor"
+        <Expander Grid.Row="2" Header="{DynamicResource LogMonitorHeader}"
                    Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
                    Padding="10,2"
                    IsExpanded="False">
             <Grid RowDefinitions="Auto,*" Height="180">
                 <!-- Controls -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,4,0,4">
-                    <Button Content="Start" Click="OnLogMonitorStart" Padding="10,2" FontSize="11" />
-                    <Button Content="Stop" Click="OnLogMonitorStop" Padding="10,2" FontSize="11"
+                    <Button Content="{DynamicResource LogMonitorStart}" Click="OnLogMonitorStart" Padding="10,2" FontSize="11" />
+                    <Button Content="{DynamicResource LogMonitorStop}" Click="OnLogMonitorStop" Padding="10,2" FontSize="11"
                             IsEnabled="{Binding LogMonitor.IsMonitoring}" />
-                    <Button Content="Clear" Click="OnLogMonitorClear" Padding="10,2" FontSize="11" />
+                    <Button Content="{DynamicResource LogMonitorClear}" Click="OnLogMonitorClear" Padding="10,2" FontSize="11" />
                     <Separator Margin="4,0" />
-                    <CheckBox Content="Errors" IsChecked="{Binding LogMonitor.ShowErrors}" FontSize="11" />
-                    <CheckBox Content="Warnings" IsChecked="{Binding LogMonitor.ShowWarnings}" FontSize="11" />
-                    <CheckBox Content="Info" IsChecked="{Binding LogMonitor.ShowInfo}" FontSize="11" />
+                    <CheckBox Content="{DynamicResource LogMonitorErrors}" IsChecked="{Binding LogMonitor.ShowErrors}" FontSize="11" />
+                    <CheckBox Content="{DynamicResource LogMonitorWarnings}" IsChecked="{Binding LogMonitor.ShowWarnings}" FontSize="11" />
+                    <CheckBox Content="{DynamicResource LogMonitorInfo}" IsChecked="{Binding LogMonitor.ShowInfo}" FontSize="11" />
                     <TextBlock Text="{Binding LogMonitor.StatusText}" FontSize="11" Opacity="0.6"
                                VerticalAlignment="Center" Margin="8,0,0,0" />
                 </StackPanel>

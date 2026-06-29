@@ -1,0 +1,82 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Window titles -->
+    <sys:String x:Key="AppTitle">IsaacAgent - Binding of Isaac Modding Assistant</sys:String>
+    <sys:String x:Key="SettingsTitle">Settings</sys:String>
+
+    <!-- Menu: File -->
+    <sys:String x:Key="MenuFile">File</sys:String>
+    <sys:String x:Key="MenuFileNewProject">New Project...</sys:String>
+    <sys:String x:Key="MenuFileNewFromTemplate">New from Template...</sys:String>
+    <sys:String x:Key="MenuFileOpenProject">Open Project...</sys:String>
+    <sys:String x:Key="MenuFileSettings">Settings...</sys:String>
+    <sys:String x:Key="MenuFileExit">Exit</sys:String>
+
+    <!-- Menu: Chat -->
+    <sys:String x:Key="MenuChat">Chat</sys:String>
+    <sys:String x:Key="MenuChatClear">Clear Chat</sys:String>
+
+    <!-- Menu: View -->
+    <sys:String x:Key="MenuView">View</sys:String>
+    <sys:String x:Key="MenuViewDiffViewer">Diff Viewer...</sys:String>
+
+    <!-- Menu: Help -->
+    <sys:String x:Key="MenuHelp">Help</sys:String>
+    <sys:String x:Key="MenuHelpCommandPalette">Command Palette...</sys:String>
+    <sys:String x:Key="MenuHelpAbout">About IsaacAgent</sys:String>
+
+    <!-- Project panel -->
+    <sys:String x:Key="PanelProjectFiles">Project Files</sys:String>
+
+    <!-- Quick Reference panel -->
+    <sys:String x:Key="PanelQuickReference">Quick Reference</sys:String>
+    <sys:String x:Key="QuickRefCallbacks">Common Callbacks</sys:String>
+    <sys:String x:Key="QuickRefClasses">Key Classes</sys:String>
+    <sys:String x:Key="QuickRefModStructure">Mod Structure</sys:String>
+
+    <!-- Chat -->
+    <sys:String x:Key="ChatSend">Send</sys:String>
+    <sys:String x:Key="ChatCancel">Cancel</sys:String>
+    <sys:String x:Key="ChatInputWatermark">Ask about Isaac modding... (Ctrl+Enter to send)</sys:String>
+    <sys:String x:Key="ChatKnowledgeRetrieved">Knowledge Retrieved</sys:String>
+
+    <!-- Log Monitor -->
+    <sys:String x:Key="LogMonitorHeader">Game Log Monitor</sys:String>
+    <sys:String x:Key="LogMonitorStart">Start</sys:String>
+    <sys:String x:Key="LogMonitorStop">Stop</sys:String>
+    <sys:String x:Key="LogMonitorClear">Clear</sys:String>
+    <sys:String x:Key="LogMonitorErrors">Errors</sys:String>
+    <sys:String x:Key="LogMonitorWarnings">Warnings</sys:String>
+    <sys:String x:Key="LogMonitorInfo">Info</sys:String>
+
+    <!-- Settings window -->
+    <sys:String x:Key="SettingsLLMProvider">LLM Provider</sys:String>
+    <sys:String x:Key="SettingsEndpoint">Endpoint</sys:String>
+    <sys:String x:Key="SettingsModel">Model</sys:String>
+    <sys:String x:Key="SettingsApiKey">API Key</sys:String>
+    <sys:String x:Key="SettingsKnowledgeBase">Knowledge Base (RAG)</sys:String>
+    <sys:String x:Key="SettingsEmbeddingSource">Embedding Source</sys:String>
+    <sys:String x:Key="SettingsOllamaEndpoint">Ollama Endpoint</sys:String>
+    <sys:String x:Key="SettingsEmbeddingModel">Embedding Model</sys:String>
+    <sys:String x:Key="SettingsOnnxModelPath">ONNX Model Path</sys:String>
+    <sys:String x:Key="SettingsTokenizerVocabPath">Tokenizer Vocab Path</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">Note: Embedding source changes are applied on save and trigger a background index rebuild. No restart required.</sys:String>
+    <sys:String x:Key="SettingsAppearance">Appearance</sys:String>
+    <sys:String x:Key="SettingsLanguage">Language</sys:String>
+    <sys:String x:Key="SettingsTheme">Theme</sys:String>
+    <sys:String x:Key="SettingsThemeDark">Dark</sys:String>
+    <sys:String x:Key="SettingsThemeLight">Light</sys:String>
+    <sys:String x:Key="SettingsSave">Save</sys:String>
+    <sys:String x:Key="SettingsCancel">Cancel</sys:String>
+
+    <!-- Status -->
+    <sys:String x:Key="StatusReady">Ready</sys:String>
+    <sys:String x:Key="StatusNoProject">No project</sys:String>
+    <sys:String x:Key="StatusChatCleared">Chat cleared</sys:String>
+
+    <!-- Toast messages -->
+    <sys:String x:Key="ToastProjectLoaded">Project loaded</sys:String>
+
+</ResourceDictionary>

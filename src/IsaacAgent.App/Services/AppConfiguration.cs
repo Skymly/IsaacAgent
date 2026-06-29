@@ -47,6 +47,12 @@ public sealed class AppConfiguration
     /// <summary>Whether the window was maximized.</summary>
     public bool WindowMaximized { get; set; }
 
+    /// <summary>UI language: "en" or "zh". Default "en".</summary>
+    public string Language { get; set; } = "en";
+
+    /// <summary>UI theme: "dark" or "light". Default "dark".</summary>
+    public string Theme { get; set; } = "dark";
+
     public EmbeddingConfig ToEmbeddingConfig() => new()
     {
         Source = EmbeddingSource,
@@ -118,6 +124,8 @@ public sealed class AppConfiguration
             WindowX = WindowX,
             WindowY = WindowY,
             WindowMaximized = WindowMaximized,
+            Language = Language,
+            Theme = Theme,
         };
 
         if (!string.IsNullOrEmpty(ApiKey))

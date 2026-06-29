@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using IsaacAgent.App.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IsaacAgent.App.ViewModels;
 
@@ -47,6 +48,17 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private string _indexStatus = "";
 
+    // Appearance settings
+    [ObservableProperty]
+    private string _selectedLanguage = "en";
+
+    public ObservableCollection<string> AvailableLanguages { get; } = ["en", "zh"];
+
+    [ObservableProperty]
+    private string _selectedTheme = "dark";
+
+    public ObservableCollection<string> AvailableThemes { get; } = ["dark", "light"];
+
     private readonly AppConfiguration _config;
 
     public SettingsViewModel(AppConfiguration config)
@@ -61,6 +73,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _ollamaEmbeddingModel = config.OllamaEmbeddingModel;
         _onnxEmbeddingModelPath = config.OnnxEmbeddingModelPath;
         _onnxEmbeddingVocabPath = config.OnnxEmbeddingVocabPath;
+        _selectedLanguage = string.IsNullOrEmpty(config.Language) ? "en" : config.Language;
+        _selectedTheme = string.IsNullOrEmpty(config.Theme) ? "dark" : config.Theme;
     }
 
     public void Save()
@@ -76,9 +90,21 @@ public sealed partial class SettingsViewModel : ObservableObject
         _config.OllamaEmbeddingModel = OllamaEmbeddingModel;
         _config.OnnxEmbeddingModelPath = OnnxEmbeddingModelPath;
         _config.OnnxEmbeddingVocabPath = OnnxEmbeddingVocabPath;
+
+        // Apply language and theme changes at runtime.
+        var languageChanged = _config.Language != SelectedLanguage;
+        var themeChanged = _config.Theme != SelectedTheme;
+        _config.Language = SelectedLanguage;
+        _config.Theme = SelectedTheme;
+
         _config.Save();
         App.ReloadLlmProvider();
         App.ReloadEmbeddingProvider();
+
+        if (languageChanged)
+            App.Services.GetRequiredService<LocalizationService>().SetLanguage(SelectedLanguage);
+        if (themeChanged)
+            App.Services.GetRequiredService<ThemeService>().SetTheme(SelectedTheme);
     }
 
     /// <summary>

@@ -1,0 +1,82 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Window titles -->
+    <sys:String x:Key="AppTitle">IsaacAgent - 以撒 Mod 助手</sys:String>
+    <sys:String x:Key="SettingsTitle">设置</sys:String>
+
+    <!-- Menu: File -->
+    <sys:String x:Key="MenuFile">文件</sys:String>
+    <sys:String x:Key="MenuFileNewProject">新建项目...</sys:String>
+    <sys:String x:Key="MenuFileNewFromTemplate">从模板新建...</sys:String>
+    <sys:String x:Key="MenuFileOpenProject">打开项目...</sys:String>
+    <sys:String x:Key="MenuFileSettings">设置...</sys:String>
+    <sys:String x:Key="MenuFileExit">退出</sys:String>
+
+    <!-- Menu: Chat -->
+    <sys:String x:Key="MenuChat">聊天</sys:String>
+    <sys:String x:Key="MenuChatClear">清空聊天</sys:String>
+
+    <!-- Menu: View -->
+    <sys:String x:Key="MenuView">视图</sys:String>
+    <sys:String x:Key="MenuViewDiffViewer">差异查看器...</sys:String>
+
+    <!-- Menu: Help -->
+    <sys:String x:Key="MenuHelp">帮助</sys:String>
+    <sys:String x:Key="MenuHelpCommandPalette">命令面板...</sys:String>
+    <sys:String x:Key="MenuHelpAbout">关于 IsaacAgent</sys:String>
+
+    <!-- Project panel -->
+    <sys:String x:Key="PanelProjectFiles">项目文件</sys:String>
+
+    <!-- Quick Reference panel -->
+    <sys:String x:Key="PanelQuickReference">快速参考</sys:String>
+    <sys:String x:Key="QuickRefCallbacks">常用回调</sys:String>
+    <sys:String x:Key="QuickRefClasses">关键类</sys:String>
+    <sys:String x:Key="QuickRefModStructure">Mod 结构</sys:String>
+
+    <!-- Chat -->
+    <sys:String x:Key="ChatSend">发送</sys:String>
+    <sys:String x:Key="ChatCancel">取消</sys:String>
+    <sys:String x:Key="ChatInputWatermark">询问以撒 Mod 相关问题... (Ctrl+Enter 发送)</sys:String>
+    <sys:String x:Key="ChatKnowledgeRetrieved">已检索知识</sys:String>
+
+    <!-- Log Monitor -->
+    <sys:String x:Key="LogMonitorHeader">游戏日志监控</sys:String>
+    <sys:String x:Key="LogMonitorStart">开始</sys:String>
+    <sys:String x:Key="LogMonitorStop">停止</sys:String>
+    <sys:String x:Key="LogMonitorClear">清空</sys:String>
+    <sys:String x:Key="LogMonitorErrors">错误</sys:String>
+    <sys:String x:Key="LogMonitorWarnings">警告</sys:String>
+    <sys:String x:Key="LogMonitorInfo">信息</sys:String>
+
+    <!-- Settings window -->
+    <sys:String x:Key="SettingsLLMProvider">LLM 提供商</sys:String>
+    <sys:String x:Key="SettingsEndpoint">端点</sys:String>
+    <sys:String x:Key="SettingsModel">模型</sys:String>
+    <sys:String x:Key="SettingsApiKey">API 密钥</sys:String>
+    <sys:String x:Key="SettingsKnowledgeBase">知识库 (RAG)</sys:String>
+    <sys:String x:Key="SettingsEmbeddingSource">嵌入源</sys:String>
+    <sys:String x:Key="SettingsOllamaEndpoint">Ollama 端点</sys:String>
+    <sys:String x:Key="SettingsEmbeddingModel">嵌入模型</sys:String>
+    <sys:String x:Key="SettingsOnnxModelPath">ONNX 模型路径</sys:String>
+    <sys:String x:Key="SettingsTokenizerVocabPath">分词器词表路径</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">注意: 嵌入源更改在保存时生效,会触发后台索引重建。无需重启。</sys:String>
+    <sys:String x:Key="SettingsAppearance">外观</sys:String>
+    <sys:String x:Key="SettingsLanguage">语言</sys:String>
+    <sys:String x:Key="SettingsTheme">主题</sys:String>
+    <sys:String x:Key="SettingsThemeDark">深色</sys:String>
+    <sys:String x:Key="SettingsThemeLight">浅色</sys:String>
+    <sys:String x:Key="SettingsSave">保存</sys:String>
+    <sys:String x:Key="SettingsCancel">取消</sys:String>
+
+    <!-- Status -->
+    <sys:String x:Key="StatusReady">就绪</sys:String>
+    <sys:String x:Key="StatusNoProject">无项目</sys:String>
+    <sys:String x:Key="StatusChatCleared">聊天已清空</sys:String>
+
+    <!-- Toast messages -->
+    <sys:String x:Key="ToastProjectLoaded">项目已加载</sys:String>
+
+</ResourceDictionary>

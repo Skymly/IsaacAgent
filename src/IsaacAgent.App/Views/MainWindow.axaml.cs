@@ -282,6 +282,30 @@ public sealed partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
+            // Ctrl+Tab: Switch to next chat tab
+            if (e.Key == Avalonia.Input.Key.Tab && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control)
+            {
+                vm.Chat.SwitchToNextTabCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+            // Ctrl+W: Close active tab (if more than one tab)
+            if (e.Key == Avalonia.Input.Key.W && e.KeyModifiers == Avalonia.Input.KeyModifiers.Control)
+            {
+                if (vm.Chat.CanCloseTabs && vm.Chat.ActiveTab is not null)
+                {
+                    vm.Chat.CloseTabCommand.Execute(vm.Chat.ActiveTab);
+                }
+                e.Handled = true;
+                return;
+            }
+            // F1: About
+            if (e.Key == Avalonia.Input.Key.F1 && e.KeyModifiers == Avalonia.Input.KeyModifiers.None)
+            {
+                OnAbout(this, new RoutedEventArgs());
+                e.Handled = true;
+                return;
+            }
         }
         base.OnKeyDown(e);
     }

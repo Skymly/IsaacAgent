@@ -203,6 +203,41 @@ public class ChatViewModelTests
         Assert.Same(current, vm.ActiveTab);
     }
 
+    // ── SwitchToNextTab ───────────────────────────────────────
+
+    [Fact]
+    public void SwitchToNextTab_SingleTab_DoesNothing()
+    {
+        var vm = CreateChatViewModel();
+        var current = vm.ActiveTab;
+        vm.SwitchToNextTabCommand.Execute(null);
+        Assert.Same(current, vm.ActiveTab);
+    }
+
+    [Fact]
+    public void SwitchToNextTab_MultipleTabs_CyclesForward()
+    {
+        var vm = CreateChatViewModel();
+        vm.AddTabCommand.Execute(null);
+        vm.AddTabCommand.Execute(null);
+        Assert.Equal(3, vm.Tabs.Count);
+
+        // Start at tab 2 (the last added tab is active)
+        Assert.Same(vm.Tabs[2], vm.ActiveTab);
+
+        // Switch to next (wraps to tab 0)
+        vm.SwitchToNextTabCommand.Execute(null);
+        Assert.Same(vm.Tabs[0], vm.ActiveTab);
+
+        // Switch to next (tab 1)
+        vm.SwitchToNextTabCommand.Execute(null);
+        Assert.Same(vm.Tabs[1], vm.ActiveTab);
+
+        // Switch to next (tab 2)
+        vm.SwitchToNextTabCommand.Execute(null);
+        Assert.Same(vm.Tabs[2], vm.ActiveTab);
+    }
+
     // ── OnProjectChanged ──────────────────────────────────────
 
     [Fact]

@@ -21,7 +21,7 @@ public sealed partial class MainViewModel : ObservableObject
     public ToastService Toasts { get; }
 
     [ObservableProperty]
-    private string _statusText = "Ready";
+    private string _statusText = "";
 
     [ObservableProperty]
     private bool _isBusy;
@@ -36,15 +36,28 @@ public sealed partial class MainViewModel : ObservableObject
         LogMonitor = services.GetRequiredService<LogMonitorService>();
         Toasts = services.GetRequiredService<ToastService>();
 
+        StatusText = GetString("StatusReady");
+
         Project.ProjectLoaded += path =>
         {
             Chat.OnProjectChanged(path);
             StatusText = string.IsNullOrEmpty(path)
-                ? "No project"
+                ? GetString("StatusNoProject")
                 : $"Project: {Project.ProjectName}";
             if (!string.IsNullOrEmpty(path))
-                Toasts.ShowSuccess($"Project loaded: {Project.ProjectName}");
+                Toasts.ShowSuccess($"{GetString("ToastProjectLoaded")}: {Project.ProjectName}");
         };
+    }
+
+    /// <summary>
+    ///   Look up a localized string from application resources.
+    ///   Falls back to the key if not found.
+    /// </summary>
+    private static string GetString(string key)
+    {
+        if (Avalonia.Application.Current?.Resources.TryGetValue(key, out var v) == true && v is string s)
+            return s;
+        return key;
     }
 
     [RelayCommand]
@@ -63,6 +76,6 @@ public sealed partial class MainViewModel : ObservableObject
     private void ClearChat()
     {
         Chat.ClearMessages();
-        StatusText = "Chat cleared";
+        StatusText = GetString("StatusChatCleared");
     }
 }

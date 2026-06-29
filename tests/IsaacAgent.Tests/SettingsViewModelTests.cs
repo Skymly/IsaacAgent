@@ -176,4 +176,68 @@ public class SettingsViewModelTests
         Assert.Equal("", vm.Endpoint);
         Assert.Equal("", vm.Model);
     }
+
+    [Fact]
+    public void Constructor_LoadsLanguageFromConfig()
+    {
+        var config = new AppConfiguration { Language = "zh" };
+        var vm = new SettingsViewModel(config);
+        Assert.Equal("zh", vm.SelectedLanguage);
+    }
+
+    [Fact]
+    public void Constructor_LoadsThemeFromConfig()
+    {
+        var config = new AppConfiguration { Theme = "light" };
+        var vm = new SettingsViewModel(config);
+        Assert.Equal("light", vm.SelectedTheme);
+    }
+
+    [Fact]
+    public void Constructor_DefaultLanguage_IsEnglish()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal("en", vm.SelectedLanguage);
+    }
+
+    [Fact]
+    public void Constructor_DefaultTheme_IsDark()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal("dark", vm.SelectedTheme);
+    }
+
+    [Fact]
+    public void AvailableLanguages_ContainsEnAndZh()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal(2, vm.AvailableLanguages.Count);
+        Assert.Contains("en", vm.AvailableLanguages);
+        Assert.Contains("zh", vm.AvailableLanguages);
+    }
+
+    [Fact]
+    public void AvailableThemes_ContainsDarkAndLight()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal(2, vm.AvailableThemes.Count);
+        Assert.Contains("dark", vm.AvailableThemes);
+        Assert.Contains("light", vm.AvailableThemes);
+    }
+
+    [Fact]
+    public void SelectedLanguage_SetAndGet_WorksCorrectly()
+    {
+        var vm = CreateViewModel();
+        vm.SelectedLanguage = "zh";
+        Assert.Equal("zh", vm.SelectedLanguage);
+    }
+
+    [Fact]
+    public void SelectedTheme_SetAndGet_WorksCorrectly()
+    {
+        var vm = CreateViewModel();
+        vm.SelectedTheme = "light";
+        Assert.Equal("light", vm.SelectedTheme);
+    }
 }

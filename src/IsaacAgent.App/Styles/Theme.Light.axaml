@@ -1,0 +1,86 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Light theme color palette for IsaacAgent.
+         Overrides the dark theme colors with light-appropriate values.
+         ============================================================ -->
+
+    <!-- Accent / links / highlights -->
+    <Color x:Key="IsaacAccentColor">#0078D4</Color>
+    <Color x:Key="IsaacLinkColor">#0078D4</Color>
+    <Color x:Key="IsaacLuaTagColor">#0078D4</Color>
+
+    <!-- Syntax / code -->
+    <Color x:Key="IsaacXmlTagColor">#B5651D</Color>
+    <Color x:Key="IsaacCodeColor">#B5651D</Color>
+    <Color x:Key="IsaacCodeBlockBgColor">#F5F5F5</Color>
+    <Color x:Key="IsaacCodeFgColor">#333333</Color>
+
+    <!-- Chat message backgrounds -->
+    <Color x:Key="IsaacChatUserBgColor">#D6E8F8</Color>
+    <Color x:Key="IsaacChatAssistantBgColor">#F0F0F0</Color>
+    <Color x:Key="IsaacChatToolBgColor">#FFF4D6</Color>
+    <Color x:Key="IsaacChatToolResultBgColor">#D6F0D6</Color>
+    <Color x:Key="IsaacChatRetrievalBgColor">#D6E0F0</Color>
+    <Color x:Key="IsaacChatErrorBgColor">#F8D6D6</Color>
+    <Color x:Key="IsaacChatSystemBgColor">#E0E0E0</Color>
+
+    <!-- Diff viewer -->
+    <Color x:Key="IsaacDiffAddedColor">#22863A</Color>
+    <Color x:Key="IsaacDiffRemovedColor">#CB2431</Color>
+    <Color x:Key="IsaacDiffContextColor">#24292E</Color>
+    <Color x:Key="IsaacDiffLineNumberColor">#959DA5</Color>
+
+    <!-- Log levels -->
+    <Color x:Key="IsaacLogHeaderColor">#0078D4</Color>
+    <Color x:Key="IsaacLogErrorColor">#CB2431</Color>
+    <Color x:Key="IsaacLogWarningColor">#B08800</Color>
+    <Color x:Key="IsaacLogInfoColor">#28A745</Color>
+
+    <!-- Markdown renderer -->
+    <Color x:Key="IsaacMarkdownQuoteColor">#6A737D</Color>
+    <Color x:Key="IsaacMarkdownHrColor">#D0D7DE</Color>
+
+    <!-- Brushes -->
+    <SolidColorBrush x:Key="IsaacAccentBrush" Color="{StaticResource IsaacAccentColor}" />
+    <SolidColorBrush x:Key="IsaacLinkBrush" Color="{StaticResource IsaacLinkColor}" />
+    <SolidColorBrush x:Key="IsaacLuaTagBrush" Color="{StaticResource IsaacLuaTagColor}" />
+    <SolidColorBrush x:Key="IsaacXmlTagBrush" Color="{StaticResource IsaacXmlTagColor}" />
+    <SolidColorBrush x:Key="IsaacCodeBrush" Color="{StaticResource IsaacCodeColor}" />
+    <SolidColorBrush x:Key="IsaacCodeBlockBgBrush" Color="{StaticResource IsaacCodeBlockBgColor}" />
+    <SolidColorBrush x:Key="IsaacCodeFgBrush" Color="{StaticResource IsaacCodeFgColor}" />
+
+    <SolidColorBrush x:Key="IsaacChatUserBgBrush" Color="{StaticResource IsaacChatUserBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatAssistantBgBrush" Color="{StaticResource IsaacChatAssistantBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatToolBgBrush" Color="{StaticResource IsaacChatToolBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatToolResultBgBrush" Color="{StaticResource IsaacChatToolResultBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatRetrievalBgBrush" Color="{StaticResource IsaacChatRetrievalBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatErrorBgBrush" Color="{StaticResource IsaacChatErrorBgColor}" />
+    <SolidColorBrush x:Key="IsaacChatSystemBgBrush" Color="{StaticResource IsaacChatSystemBgColor}" />
+
+    <SolidColorBrush x:Key="IsaacDiffAddedBrush" Color="{StaticResource IsaacDiffAddedColor}" />
+    <SolidColorBrush x:Key="IsaacDiffRemovedBrush" Color="{StaticResource IsaacDiffRemovedColor}" />
+    <SolidColorBrush x:Key="IsaacDiffContextBrush" Color="{StaticResource IsaacDiffContextColor}" />
+    <SolidColorBrush x:Key="IsaacDiffLineNumberBrush" Color="{StaticResource IsaacDiffLineNumberColor}" />
+
+    <SolidColorBrush x:Key="IsaacLogHeaderBrush" Color="{StaticResource IsaacLogHeaderColor}" />
+    <SolidColorBrush x:Key="IsaacLogErrorBrush" Color="{StaticResource IsaacLogErrorColor}" />
+    <SolidColorBrush x:Key="IsaacLogWarningBrush" Color="{StaticResource IsaacLogWarningColor}" />
+    <SolidColorBrush x:Key="IsaacLogInfoBrush" Color="{StaticResource IsaacLogInfoColor}" />
+
+    <SolidColorBrush x:Key="IsaacMarkdownQuoteBrush" Color="{StaticResource IsaacMarkdownQuoteColor}" />
+    <SolidColorBrush x:Key="IsaacMarkdownHrBrush" Color="{StaticResource IsaacMarkdownHrColor}" />
+
+    <!-- Toast notification colors (same for both themes) -->
+    <Color x:Key="IsaacToastInfoColor">#4A9EFF</Color>
+    <Color x:Key="IsaacToastSuccessColor">#4CAF50</Color>
+    <Color x:Key="IsaacToastWarningColor">#FF9800</Color>
+    <Color x:Key="IsaacToastErrorColor">#F44336</Color>
+
+    <SolidColorBrush x:Key="ToastInfoBrush" Color="{StaticResource IsaacToastInfoColor}" />
+    <SolidColorBrush x:Key="ToastSuccessBrush" Color="{StaticResource IsaacToastSuccessColor}" />
+    <SolidColorBrush x:Key="ToastWarningBrush" Color="{StaticResource IsaacToastWarningColor}" />
+    <SolidColorBrush x:Key="ToastErrorBrush" Color="{StaticResource IsaacToastErrorColor}" />
+
+</ResourceDictionary>

@@ -38,6 +38,10 @@ public sealed class App : Application
             desktop.ShutdownRequested += OnShutdownRequested;
         }
 
+        // Apply saved language and theme preferences.
+        Services.GetRequiredService<LocalizationService>().ApplyInitialLanguage();
+        Services.GetRequiredService<ThemeService>().ApplyInitialTheme();
+
         // Pre-warm the RAG index in the background so the first search_knowledge
         // call doesn't block the UI for tens of seconds (especially with ONNX).
         _ = Task.Run(() => PrewarmRagIndexAsync(_shutdownCts.Token), _shutdownCts.Token);
@@ -85,6 +89,8 @@ public sealed class App : Application
         services.AddSingleton<DiffViewerViewModel>();
         services.AddSingleton<TemplateGalleryViewModel>();
         services.AddSingleton<ToastService>();
+        services.AddSingleton<LocalizationService>();
+        services.AddSingleton<ThemeService>();
 
         return services.BuildServiceProvider();
     }

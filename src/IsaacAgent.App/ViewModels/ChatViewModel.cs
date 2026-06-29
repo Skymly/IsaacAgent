@@ -69,6 +69,15 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
         if (tab is not null) SetActiveTab(tab);
     }
 
+    [RelayCommand]
+    private void SwitchToNextTab()
+    {
+        if (Tabs.Count <= 1 || ActiveTab is null) return;
+        var idx = Tabs.IndexOf(ActiveTab);
+        var nextIdx = (idx + 1) % Tabs.Count;
+        SetActiveTab(Tabs[nextIdx]);
+    }
+
     private void SetActiveTab(ChatTabViewModel tab)
     {
         if (ActiveTab is not null) ActiveTab.IsActive = false;
