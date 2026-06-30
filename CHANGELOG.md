@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-06-30
+
+Performance optimization: async file tree loading, chat list
+virtualization, message trimming, file preview limits, and
+lazy snippet loading.
+
+### Added
+
+- Message trimming: UI message collection is limited to 200
+  messages. Older messages are automatically disposed and removed
+  after each send/resend. The full conversation history remains in
+  the AgentSession for LLM context. Prevents unbounded memory growth
+  in long chat sessions.
+- File preview size limit: files larger than 100KB are truncated
+  when opened in the file preview pane, with a "(truncated)"
+  notice. Prevents loading very large files into memory.
+- ClearFilePreview method on ProjectViewModel: allows clearing the
+  file preview content to free memory.
+- TrimMessages method on ChatTabViewModel: disposes and removes
+  oldest messages when the collection exceeds MaxUiMessages (200).
+- BuildFileTreeSync method on ProjectViewModel: background-thread-
+  safe version of file tree building that returns a list instead
+  of populating an ObservableCollection.
+
+### Changed
+
+- File tree loading: RefreshFilesAsync now runs BuildFileTreeSync
+  on a background thread via Task.Run, then adds results to the
+  UI-bound collection. Eliminates UI freezing for large projects
+  with thousands of files.
+- Chat message list: replaced ItemsControl with ListBox using
+  VirtualizingStackPanel. Only visible messages are rendered,
+  significantly reducing memory and CPU for long conversations.
+  Updated $parent[ItemsControl] bindings to $parent[ListBox].
+- File preview: previous preview content is cleared before loading
+  a new file, freeing memory immediately.
+- LuaSnippetService: custom snippet loading from disk now runs on
+  a background thread in the constructor, avoiding startup delay
+  when the JSON file is large or disk is slow.
+
+### Tests
+
+- ChatTabViewModelTests: +2 tests for message trimming
+  - Messages_BelowLimit_NotTrimmed: verifies small collections
+    are not affected
+  - Messages_AboveLimit_TrimmedAfterSend: verifies collections
+    exceeding 200 messages are trimmed after send
+- Total: 620 tests (616 pass, 4 skip, 0 fail)
+
 ## [0.1.8] - 2026-06-30
 
 Snippet library expansion: more built-in snippets, custom snippets

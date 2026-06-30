@@ -305,12 +305,17 @@ public sealed class LuaSnippetService
 
     public LuaSnippetService()
     {
-        // Load built-in snippets
+        // Load built-in snippets (in-memory, instant)
         foreach (var s in BuiltInSnippets)
             Snippets.Add(s);
 
-        // Load custom snippets from disk
-        LoadCustomSnippets();
+        // Load custom snippets on a background thread to avoid
+        // blocking startup if the JSON file is large or disk is slow.
+        _ = Task.Run(() =>
+        {
+            LoadCustomSnippets();
+            UpdateFiltered();
+        });
         UpdateFiltered();
     }
 

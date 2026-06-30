@@ -439,4 +439,44 @@ public class ChatTabViewModelTests
         Assert.False(msg.IsEditing);
         Assert.Equal("", msg.EditText);
     }
+
+    // ── Message trimming (memory optimization) ────────────────
+
+    [Fact]
+    public void Messages_BelowLimit_NotTrimmed()
+    {
+        var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
+        // Add a few messages — well below the 200 limit
+        for (var i = 0; i < 10; i++)
+            tab.Messages.Add(new ChatMessageViewModel { Role = "user", Content = $"msg {i}" });
+
+        // Send a message to trigger TrimMessages
+        tab.InputText = "trigger trim";
+        tab.SendCommand.Execute(null);
+        FlushDispatcher();
+
+        // All messages should still be present
+        Assert.True(tab.Messages.Count >= 12); // 10 added + user + assistant
+    }
+
+    [Fact]
+    public async Task Messages_AboveLimit_TrimmedAfterSend()
+    {
+        var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("response") }]);
+
+        // Add 205 messages to exceed the 200 limit
+        for (var i = 0; i < 205; i++)
+            tab.Messages.Add(new ChatMessageViewModel { Role = "user", Content = $"msg {i}" });
+
+        Assert.Equal(205, tab.Messages.Count);
+
+        // Send a message — should trigger trimming
+        tab.InputText = "trigger trim";
+        await tab.SendCommand.ExecuteAsync(null);
+        FlushDispatcher();
+
+        // Should be trimmed to at most 200 + the new messages from this send
+        Assert.True(tab.Messages.Count <= 202,
+            $"Expected <= 202 messages after trim, got {tab.Messages.Count}");
+    }
 }

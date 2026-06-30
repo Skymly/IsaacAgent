@@ -49,6 +49,14 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _totalOutputTokens;
 
+    /// <summary>
+    ///   Maximum number of messages kept in the UI collection. Older
+    ///   messages are trimmed to prevent unbounded memory growth.
+    ///   The full history is still preserved in the AgentSession for
+    ///   LLM context.
+    /// </summary>
+    private const int MaxUiMessages = 200;
+
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
     public ChatTabViewModel(IServiceProvider services, ILogger<ChatTabViewModel> logger, string? projectDir = null)
@@ -238,6 +246,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
                 }
             }, CancellationToken.None);
         }
+        TrimMessages();
     }
 
     [RelayCommand]
@@ -329,6 +338,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
                 }
             }, CancellationToken.None);
         }
+        TrimMessages();
     }
 
     /// <summary>
@@ -362,6 +372,21 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         _session.ClearHistory();
         TotalInputTokens = 0;
         TotalOutputTokens = 0;
+    }
+
+    /// <summary>
+    ///   Trim the UI message collection to MaxUiMessages, disposing
+    ///   removed messages. The full conversation history remains in
+    ///   the AgentSession for LLM context.
+    /// </summary>
+    private void TrimMessages()
+    {
+        while (Messages.Count > MaxUiMessages)
+        {
+            var old = Messages[0];
+            old.Dispose();
+            Messages.RemoveAt(0);
+        }
     }
 
     public void Dispose()

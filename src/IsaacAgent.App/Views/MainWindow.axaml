@@ -213,16 +213,18 @@
                         </ItemsControl>
                     </DockPanel>
 
-                    <!-- Chat content for active tab -->
+                    <!-- Chat content for active tab (virtualized for performance) -->
                     <ScrollViewer x:Name="ChatScrollViewer" DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto"
                                   IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
-                        <ItemsControl ItemsSource="{Binding Chat.ActiveTab.Messages}" Padding="8">
-                            <ItemsControl.ItemsPanel>
+                        <ListBox ItemsSource="{Binding Chat.ActiveTab.Messages}" Padding="8"
+                                 Background="Transparent" BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <StackPanel Spacing="8" />
+                                    <VirtualizingStackPanel />
                                 </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ChatMessageViewModel">
                                     <Border CornerRadius="8" Padding="12,8"
                                             Background="{Binding BackgroundBrush}"
@@ -231,7 +233,7 @@
                                         <Grid>
                                             <!-- Tool call/result: collapsible card -->
                                             <StackPanel Spacing="4" IsVisible="{Binding IsTool}">
-                                                <Button Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).ActiveTab.ToggleExpandCommand}"
+                                                <Button Command="{Binding $parent[ListBox].((vm:MainViewModel)Chat).ActiveTab.ToggleExpandCommand}"
                                                         CommandParameter="{Binding}"
                                                         Background="Transparent" BorderThickness="0" Padding="0"
                                                         HorizontalAlignment="Left">
@@ -295,7 +297,7 @@
                                                              AcceptsReturn="True" MinHeight="60" FontSize="13" />
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <Button Content="{DynamicResource ChatResend}" Padding="8,2" FontSize="12"
-                                                                Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).ActiveTab.ResendCommand}"
+                                                                Command="{Binding $parent[ListBox].((vm:MainViewModel)Chat).ActiveTab.ResendCommand}"
                                                                 CommandParameter="{Binding}" />
                                                         <Button Content="{DynamicResource SettingsCancel}" Padding="8,2" FontSize="12"
                                                                 Command="{Binding CancelEditCommand}" />
@@ -312,8 +314,8 @@
                                         </Grid>
                                     </Border>
                                 </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </ScrollViewer>
 
                     <!-- Search panel (toggle with Ctrl+F) -->

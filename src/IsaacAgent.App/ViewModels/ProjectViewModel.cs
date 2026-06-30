@@ -95,9 +95,27 @@ public sealed partial class ProjectViewModel : ObservableObject
         var fullPath = Path.Combine(ProjectPath, item.Path);
         if (!File.Exists(fullPath)) return;
 
+        // Clear previous preview to free memory before loading new content
+        FilePreviewContent = "";
+
         try
         {
-            var content = await File.ReadAllTextAsync(fullPath);
+            // Limit preview to first 100KB to avoid memory issues with large files
+            const int MaxPreviewBytes = 100 * 1024;
+            var fileInfo = new FileInfo(fullPath);
+            string content;
+            if (fileInfo.Length > MaxPreviewBytes)
+            {
+                await using var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read);
+                using var reader = new StreamReader(stream);
+                var buffer = new char[MaxPreviewBytes];
+                var read = await reader.ReadAsync(buffer);
+                content = new string(buffer, 0, read) + "\n\n... (truncated, file is too large)";
+            }
+            else
+            {
+                content = await File.ReadAllTextAsync(fullPath);
+            }
             FilePreviewName = item.Path;
             FilePreviewContent = content;
             HasFilePreview = true;
@@ -106,6 +124,16 @@ public sealed partial class ProjectViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to read file {Path}", item.Path);
         }
+    }
+
+    /// <summary>
+    ///   Clear the file preview to free memory.
+    /// </summary>
+    public void ClearFilePreview()
+    {
+        FilePreviewContent = "";
+        FilePreviewName = "";
+        HasFilePreview = false;
     }
 
     /// <summary>
@@ -337,21 +365,76 @@ public sealed partial class ProjectViewModel : ObservableObject
         ProjectLoaded?.Invoke(path);
     }
 
-    private Task RefreshFilesAsync()
+    private async Task RefreshFilesAsync()
     {
         Files.Clear();
-        if (string.IsNullOrEmpty(ProjectPath)) return Task.CompletedTask;
+        if (string.IsNullOrEmpty(ProjectPath)) return;
 
         var projectPath = ProjectPath;
         try
         {
-            BuildFileTree(projectPath, projectPath, Files);
+            // Build the tree on a background thread to avoid UI freezing
+            // for large projects with thousands of files.
+            var items = await Task.Run(() => BuildFileTreeSync(projectPath, projectPath));
+            Files.Clear();
+            foreach (var item in items)
+                Files.Add(item);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to refresh files");
         }
-        return Task.CompletedTask;
+    }
+
+    /// <summary>
+    ///   Synchronous version of BuildFileTree that returns a list instead
+    ///   of populating an ObservableCollection. Safe to call on background
+    ///   thread since it doesn't touch UI-bound collections.
+    /// </summary>
+    private static List<FileTreeItem> BuildFileTreeSync(string projectRoot, string currentDir)
+    {
+        var result = new List<FileTreeItem>();
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".git", "bin", "obj", ".vs", "node_modules"
+        };
+
+        foreach (var dir in Directory.GetDirectories(currentDir)
+                     .OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+        {
+            var dirName = Path.GetFileName(dir);
+            if (excluded.Contains(dirName)) continue;
+
+            var relPath = Path.GetRelativePath(projectRoot, dir).Replace('\\', '/');
+            var dirItem = new FileTreeItem
+            {
+                Name = dirName,
+                Path = relPath,
+                IsDirectory = true,
+                IsExpanded = true
+            };
+            var children = BuildFileTreeSync(projectRoot, dir);
+            foreach (var child in children)
+                dirItem.Children.Add(child);
+            if (dirItem.Children.Count > 0)
+                result.Add(dirItem);
+        }
+
+        foreach (var file in Directory.GetFiles(currentDir)
+                     .OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        {
+            var fileName = Path.GetFileName(file);
+            var relPath = Path.GetRelativePath(projectRoot, file).Replace('\\', '/');
+            result.Add(new FileTreeItem
+            {
+                Name = fileName,
+                Path = relPath,
+                IsLua = file.EndsWith(".lua", StringComparison.OrdinalIgnoreCase),
+                IsXml = file.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
+            });
+        }
+
+        return result;
     }
 
     /// <summary>
