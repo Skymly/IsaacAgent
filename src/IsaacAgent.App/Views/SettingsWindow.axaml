@@ -5,7 +5,7 @@
         xmlns:services="using:IsaacAgent.App.Services"
         x:Class="IsaacAgent.App.Views.SettingsWindow"
         Title="{DynamicResource SettingsTitle}"
-        Width="540" Height="720"
+        Width="560" Height="740"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         x:DataType="vm:SettingsViewModel">
@@ -13,80 +13,91 @@
     <Grid RowDefinitions="*,Auto" Margin="20">
 
         <ScrollViewer Grid.Row="0">
-            <StackPanel Spacing="12">
+            <StackPanel Spacing="16">
 
                 <!-- Appearance Section -->
-                <TextBlock Text="{DynamicResource SettingsAppearance}" FontWeight="Bold" FontSize="14" />
-                <TextBlock Text="{DynamicResource SettingsLanguage}" FontWeight="SemiBold" />
-                <ComboBox x:Name="LanguageComboBox"
-                          SelectedItem="{Binding SelectedLanguage}"
-                          ItemsSource="{Binding AvailableLanguages}" />
-                <TextBlock Text="{DynamicResource SettingsTheme}" FontWeight="SemiBold" />
-                <ComboBox x:Name="ThemeComboBox"
-                          SelectedItem="{Binding SelectedTheme}"
-                          ItemsSource="{Binding AvailableThemes}" />
+                <Border Classes="card" Padding="16,12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{DynamicResource SettingsAppearance}" Classes="header" FontSize="14" />
+                        <Separator Classes="isaac" Margin="0,2" />
+                        <TextBlock Text="{DynamicResource SettingsLanguage}" FontWeight="SemiBold" />
+                        <ComboBox x:Name="LanguageComboBox"
+                                  SelectedItem="{Binding SelectedLanguage}"
+                                  ItemsSource="{Binding AvailableLanguages}" />
+                        <TextBlock Text="{DynamicResource SettingsTheme}" FontWeight="SemiBold" />
+                        <ComboBox x:Name="ThemeComboBox"
+                                  SelectedItem="{Binding SelectedTheme}"
+                                  ItemsSource="{Binding AvailableThemes}" />
 
-                <TextBlock Text="Accent Color" FontWeight="SemiBold" />
-                <TextBox Text="{Binding AccentColor}" Watermark="#569CD6 (leave empty for default)" />
+                        <TextBlock Text="Accent Color" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding AccentColor}" Watermark="#569CD6 (leave empty for default)" Classes="isaac" />
 
-                <TextBlock Text="Font Size" FontWeight="SemiBold" />
-                <ComboBox SelectedItem="{Binding SelectedFontSize}"
-                          ItemsSource="{Binding AvailableFontSizes}" />
+                        <TextBlock Text="Font Size" FontWeight="SemiBold" />
+                        <ComboBox SelectedItem="{Binding SelectedFontSize}"
+                                  ItemsSource="{Binding AvailableFontSizes}" />
 
-                <TextBlock Text="Log Level" FontWeight="SemiBold" />
-                <ComboBox SelectedItem="{Binding SelectedLogLevel}"
-                          ItemsSource="{Binding AvailableLogLevels}" />
-
-                <Separator Height="1" Margin="0,8" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+                        <TextBlock Text="Log Level" FontWeight="SemiBold" />
+                        <ComboBox SelectedItem="{Binding SelectedLogLevel}"
+                                  ItemsSource="{Binding AvailableLogLevels}" />
+                    </StackPanel>
+                </Border>
 
                 <!-- LLM Section -->
-                <TextBlock Text="{DynamicResource SettingsLLMProvider}" FontWeight="Bold" FontSize="14" />
-                <ComboBox SelectedItem="{Binding SelectedProviderType}"
-                          ItemsSource="{Binding ProviderTypes}" />
+                <Border Classes="card" Padding="16,12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{DynamicResource SettingsLLMProvider}" Classes="header" FontSize="14" />
+                        <Separator Classes="isaac" Margin="0,2" />
+                        <ComboBox SelectedItem="{Binding SelectedProviderType}"
+                                  ItemsSource="{Binding ProviderTypes}" />
 
-                <TextBlock Text="{DynamicResource SettingsEndpoint}" FontWeight="SemiBold" />
-                <TextBox Text="{Binding Endpoint}" Watermark="https://api.example.com/v1" />
+                        <TextBlock Text="{DynamicResource SettingsEndpoint}" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding Endpoint}" Watermark="https://api.example.com/v1" Classes="isaac" />
 
-                <TextBlock Text="{DynamicResource SettingsModel}" FontWeight="SemiBold" />
-                <TextBox Text="{Binding Model}" Watermark="model-name" />
+                        <TextBlock Text="{DynamicResource SettingsModel}" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding Model}" Watermark="model-name" Classes="isaac" />
 
-                <TextBlock Text="{DynamicResource SettingsApiKey}" FontWeight="SemiBold" />
-                <TextBox Text="{Binding ApiKey}" Watermark="sk-..." PasswordChar="*" />
-
-                <Separator Height="1" Margin="0,8" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+                        <TextBlock Text="{DynamicResource SettingsApiKey}" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding ApiKey}" Watermark="sk-..." PasswordChar="*" Classes="isaac" />
+                    </StackPanel>
+                </Border>
 
                 <!-- RAG / Embedding Section -->
-                <TextBlock Text="{DynamicResource SettingsKnowledgeBase}" FontWeight="Bold" FontSize="14" />
-                <TextBlock Text="{DynamicResource SettingsEmbeddingSource}" FontWeight="SemiBold" />
-                <ComboBox SelectedItem="{Binding SelectedEmbeddingSource}"
-                          ItemsSource="{Binding EmbeddingSources}" />
+                <Border Classes="card" Padding="16,12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{DynamicResource SettingsKnowledgeBase}" Classes="header" FontSize="14" />
+                        <Separator Classes="isaac" Margin="0,2" />
+                        <TextBlock Text="{DynamicResource SettingsEmbeddingSource}" FontWeight="SemiBold" />
+                        <ComboBox SelectedItem="{Binding SelectedEmbeddingSource}"
+                                  ItemsSource="{Binding EmbeddingSources}" />
 
-                <!-- Ollama embedding settings -->
-                <StackPanel Spacing="8" IsVisible="{Binding SelectedEmbeddingSource, Converter={x:Static conv:EmbeddingSourceVisibilityConverter.OllamaInstance}}">
-                    <TextBlock Text="{DynamicResource SettingsOllamaEndpoint}" FontWeight="SemiBold" />
-                    <TextBox Text="{Binding OllamaEmbeddingEndpoint}" Watermark="http://localhost:11434" />
+                        <!-- Ollama embedding settings -->
+                        <StackPanel Spacing="8" IsVisible="{Binding SelectedEmbeddingSource, Converter={x:Static conv:EmbeddingSourceVisibilityConverter.OllamaInstance}}">
+                            <TextBlock Text="{DynamicResource SettingsOllamaEndpoint}" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding OllamaEmbeddingEndpoint}" Watermark="http://localhost:11434" Classes="isaac" />
 
-                    <TextBlock Text="{DynamicResource SettingsEmbeddingModel}" FontWeight="SemiBold" />
-                    <TextBox Text="{Binding OllamaEmbeddingModel}" Watermark="nomic-embed-text" />
-                </StackPanel>
+                            <TextBlock Text="{DynamicResource SettingsEmbeddingModel}" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding OllamaEmbeddingModel}" Watermark="nomic-embed-text" Classes="isaac" />
+                        </StackPanel>
 
-                <!-- ONNX embedding settings -->
-                <StackPanel Spacing="8" IsVisible="{Binding SelectedEmbeddingSource, Converter={x:Static conv:EmbeddingSourceVisibilityConverter.OnnxInstance}}">
-                    <TextBlock Text="{DynamicResource SettingsOnnxModelPath}" FontWeight="SemiBold" />
-                    <TextBox Text="{Binding OnnxEmbeddingModelPath}" Watermark="C:\path\to\model.onnx" />
+                        <!-- ONNX embedding settings -->
+                        <StackPanel Spacing="8" IsVisible="{Binding SelectedEmbeddingSource, Converter={x:Static conv:EmbeddingSourceVisibilityConverter.OnnxInstance}}">
+                            <TextBlock Text="{DynamicResource SettingsOnnxModelPath}" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding OnnxEmbeddingModelPath}" Watermark="C:\path\to\model.onnx" Classes="isaac" />
 
-                    <TextBlock Text="{DynamicResource SettingsTokenizerVocabPath}" FontWeight="SemiBold" />
-                    <TextBox Text="{Binding OnnxEmbeddingVocabPath}" Watermark="C:\path\to\vocab.txt" />
-                </StackPanel>
+                            <TextBlock Text="{DynamicResource SettingsTokenizerVocabPath}" FontWeight="SemiBold" />
+                            <TextBox Text="{Binding OnnxEmbeddingVocabPath}" Watermark="C:\path\to\vocab.txt" Classes="isaac" />
+                        </StackPanel>
 
-                <TextBlock Text="{DynamicResource SettingsEmbeddingNote}"
-                           FontSize="11" Opacity="0.5" TextWrapping="Wrap" />
+                        <TextBlock Text="{DynamicResource SettingsEmbeddingNote}"
+                                   Classes="caption" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
-            <Button Content="{DynamicResource SettingsCancel}" Click="OnCancel" Width="80" />
-            <Button Content="{DynamicResource SettingsSave}" Click="OnSave" Width="80" IsDefault="True" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+            <Button Content="{DynamicResource SettingsCancel}" Click="OnCancel" Width="90" Classes="ghost" />
+            <Button Content="{DynamicResource SettingsSave}" Click="OnSave" Width="90" Classes="primary" IsDefault="True" />
         </StackPanel>
     </Grid>
 </Window>

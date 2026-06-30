@@ -12,7 +12,7 @@
 
     <Grid RowDefinitions="Auto,*,Auto,Auto">
 
-        <Menu Grid.Row="0" Background="{DynamicResource SystemControlBackgroundAltMediumBrush}">
+        <Menu Grid.Row="0" Background="{DynamicResource IsaacSurfaceBrush}">
             <MenuItem Header="{DynamicResource MenuFile}">
                 <MenuItem Header="{DynamicResource MenuFileNewProject}" Command="{Binding NewProjectAsyncCommand}" />
                 <MenuItem Header="{DynamicResource MenuFileNewFromTemplate}" Click="OnTemplateGallery" InputGesture="Ctrl+Shift+T" />
@@ -38,43 +38,43 @@
             </MenuItem>
         </Menu>
 
-        <Grid Grid.Row="1" ColumnDefinitions="250,*,300">
+        <Grid Grid.Row="1" ColumnDefinitions="260,*,320">
 
-            <Border Grid.Column="0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,0,1,0">
+            <!-- ===== Left sidebar: Project files ===== -->
+            <Border Grid.Column="0" Classes="panel">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="{DynamicResource PanelProjectFiles}"
-                               FontWeight="Bold" Margin="10,8" />
+                               Classes="header" Margin="12,10,12,4" />
                     <TextBlock DockPanel.Dock="Top" Text="{Binding Project.ProjectName}"
-                               Opacity="0.6" Margin="10,0" />
+                               Classes="caption" Margin="12,0,12,8" />
 
                     <!-- File search box -->
                     <TextBox DockPanel.Dock="Top"
                              Text="{Binding Project.FileSearchText}"
                              Watermark="{DynamicResource FileSearchWatermark}"
-                             Margin="10,4,10,4"
+                             Classes="search"
                              InnerLeftContent="🔍"
-                             FontSize="12" />
+                             Margin="12,0,12,8" />
 
-                    <Border DockPanel.Dock="Bottom" 
+                    <Border DockPanel.Dock="Bottom"
                             IsVisible="{Binding Project.HasFilePreview}"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderBrush="{DynamicResource IsaacBorderSubtleBrush}"
                             BorderThickness="0,1,0,0"
                             MaxHeight="300">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" 
+                            <TextBlock DockPanel.Dock="Top"
                                        Text="{Binding Project.FilePreviewName}"
-                                       FontFamily="Consolas" FontSize="11"
-                                       Opacity="0.7" Margin="10,6,10,4" />
+                                       Classes="mono caption"
+                                       Margin="12,8,12,4" />
                             <ScrollViewer>
                                 <TextBox Text="{Binding Project.FilePreviewContent}"
                                          IsReadOnly="True"
-                                         FontFamily="Cascadia Code,Consolas,monospace"
-                                         FontSize="12"
+                                         Classes="mono"
                                          BorderThickness="0"
                                          Background="Transparent"
                                          AcceptsReturn="True"
                                          TextWrapping="NoWrap"
-                                         Margin="6,0,6,6" />
+                                         Margin="8,0,8,8" />
                             </ScrollViewer>
                         </DockPanel>
                     </Border>
@@ -82,9 +82,8 @@
                     <!-- File search results (shown when searching) -->
                     <ListBox x:Name="FileSearchResults"
                              ItemsSource="{Binding Project.FilteredFiles}"
-                             Margin="0,8,0,0"
-                             Background="Transparent"
-                             BorderThickness="0"
+                             Classes="isaac"
+                             Margin="4,0"
                              DoubleTapped="OnFileDoubleTapped"
                              IsVisible="{Binding Project.HasFileSearch}">
                         <ListBox.ItemTemplate>
@@ -104,9 +103,8 @@
 
                     <TreeView x:Name="FileTreeView"
                               ItemsSource="{Binding Project.Files}"
-                              Margin="0,8,0,0"
-                              Background="Transparent"
-                              BorderThickness="0"
+                              Classes="isaac"
+                              Margin="4,0"
                               DoubleTapped="OnFileDoubleTapped"
                               IsVisible="{Binding !Project.HasFileSearch}">
                         <TreeView.ContextMenu>
@@ -157,67 +155,69 @@
                 </DockPanel>
             </Border>
 
-            <Border Grid.Column="1" Padding="8">
+            <Border Grid.Column="1" Padding="0">
                 <DockPanel>
                     <!-- Tab bar -->
-                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
-                        <Button DockPanel.Dock="Right" Content="+" Padding="8,2"
-                                Command="{Binding Chat.AddTabCommand}"
-                                FontSize="14" Margin="4,0,0,0" />
-                        <ItemsControl ItemsSource="{Binding Chat.Tabs}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="2" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:ChatTabViewModel">
-                                    <Panel>
-                                        <!-- Active tab: highlighted with accent border -->
-                                        <Border Padding="8,4" CornerRadius="4,4,0,0"
-                                                BorderBrush="{DynamicResource IsaacAccentBrush}" BorderThickness="0,0,0,2"
-                                                IsVisible="{Binding IsActive}">
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.SelectTabCommand}"
-                                                        CommandParameter="{Binding}">
-                                                    <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="Bold" />
-                                                </Button>
-                                                <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
-                                                        CommandParameter="{Binding}"
-                                                        FontSize="10" Opacity="0.5" Content="✕"
-                                                        IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
-                                            </StackPanel>
-                                        </Border>
-                                        <!-- Inactive tab: dimmed -->
-                                        <Border Padding="8,4" CornerRadius="4,4,0,0"
-                                                Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
-                                                IsVisible="{Binding !IsActive}">
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.SelectTabCommand}"
-                                                        CommandParameter="{Binding}">
-                                                    <TextBlock Text="{Binding Title}" FontSize="12" Opacity="0.6" />
-                                                </Button>
-                                                <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
-                                                        CommandParameter="{Binding}"
-                                                        FontSize="10" Opacity="0.5" Content="✕"
-                                                        IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
-                                            </StackPanel>
-                                        </Border>
-                                    </Panel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </DockPanel>
+                    <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource IsaacBorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="8,6,8,0">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="+" Classes="icon"
+                                    Command="{Binding Chat.AddTabCommand}"
+                                    FontSize="16" Margin="4,0,0,0" />
+                            <ItemsControl ItemsSource="{Binding Chat.Tabs}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="2" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ChatTabViewModel">
+                                        <Panel>
+                                            <!-- Active tab: highlighted with accent border -->
+                                            <Border Padding="10,6" CornerRadius="6,6,0,0"
+                                                    BorderBrush="{DynamicResource IsaacAccentBrush}" BorderThickness="0,0,0,2"
+                                                    IsVisible="{Binding IsActive}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Button Classes="tab" Padding="0"
+                                                            Command="{Binding $parent[ItemsControl].DataContext.Chat.SelectTabCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" />
+                                                    </Button>
+                                                    <Button Classes="icon" Padding="2,0"
+                                                            Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            FontSize="10" Opacity="0.4" Content="✕"
+                                                            IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <!-- Inactive tab: dimmed -->
+                                            <Border Padding="10,6" CornerRadius="6,6,0,0"
+                                                    Background="Transparent"
+                                                    IsVisible="{Binding !IsActive}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <Button Classes="tab" Padding="0"
+                                                            Command="{Binding $parent[ItemsControl].DataContext.Chat.SelectTabCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <TextBlock Text="{Binding Title}" FontSize="12" Opacity="0.5" />
+                                                    </Button>
+                                                    <Button Classes="icon" Padding="2,0"
+                                                            Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            FontSize="10" Opacity="0.3" Content="✕"
+                                                            IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Panel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </DockPanel>
+                    </Border>
 
                     <!-- Chat content for active tab (virtualized for performance) -->
                     <ScrollViewer x:Name="ChatScrollViewer" DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto"
                                   IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
-                        <ListBox ItemsSource="{Binding Chat.ActiveTab.Messages}" Padding="8"
-                                 Background="Transparent" BorderThickness="0"
+                        <ListBox ItemsSource="{Binding Chat.ActiveTab.Messages}" Padding="12"
+                                 Classes="isaac"
                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                             <ListBox.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -226,21 +226,23 @@
                             </ListBox.ItemsPanel>
                             <ListBox.ItemTemplate>
                                 <DataTemplate x:DataType="vm:ChatMessageViewModel">
-                                    <Border CornerRadius="8" Padding="12,8"
+                                    <Border CornerRadius="8" Padding="14,10"
                                             Background="{Binding BackgroundBrush}"
                                             HorizontalAlignment="{Binding HorizontalAlign}"
-                                            MaxWidth="600">
+                                            MaxWidth="640"
+                                            BoxShadow="0 1 3 0 #20000000"
+                                            Margin="0,3">
                                         <Grid>
                                             <!-- Tool call/result: collapsible card -->
-                                            <StackPanel Spacing="4" IsVisible="{Binding IsTool}">
+                                            <StackPanel Spacing="6" IsVisible="{Binding IsTool}">
                                                 <Button Command="{Binding $parent[ListBox].DataContext.Chat.ActiveTab.ToggleExpandCommand}"
                                                         CommandParameter="{Binding}"
-                                                        Background="Transparent" BorderThickness="0" Padding="0"
-                                                        HorizontalAlignment="Left">
+                                                        Classes="ghost"
+                                                        HorizontalAlignment="Left"
+                                                        Padding="6,2">
                                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                                         <TextBlock Text="{Binding RoleLabel}"
-                                                                   FontSize="11" Opacity="0.7"
-                                                                   FontFamily="Cascadia Code,Consolas,monospace" />
+                                                                   Classes="mono caption" />
                                                         <TextBlock Text="▼" FontSize="9" Opacity="0.4"
                                                                    IsVisible="{Binding IsExpanded}" />
                                                         <TextBlock Text="▶" FontSize="9" Opacity="0.4"
@@ -248,65 +250,63 @@
                                                     </StackPanel>
                                                 </Button>
                                                 <TextBlock Text="{Binding ToolArgsPreview}"
-                                                           FontSize="11" Opacity="0.5"
-                                                           FontFamily="Cascadia Code,Consolas,monospace"
+                                                           Classes="mono caption"
                                                            IsVisible="{Binding !IsExpanded}"
                                                            TextWrapping="Wrap" />
                                                 <SelectableTextBlock TextWrapping="Wrap"
-                                                                     FontFamily="Cascadia Code,Consolas,monospace"
-                                                                     FontSize="12"
+                                                                     Classes="mono"
                                                                      IsVisible="{Binding IsExpanded}"
                                                                      md:MarkdownRenderer.Markdown="{Binding DebouncedMarkdown}" />
                                             </StackPanel>
 
                                             <!-- Retrieval results: knowledge sources card -->
-                                            <StackPanel Spacing="4" IsVisible="{Binding IsRetrieval}">
+                                            <StackPanel Spacing="6" IsVisible="{Binding IsRetrieval}">
                                                 <TextBlock Text="{DynamicResource ChatKnowledgeRetrieved}"
-                                                           FontSize="11" Opacity="0.7"
-                                                           FontFamily="Cascadia Code,Consolas,monospace" />
+                                                           Classes="mono caption" />
                                                 <SelectableTextBlock TextWrapping="Wrap"
-                                                                     FontFamily="Cascadia Code,Consolas,monospace"
+                                                                     Classes="mono"
                                                                      FontSize="11"
                                                                      md:MarkdownRenderer.Markdown="{Binding DebouncedMarkdown}" />
                                             </StackPanel>
 
                                             <!-- Regular message -->
-                                            <StackPanel Spacing="4" IsVisible="{Binding IsRegular}">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <StackPanel Spacing="6" IsVisible="{Binding IsRegular}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
                                                     <TextBlock Text="{Binding RoleLabel}"
-                                                               FontSize="11" Opacity="0.5"
+                                                               Classes="caption"
                                                                VerticalAlignment="Center" />
                                                     <!-- Copy button -->
                                                     <Button Content="{DynamicResource ChatCopy}"
                                                             Command="{Binding CopyContentCommand}"
+                                                            Classes="ghost"
                                                             FontSize="10" Padding="6,2"
-                                                            Background="Transparent" BorderThickness="0"
-                                                            Opacity="0.5" />
+                                                            Opacity="0.4" />
                                                     <!-- Edit button (user messages only) -->
                                                     <Button Content="{DynamicResource ChatEdit}"
                                                             Command="{Binding StartEditCommand}"
+                                                            Classes="ghost"
                                                             FontSize="10" Padding="6,2"
-                                                            Background="Transparent" BorderThickness="0"
-                                                            Opacity="0.5"
+                                                            Opacity="0.4"
                                                             IsVisible="{Binding IsUser}" />
                                                 </StackPanel>
 
                                                 <!-- Edit mode (user messages) -->
-                                                <StackPanel Spacing="4" IsVisible="{Binding IsEditing}">
+                                                <StackPanel Spacing="6" IsVisible="{Binding IsEditing}">
                                                     <TextBox Text="{Binding EditText}"
-                                                             AcceptsReturn="True" MinHeight="60" FontSize="13" />
+                                                             AcceptsReturn="True" MinHeight="60"
+                                                             Classes="isaac" FontSize="13" />
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <Button Content="{DynamicResource ChatResend}" Padding="8,2" FontSize="12"
+                                                        <Button Content="{DynamicResource ChatResend}" Classes="primary" FontSize="12"
                                                                 Command="{Binding $parent[ListBox].DataContext.Chat.ActiveTab.ResendCommand}"
                                                                 CommandParameter="{Binding}" />
-                                                        <Button Content="{DynamicResource SettingsCancel}" Padding="8,2" FontSize="12"
+                                                        <Button Content="{DynamicResource SettingsCancel}" Classes="ghost" FontSize="12"
                                                                 Command="{Binding CancelEditCommand}" />
                                                     </StackPanel>
                                                 </StackPanel>
 
                                                 <!-- Normal display -->
                                                 <SelectableTextBlock TextWrapping="Wrap"
-                                                                     FontFamily="Cascadia Code,Consolas,monospace"
+                                                                     Classes="mono"
                                                                      FontSize="13"
                                                                      IsVisible="{Binding !IsEditing}"
                                                                      md:MarkdownRenderer.Markdown="{Binding DebouncedMarkdown}" />
@@ -319,18 +319,19 @@
                     </ScrollViewer>
 
                     <!-- Search panel (toggle with Ctrl+F) -->
-                    <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0"
+                    <Border DockPanel.Dock="Bottom" Padding="12,8" Margin="8,4,8,0"
                             IsVisible="{Binding IsSearchVisible}"
-                            Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
-                            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                            BorderThickness="0,1,0,0">
-                        <StackPanel Spacing="4">
-                            <TextBox Text="{Binding SearchQuery}" Watermark="Search messages..." />
+                            Background="{DynamicResource IsaacSurfaceVariantBrush}"
+                            BorderBrush="{DynamicResource IsaacBorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="6">
+                        <StackPanel Spacing="6">
+                            <TextBox Text="{Binding SearchQuery}" Watermark="Search messages..." Classes="isaac" />
                             <ItemsControl ItemsSource="{Binding SearchResults}" MaxHeight="200">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <StackPanel Margin="0,2" Spacing="2">
-                                            <TextBlock Text="{Binding Item1}" FontSize="11" Opacity="0.6" FontWeight="Bold" />
+                                        <StackPanel Margin="0,3" Spacing="2">
+                                            <TextBlock Text="{Binding Item1}" FontSize="11" Opacity="0.5" FontWeight="SemiBold" />
                                             <TextBlock Text="{Binding Item2.Content}" FontSize="11" Opacity="0.8"
                                                        TextWrapping="Wrap" MaxLines="2" />
                                         </StackPanel>
@@ -340,15 +341,19 @@
                         </StackPanel>
                     </Border>
 
-                    <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0"
+                    <Border DockPanel.Dock="Bottom" Padding="12,8" Margin="8,0,8,8"
+                            Background="{DynamicResource IsaacSurfaceVariantBrush}"
+                            BorderBrush="{DynamicResource IsaacBorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
                             IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
-                        <StackPanel Spacing="4">
+                        <StackPanel Spacing="6">
                             <!-- Snippet search + dropdown -->
-                            <StackPanel Orientation="Horizontal" Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
                                 <TextBox x:Name="SnippetSearchBox"
                                          Watermark="Search snippets..."
+                                         Classes="isaac"
                                          MinWidth="120"
-                                         FontSize="11"
                                          TextChanged="OnSnippetSearchChanged" />
                                 <ComboBox x:Name="SnippetComboBox"
                                           PlaceholderText="{DynamicResource ChatInsertSnippet}"
@@ -373,7 +378,8 @@
                                 </ComboBox>
                                 <Button x:Name="SnippetManageBtn"
                                         Content="⚙"
-                                        FontSize="14" Padding="6,2"
+                                        Classes="icon"
+                                        FontSize="16"
                                         ToolTip.Tip="Manage custom snippets"
                                         Click="OnSnippetManage" />
                             </StackPanel>
@@ -382,11 +388,13 @@
                                          Text="{Binding Chat.ActiveTab.InputText}"
                                          Watermark="{DynamicResource ChatInputWatermark}"
                                          AcceptsReturn="True"
-                                         MinHeight="40"
+                                         MinHeight="44"
+                                         Classes="isaac"
                                          IsEnabled="{Binding !Chat.ActiveTab.IsGenerating}"
                                          KeyDown="OnInputKeyDown" />
                                 <Button Grid.Column="1"
                                         Content="{DynamicResource ChatSend}"
+                                        Classes="primary"
                                         Command="{Binding Chat.ActiveTab.SendCommand}"
                                         Margin="8,0,0,0"
                                         VerticalAlignment="Stretch"
@@ -403,38 +411,54 @@
                 </DockPanel>
             </Border>
 
-            <Border Grid.Column="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1,0,0,0">
+            <!-- ===== Right sidebar: Quick reference ===== -->
+            <Border Grid.Column="2" Classes="panel" BorderThickness="1,0,0,0">
                 <DockPanel>
                     <TextBlock DockPanel.Dock="Top" Text="{DynamicResource PanelQuickReference}"
-                               FontWeight="Bold" Margin="10,8" />
+                               Classes="header" Margin="12,10,12,8" />
                     <ScrollViewer>
-                        <StackPanel Spacing="4" Margin="10,0">
-                            <TextBlock Text="{DynamicResource QuickRefCallbacks}" FontWeight="SemiBold" Margin="0,8,0,4" />
-                            <ItemsControl ItemsSource="{Binding QuickReference.Callbacks}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="11" Opacity="0.7" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                        <StackPanel Spacing="8" Margin="12,0,12,12">
+                            <!-- Callbacks section -->
+                            <Border Classes="card" Padding="10,8">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{DynamicResource QuickRefCallbacks}" Classes="header" />
+                                    <ItemsControl ItemsSource="{Binding QuickReference.Callbacks}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Classes="mono caption" Text="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock Text="{DynamicResource QuickRefClasses}" FontWeight="SemiBold" Margin="0,12,0,4" />
-                            <ItemsControl ItemsSource="{Binding QuickReference.Classes}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="11" Opacity="0.7" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <!-- Classes section -->
+                            <Border Classes="card" Padding="10,8">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{DynamicResource QuickRefClasses}" Classes="header" />
+                                    <ItemsControl ItemsSource="{Binding QuickReference.Classes}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Classes="mono caption" Text="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
 
-                            <TextBlock Text="{DynamicResource QuickRefModStructure}" FontWeight="SemiBold" Margin="0,12,0,4" />
-                            <ItemsControl ItemsSource="{Binding QuickReference.ModStructure}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="11" Opacity="0.7" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <!-- Mod structure section -->
+                            <Border Classes="card" Padding="10,8">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{DynamicResource QuickRefModStructure}" Classes="header" />
+                                    <ItemsControl ItemsSource="{Binding QuickReference.ModStructure}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Classes="mono caption" Text="{Binding}" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </DockPanel>
@@ -443,29 +467,29 @@
 
         <!-- Log Monitor Panel (collapsible) -->
         <Expander Grid.Row="2" Header="{DynamicResource LogMonitorHeader}"
-                   Background="{DynamicResource SystemControlBackgroundAltMediumBrush}"
-                   Padding="10,2"
+                   Classes="isaac"
+                   Background="{DynamicResource IsaacSurfaceBrush}"
+                   Padding="12,6"
                    IsExpanded="False">
             <Grid RowDefinitions="Auto,*" Height="180">
                 <!-- Controls -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,4,0,4">
-                    <Button Content="{DynamicResource LogMonitorStart}" Click="OnLogMonitorStart" Padding="10,2" FontSize="11" />
-                    <Button Content="{DynamicResource LogMonitorStop}" Click="OnLogMonitorStop" Padding="10,2" FontSize="11"
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,6,0,6">
+                    <Button Content="{DynamicResource LogMonitorStart}" Click="OnLogMonitorStart" Classes="ghost" FontSize="11" />
+                    <Button Content="{DynamicResource LogMonitorStop}" Click="OnLogMonitorStop" Classes="ghost" FontSize="11"
                             IsEnabled="{Binding LogMonitor.IsMonitoring}" />
-                    <Button Content="{DynamicResource LogMonitorClear}" Click="OnLogMonitorClear" Padding="10,2" FontSize="11" />
-                    <Separator Margin="4,0" />
+                    <Button Content="{DynamicResource LogMonitorClear}" Click="OnLogMonitorClear" Classes="ghost" FontSize="11" />
+                    <Separator Classes="isaac" Margin="4,0" />
                     <CheckBox Content="{DynamicResource LogMonitorErrors}" IsChecked="{Binding LogMonitor.ShowErrors}" FontSize="11" />
                     <CheckBox Content="{DynamicResource LogMonitorWarnings}" IsChecked="{Binding LogMonitor.ShowWarnings}" FontSize="11" />
                     <CheckBox Content="{DynamicResource LogMonitorInfo}" IsChecked="{Binding LogMonitor.ShowInfo}" FontSize="11" />
-                    <TextBlock Text="{Binding LogMonitor.StatusText}" FontSize="11" Opacity="0.6"
+                    <TextBlock Text="{Binding LogMonitor.StatusText}" Classes="caption"
                                VerticalAlignment="Center" Margin="8,0,0,0" />
                 </StackPanel>
 
                 <!-- Log entries -->
                 <ListBox Grid.Row="1"
                          ItemsSource="{Binding LogMonitor.Entries}"
-                         Background="Transparent"
-                         BorderThickness="0"
+                         Classes="isaac"
                          FontFamily="Cascadia Code,Consolas,monospace"
                          FontSize="11">
                     <ListBox.ItemTemplate>
@@ -482,10 +506,10 @@
             </Grid>
         </Expander>
 
-        <Border Grid.Row="3" Background="{DynamicResource SystemControlBackgroundAltMediumBrush}" Padding="10,4">
+        <Border Grid.Row="3" Background="{DynamicResource IsaacSurfaceBrush}" Padding="12,6"
+                BorderBrush="{DynamicResource IsaacBorderSubtleBrush}" BorderThickness="0,1,0,0">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Right" FontSize="11" Opacity="0.6"
-                           FontFamily="Cascadia Code,Consolas,monospace"
+                <TextBlock DockPanel.Dock="Right" Classes="caption mono"
                            IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
                     <TextBlock.Text>
                         <MultiBinding StringFormat="↑{0} ↓{1} tokens">
@@ -505,19 +529,19 @@
             <ItemsControl ItemsSource="{Binding Toasts.ActiveToasts}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel Orientation="Vertical" Spacing="6" />
+                        <StackPanel Orientation="Vertical" Spacing="8" />
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ToastNotification">
-                        <Border Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
-                                CornerRadius="6"
-                                Padding="12,8"
-                                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        <Border Background="{DynamicResource IsaacSurfaceVariantBrush}"
+                                CornerRadius="8"
+                                Padding="14,10"
+                                BorderBrush="{DynamicResource IsaacBorderSubtleBrush}"
                                 BorderThickness="1"
-                                BoxShadow="0 2 8 0 #40000000">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="{Binding Icon}" FontSize="16"
+                                BoxShadow="0 4 12 0 #50000000">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <TextBlock Text="{Binding Icon}" FontSize="18"
                                            Foreground="{Binding Severity, Converter={x:Static conv:ToastSeverityToBrushConverter.Instance}}"
                                            VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding Message}" FontSize="13"

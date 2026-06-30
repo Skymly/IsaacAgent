@@ -1,0 +1,192 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Button styles
+         ============================================================ -->
+
+    <!-- Primary button: accent background, white text -->
+    <Style Selector="Button.primary">
+        <Setter Property="Background" Value="{DynamicResource IsaacAccentBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="#3a7bc8" />
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="#2a6ab5" />
+    </Style>
+
+    <!-- Ghost button: transparent, subtle on hover -->
+    <Style Selector="Button.ghost">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="Button.ghost:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource IsaacHoverOverlayBrush}" />
+    </Style>
+    <Style Selector="Button.ghost:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource IsaacPressedOverlayBrush}" />
+    </Style>
+
+    <!-- Icon button: square, minimal padding -->
+    <Style Selector="Button.icon">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="6" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="Button.icon:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource IsaacHoverOverlayBrush}" />
+    </Style>
+    <Style Selector="Button.icon:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource IsaacPressedOverlayBrush}" />
+    </Style>
+
+    <!-- Tab button: for chat tabs -->
+    <Style Selector="Button.tab">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="Button.tab:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource IsaacHoverOverlayBrush}" />
+    </Style>
+
+    <!-- ============================================================
+         TextBox styles
+         ============================================================ -->
+
+    <Style Selector="TextBox.isaac">
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="10,6" />
+        <Setter Property="BorderBrush" Value="{DynamicResource IsaacBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource IsaacSurfaceBrush}" />
+    </Style>
+    <Style Selector="TextBox.isaac:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource IsaacAccentBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- Search box variant -->
+    <Style Selector="TextBox.search">
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="28,6,10,6" />
+        <Setter Property="BorderBrush" Value="{DynamicResource IsaacBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource IsaacSurfaceBrush}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBox.search:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource IsaacAccentBrush}" />
+    </Style>
+
+    <!-- ============================================================
+         ListBox item styles
+         ============================================================ -->
+
+    <Style Selector="ListBox.isaac">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="ListBox.isaac > ListBoxItem">
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Margin" Value="4,1" />
+    </Style>
+    <Style Selector="ListBox.isaac > ListBoxItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource IsaacHoverOverlayBrush}" />
+    </Style>
+    <Style Selector="ListBox.isaac > ListBoxItem:selected">
+        <Setter Property="Background" Value="#225588" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- ============================================================
+         TreeView item styles
+         ============================================================ -->
+
+    <Style Selector="TreeView.isaac">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="TreeView.isaac > TreeViewItem">
+        <Setter Property="Padding" Value="4,2" />
+        <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="TreeView.isaac > TreeViewItem:pointerover">
+        <Setter Property="Background" Value="{DynamicResource IsaacHoverOverlayBrush}" />
+    </Style>
+    <Style Selector="TreeView.isaac > TreeViewItem:selected">
+        <Setter Property="Background" Value="#225588" />
+    </Style>
+
+    <!-- ============================================================
+         Border / panel styles
+         ============================================================ -->
+
+    <Style Selector="Border.card">
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Background" Value="{DynamicResource IsaacSurfaceVariantBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource IsaacBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="12" />
+    </Style>
+
+    <Style Selector="Border.panel">
+        <Setter Property="Background" Value="{DynamicResource IsaacSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource IsaacBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+    </Style>
+
+    <!-- ============================================================
+         TextBlock styles
+         ============================================================ -->
+
+    <Style Selector="TextBlock.header">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Opacity" Value="0.9" />
+    </Style>
+
+    <Style Selector="TextBlock.caption">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Opacity" Value="0.6" />
+    </Style>
+
+    <Style Selector="TextBlock.mono">
+        <Setter Property="FontFamily" Value="Cascadia Code,Consolas,monospace" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- ============================================================
+         Expander styles
+         ============================================================ -->
+
+    <Style Selector="Expander.isaac">
+        <Setter Property="BorderBrush" Value="{DynamicResource IsaacBorderSubtleBrush}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+    </Style>
+
+    <!-- ============================================================
+         Separator styles
+         ============================================================ -->
+
+    <Style Selector="Separator.isaac">
+        <Setter Property="Background" Value="{DynamicResource IsaacBorderSubtleBrush}" />
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Margin" Value="0,8" />
+    </Style>
+
+</Styles>
+

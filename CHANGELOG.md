@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-30
+
+UI visual overhaul: design tokens, control styles, card-based layout,
+hover/focus states, and consistent spacing.
+
+### Added
+
+- **Controls.axaml** — design token resource dictionary:
+  - Corner radius tokens (4/6/8/12px)
+  - Spacing tokens (4/8/12/16/20px)
+  - Surface colors (IsaacSurface, IsaacSurfaceVariant, IsaacBorderSubtle,
+    IsaacHoverOverlay, IsaacPressedOverlay) for both dark and light themes
+- **ControlStyles.axaml** — global control style classes:
+  - Button styles: `.primary` (accent bg, white text, hover/pressed),
+    `.ghost` (transparent, hover overlay), `.icon` (square minimal),
+    `.tab` (for chat tab buttons)
+  - TextBox styles: `.isaac` (rounded, focus accent border),
+    `.search` (pill-shaped with left icon padding)
+  - ListBox styles: `.isaac` (transparent bg, hover overlay, selected
+    highlight with rounded corners)
+  - TreeView styles: `.isaac` (transparent bg, hover, selected)
+  - Border styles: `.card` (rounded surface with border), `.panel`
+    (surface with right border)
+  - TextBlock styles: `.header` (semi-bold 13px), `.caption` (11px
+    muted), `.mono` (Cascadia Code 12px)
+  - Expander styles: `.isaac` (subtle top border)
+  - Separator styles: `.isaac` (subtle line)
+
+### Changed
+
+- **MainWindow.axaml** — full visual refresh:
+  - Sidebar: wider (260px), panel surface, card-styled search box,
+    consistent 12px spacing
+  - Chat area: tab bar with bottom border separator, rounded tabs
+    with accent underline, message bubbles with box-shadow and
+    640px max width, input area as card with rounded border
+  - Quick reference: card-based sections with headers, monospace
+    caption text, 320px width
+  - Log monitor: surface background, ghost-styled buttons
+  - Status bar: surface background with top border
+  - Toast notifications: larger shadow, more padding, 8px spacing
+  - All buttons use style classes (primary/ghost/icon/tab)
+  - All TextBoxes use `.isaac` or `.search` class
+  - All ListBoxes/TreeViews use `.isaac` class
+- **SettingsWindow.axaml** — card-based section grouping:
+  - Each settings section (Appearance, LLM, Knowledge Base) wrapped
+    in a `.card` border with header and separator
+  - All inputs use `.isaac` style
+  - Save button uses `.primary`, Cancel uses `.ghost`
+- **SnippetManagerWindow.axaml** — card-based form and snippet list:
+  - Form section in `.card` with header and separator
+  - Snippet cards with surface variant bg, subtle border, rounded
+  - All inputs use `.isaac` and `.mono` styles
+  - Add button uses `.primary`, Delete uses `.ghost`
+
+### New Files
+
+- `Styles/Controls.axaml` — design token resource dictionary
+- `Styles/ControlStyles.axaml` — global control style classes
+
+### Tests
+
+- Total: 649 tests (645 pass, 4 skip, 0 fail) — no regressions
+
 ## [0.2.0] - 2026-06-30
 
 Serilog integration: structured JSON file logging with daily

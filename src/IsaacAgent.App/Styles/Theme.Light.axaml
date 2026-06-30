@@ -95,4 +95,17 @@
     <SolidColorBrush x:Key="ToastWarningBrush" Color="{StaticResource IsaacToastWarningColor}" />
     <SolidColorBrush x:Key="ToastErrorBrush" Color="{StaticResource IsaacToastErrorColor}" />
 
+    <!-- Surface / panel colors (light overrides) -->
+    <Color x:Key="IsaacSurfaceColor">#FFFFFF</Color>
+    <Color x:Key="IsaacSurfaceVariantColor">#F5F5F5</Color>
+    <Color x:Key="IsaacBorderSubtleColor">#E0E0E0</Color>
+    <Color x:Key="IsaacHoverOverlayColor">#14000000</Color>
+    <Color x:Key="IsaacPressedOverlayColor">#28000000</Color>
+
+    <SolidColorBrush x:Key="IsaacSurfaceBrush" Color="{StaticResource IsaacSurfaceColor}" />
+    <SolidColorBrush x:Key="IsaacSurfaceVariantBrush" Color="{StaticResource IsaacSurfaceVariantColor}" />
+    <SolidColorBrush x:Key="IsaacBorderSubtleBrush" Color="{StaticResource IsaacBorderSubtleColor}" />
+    <SolidColorBrush x:Key="IsaacHoverOverlayBrush" Color="{StaticResource IsaacHoverOverlayColor}" />
+    <SolidColorBrush x:Key="IsaacPressedOverlayBrush" Color="{StaticResource IsaacPressedOverlayColor}" />
+
 </ResourceDictionary>

@@ -1,0 +1,36 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ============================================================
+         Design tokens — spacing, radius, fonts
+         ============================================================ -->
+
+    <x:Double x:Key="IsaacRadiusSmall">4</x:Double>
+    <x:Double x:Key="IsaacRadiusMedium">6</x:Double>
+    <x:Double x:Key="IsaacRadiusLarge">8</x:Double>
+    <x:Double x:Key="IsaacRadiusPill">12</x:Double>
+
+    <CornerRadius x:Key="IsaacCornerRadiusSmall">4</CornerRadius>
+    <CornerRadius x:Key="IsaacCornerRadiusMedium">6</CornerRadius>
+    <CornerRadius x:Key="IsaacCornerRadiusLarge">8</CornerRadius>
+
+    <Thickness x:Key="IsaacSpacingXSmall">4</Thickness>
+    <Thickness x:Key="IsaacSpacingSmall">8</Thickness>
+    <Thickness x:Key="IsaacSpacingMedium">12</Thickness>
+    <Thickness x:Key="IsaacSpacingLarge">16</Thickness>
+    <Thickness x:Key="IsaacSpacingXLarge">20</Thickness>
+
+    <!-- Panel / surface colors (dark) -->
+    <Color x:Key="IsaacSurfaceColor">#252526</Color>
+    <Color x:Key="IsaacSurfaceVariantColor">#2d2d30</Color>
+    <Color x:Key="IsaacBorderSubtleColor">#3e3e42</Color>
+    <Color x:Key="IsaacHoverOverlayColor">#14FFFFFF</Color>
+    <Color x:Key="IsaacPressedOverlayColor">#28FFFFFF</Color>
+
+    <SolidColorBrush x:Key="IsaacSurfaceBrush" Color="{StaticResource IsaacSurfaceColor}" />
+    <SolidColorBrush x:Key="IsaacSurfaceVariantBrush" Color="{StaticResource IsaacSurfaceVariantColor}" />
+    <SolidColorBrush x:Key="IsaacBorderSubtleBrush" Color="{StaticResource IsaacBorderSubtleColor}" />
+    <SolidColorBrush x:Key="IsaacHoverOverlayBrush" Color="{StaticResource IsaacHoverOverlayColor}" />
+    <SolidColorBrush x:Key="IsaacPressedOverlayBrush" Color="{StaticResource IsaacPressedOverlayColor}" />
+
+</ResourceDictionary>
