@@ -179,15 +179,15 @@
                                                 IsVisible="{Binding IsActive}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).SelectTabCommand}"
+                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.SelectTabCommand}"
                                                         CommandParameter="{Binding}">
                                                     <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="Bold" />
                                                 </Button>
                                                 <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).CloseTabCommand}"
+                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
                                                         CommandParameter="{Binding}"
                                                         FontSize="10" Opacity="0.5" Content="✕"
-                                                        IsVisible="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).CanCloseTabs}" />
+                                                        IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
                                             </StackPanel>
                                         </Border>
                                         <!-- Inactive tab: dimmed -->
@@ -196,15 +196,15 @@
                                                 IsVisible="{Binding !IsActive}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).SelectTabCommand}"
+                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.SelectTabCommand}"
                                                         CommandParameter="{Binding}">
                                                     <TextBlock Text="{Binding Title}" FontSize="12" Opacity="0.6" />
                                                 </Button>
                                                 <Button Background="Transparent" BorderThickness="0" Padding="0"
-                                                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).CloseTabCommand}"
+                                                        Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
                                                         CommandParameter="{Binding}"
                                                         FontSize="10" Opacity="0.5" Content="✕"
-                                                        IsVisible="{Binding $parent[ItemsControl].((vm:MainViewModel)Chat).CanCloseTabs}" />
+                                                        IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
                                             </StackPanel>
                                         </Border>
                                     </Panel>
@@ -233,7 +233,7 @@
                                         <Grid>
                                             <!-- Tool call/result: collapsible card -->
                                             <StackPanel Spacing="4" IsVisible="{Binding IsTool}">
-                                                <Button Command="{Binding $parent[ListBox].((vm:MainViewModel)Chat).ActiveTab.ToggleExpandCommand}"
+                                                <Button Command="{Binding $parent[ListBox].DataContext.Chat.ActiveTab.ToggleExpandCommand}"
                                                         CommandParameter="{Binding}"
                                                         Background="Transparent" BorderThickness="0" Padding="0"
                                                         HorizontalAlignment="Left">
@@ -297,7 +297,7 @@
                                                              AcceptsReturn="True" MinHeight="60" FontSize="13" />
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <Button Content="{DynamicResource ChatResend}" Padding="8,2" FontSize="12"
-                                                                Command="{Binding $parent[ListBox].((vm:MainViewModel)Chat).ActiveTab.ResendCommand}"
+                                                                Command="{Binding $parent[ListBox].DataContext.Chat.ActiveTab.ResendCommand}"
                                                                 CommandParameter="{Binding}" />
                                                         <Button Content="{DynamicResource SettingsCancel}" Padding="8,2" FontSize="12"
                                                                 Command="{Binding CancelEditCommand}" />
