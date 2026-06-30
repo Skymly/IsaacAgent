@@ -341,22 +341,40 @@
                     <Border DockPanel.Dock="Bottom" Padding="8,4" Margin="0,4,0,0"
                             IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
                         <StackPanel Spacing="4">
-                            <!-- Snippet dropdown -->
-                            <ComboBox x:Name="SnippetComboBox"
-                                      PlaceholderText="{DynamicResource ChatInsertSnippet}"
-                                      MinWidth="200"
-                                      HorizontalAlignment="Left"
-                                      IsEnabled="{Binding !Chat.ActiveTab.IsGenerating}"
-                                      SelectionChanged="OnSnippetSelected">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate x:DataType="services:LuaSnippet">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="{Binding Name}" FontSize="12" />
-                                            <TextBlock Text="{Binding Description}" FontSize="10" Opacity="0.5" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
+                            <!-- Snippet search + dropdown -->
+                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                <TextBox x:Name="SnippetSearchBox"
+                                         Watermark="Search snippets..."
+                                         MinWidth="120"
+                                         FontSize="11"
+                                         TextChanged="OnSnippetSearchChanged" />
+                                <ComboBox x:Name="SnippetComboBox"
+                                          PlaceholderText="{DynamicResource ChatInsertSnippet}"
+                                          MinWidth="200"
+                                          IsEnabled="{Binding !Chat.ActiveTab.IsGenerating}"
+                                          SelectionChanged="OnSnippetSelected">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="services:LuaSnippet">
+                                            <StackPanel Spacing="2">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="{Binding Category}" FontSize="9"
+                                                               Foreground="{DynamicResource IsaacSyntaxKeywordBrush}"
+                                                               Opacity="0.7" />
+                                                    <TextBlock Text="{Binding Name}" FontSize="12" />
+                                                    <TextBlock Text="★" FontSize="10" Opacity="0.5"
+                                                               IsVisible="{Binding IsCustom}" />
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Description}" FontSize="10" Opacity="0.5" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                                <Button x:Name="SnippetManageBtn"
+                                        Content="⚙"
+                                        FontSize="14" Padding="6,2"
+                                        ToolTip.Tip="Manage custom snippets"
+                                        Click="OnSnippetManage" />
+                            </StackPanel>
                             <Grid ColumnDefinitions="*,Auto,Auto">
                                 <TextBox x:Name="ChatInputBox" Grid.Column="0"
                                          Text="{Binding Chat.ActiveTab.InputText}"

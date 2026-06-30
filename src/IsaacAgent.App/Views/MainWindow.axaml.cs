@@ -45,11 +45,12 @@ public sealed partial class MainWindow : Window
 
         RestoreWindowState();
 
-        // Populate Lua snippet dropdown.
+        // Populate Lua snippet dropdown from the injected service.
+        var snippetService = App.Services.GetRequiredService<LuaSnippetService>();
         var snippetCombo = this.FindControl<ComboBox>("SnippetComboBox");
         if (snippetCombo is not null)
         {
-            snippetCombo.ItemsSource = LuaSnippetService.Snippets.ToList();
+            snippetCombo.ItemsSource = snippetService.FilteredSnippets;
         }
 
         // Enable drag-drop: folders open as project, files are read into chat context.
@@ -248,6 +249,22 @@ public sealed partial class MainWindow : Window
 
         // Reset selection so the same snippet can be selected again
         cb.SelectedIndex = -1;
+    }
+
+    private void OnSnippetSearchChanged(object? sender, Avalonia.Controls.TextChangedEventArgs e)
+    {
+        if (sender is not TextBox tb) return;
+        var snippetService = App.Services.GetRequiredService<LuaSnippetService>();
+        snippetService.SearchText = tb.Text ?? "";
+    }
+
+    private void OnSnippetManage(object? sender, RoutedEventArgs e)
+    {
+        var window = new SnippetManagerWindow
+        {
+            DataContext = App.Services.GetRequiredService<LuaSnippetService>()
+        };
+        window.Show(this);
     }
 
     protected override void OnKeyDown(Avalonia.Input.KeyEventArgs e)

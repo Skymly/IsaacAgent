@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-06-30
+
+Snippet library expansion: more built-in snippets, custom snippets
+with persistence, category grouping, and search filtering.
+
+### Added
+
+- Expanded built-in snippet catalog from 12 to 34 snippets:
+  - Callback: +4 (MC_POST_RENDER, MC_PRE_RENDER, MC_GET_CARD,
+    MC_POST_ADD_COLLECTIBLE)
+  - Render: +3 (Render text, Load sprite, Render vector)
+  - Save: +4 (Save data, Load data, Has data, Remove data)
+  - Entity: +3 (Register collectible, Register trinket, Find entities
+    in room, Get room entities)
+  - Utility: +5 (Get game, Get level, Get room, Random number,
+    Register mod, Schedule callback)
+- Custom snippet management: users can add, edit, and delete their
+  own snippets. Custom snippets are persisted to
+  %APPDATA%/IsaacAgent/custom_snippets.json and loaded on startup.
+  Custom snippets are marked with a ★ in the UI.
+- Snippet search: a search box above the snippet dropdown filters
+  snippets in real-time by name, description, or category.
+  Case-insensitive. Clearing the search restores all snippets.
+- Snippet Manager window: a dedicated window (⚙ button) for
+  managing custom snippets. Shows all snippets grouped by category
+  with name, description, and code preview. Add form with Name,
+  Category, Description, and Code fields. Delete button for custom
+  snippets.
+- Category grouping: snippets are grouped by category (Callback,
+  Entity, Render, Save, Utility, Custom) in the Snippet Manager.
+  Categories are sorted alphabetically.
+- LuaSnippetService is now an instance class registered in DI,
+  replacing the static catalog. Supports AddCustom, RemoveCustom,
+  UpdateCustom, search filtering, and GroupedSnippets accessor.
+
+### Changed
+
+- LuaSnippetService: rewritten from static class to instance class
+  with ObservableCollection for UI binding. BuiltInOnly static
+  property provides backward-compatible access to built-in snippets.
+- MainWindow.axaml: snippet area now has a search box, category
+  labels in dropdown items, and a ⚙ button to open Snippet Manager.
+- MainWindow.axaml.cs: snippet dropdown now binds to
+  LuaSnippetService.FilteredSnippets. OnSnippetSearchChanged handler
+  updates the search filter. OnSnippetManage opens the manager.
+- App.cs: LuaSnippetService registered as singleton in DI container.
+
+### Tests
+
+- LuaSnippetServiceTests: expanded from 9 to 34 tests
+  - Built-in catalog: 14 tests (not empty, all have name/code/category,
+    category coverage, name uniqueness, count >= 30)
+  - Custom management: 10 tests (add, duplicate, empty name, empty
+    category, IsCustom flag, remove, remove built-in, remove
+    non-existent, update, update built-in)
+  - Search: 5 tests (filter by name, filter by category, no match,
+    cleared restores, case-insensitive)
+  - Grouping: 3 tests (multiple categories, all accounted for, sorted)
+  - Instance: 2 tests (constructor loads, filtered initially all)
+- Total: 618 tests (614 pass, 4 skip, 0 fail)
+
 ## [0.1.7] - 2026-06-30
 
 Markdown rendering enhancements: Lua syntax highlighting, task lists,
