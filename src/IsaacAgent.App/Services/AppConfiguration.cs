@@ -59,6 +59,12 @@ public sealed class AppConfiguration
     /// <summary>UI font size multiplier: "small", "medium", or "large". Default "medium".</summary>
     public string FontSize { get; set; } = "medium";
 
+    /// <summary>
+    ///   Serilog minimum log level: "Verbose", "Debug", "Information",
+    ///   "Warning", "Error", or "Fatal". Default "Information".
+    /// </summary>
+    public string LogLevel { get; set; } = "Information";
+
     public EmbeddingConfig ToEmbeddingConfig() => new()
     {
         Source = EmbeddingSource,
@@ -134,6 +140,7 @@ public sealed class AppConfiguration
             Theme = Theme,
             AccentColor = AccentColor,
             FontSize = FontSize,
+            LogLevel = LogLevel,
         };
 
         if (!string.IsNullOrEmpty(ApiKey))

@@ -12,7 +12,7 @@ using IsaacAgent.Rag.Retrieval;
 using IsaacAgent.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
+using Serilog;
 
 namespace IsaacAgent.App;
 
@@ -59,19 +59,22 @@ public sealed class App : Application
     {
         _shutdownCts.Cancel();
         _shutdownCts.Dispose();
+        // Flush Serilog buffers on shutdown
+        Log.CloseAndFlush();
     }
 
     private static IServiceProvider ConfigureServices()
     {
         var services = new ServiceCollection();
 
-        services.AddLogging(b => b.AddSimpleConsole(o =>
-        {
-            o.SingleLine = true;
-            o.TimestampFormat = "HH:mm:ss ";
-        }));
-
+        // Load config first to get log level
         var config = AppConfiguration.Load();
+
+        // Configure Serilog: file (JSON, daily rotation) + console
+        var loggerFactory = SerilogConfigurator.CreateLoggerFactory(config.LogLevel);
+        services.AddSingleton<ILoggerFactory>(loggerFactory);
+        services.AddLogging(b => { });
+
         services.AddSingleton(config);
         services.AddLlmProvider(new(
             config.ProviderType,

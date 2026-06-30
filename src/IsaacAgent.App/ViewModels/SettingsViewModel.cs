@@ -67,6 +67,12 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public ObservableCollection<string> AvailableFontSizes { get; } = ["small", "medium", "large"];
 
+    [ObservableProperty]
+    private string _selectedLogLevel = "Information";
+
+    public ObservableCollection<string> AvailableLogLevels { get; } =
+        ["Verbose", "Debug", "Information", "Warning", "Error", "Fatal"];
+
     private readonly AppConfiguration _config;
 
     public SettingsViewModel(AppConfiguration config)
@@ -85,6 +91,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _selectedTheme = string.IsNullOrEmpty(config.Theme) ? "dark" : config.Theme;
         _accentColor = config.AccentColor;
         _selectedFontSize = string.IsNullOrEmpty(config.FontSize) ? "medium" : config.FontSize;
+        _selectedLogLevel = string.IsNullOrEmpty(config.LogLevel) ? "Information" : config.LogLevel;
     }
 
     public void Save()
@@ -109,6 +116,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _config.Theme = SelectedTheme;
         _config.AccentColor = AccentColor;
         _config.FontSize = SelectedFontSize;
+        _config.LogLevel = SelectedLogLevel;
 
         _config.Save();
         App.ReloadLlmProvider();

@@ -33,6 +33,10 @@
                 <ComboBox SelectedItem="{Binding SelectedFontSize}"
                           ItemsSource="{Binding AvailableFontSizes}" />
 
+                <TextBlock Text="Log Level" FontWeight="SemiBold" />
+                <ComboBox SelectedItem="{Binding SelectedLogLevel}"
+                          ItemsSource="{Binding AvailableLogLevels}" />
+
                 <Separator Height="1" Margin="0,8" Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
 
                 <!-- LLM Section -->

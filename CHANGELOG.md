@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-30
+
+Serilog integration: structured JSON file logging with daily
+rotation, configurable log levels, and console output.
+
+### Added
+
+- Serilog integration with dual sinks:
+  - **File sink**: structured JSON (CompactJsonFormatter), daily
+    rolling, 7-day retention, shared file access. Log files at
+    %APPDATA%/IsaacAgent/logs/app-YYYYMMDD.log
+  - **Console sink**: human-readable single-line format with
+    timestamp, level, source context, and message
+- SerilogConfigurator service: creates and configures the Serilog
+  logger, bridges to Microsoft.Extensions.Logging.ILoggerFactory.
+  Supports log level parsing (Verbose/Debug/Information/Warning/
+  Error/Fatal) with case-insensitive matching.
+- AppConfiguration.LogLevel property: persists the minimum log
+  level to config.json. Default "Information".
+- Settings window: Log Level dropdown (Verbose/Debug/Information/
+  Warning/Error/Fatal) in the Appearance section.
+- Framework log noise suppression: Microsoft, System, and Avalonia
+  namespaces are capped at Warning level to reduce noise.
+- Serilog cleanup on shutdown: Log.CloseAndFlush() ensures all
+  buffered log entries are written before process exit.
+
+### Changed
+
+- App.cs: replaced AddSimpleConsole with SerilogLoggerFactory.
+  Config is loaded before logging setup to read the saved log
+  level. ILoggerFactory is registered as singleton in DI.
+- AppConfiguration.Save: now persists LogLevel alongside other
+  settings.
+- SettingsViewModel: added SelectedLogLevel property and
+  AvailableLogLevels collection. Saved to config on apply.
+
+### New Files
+
+- `Services/SerilogConfigurator.cs` — Serilog configuration and
+  ILoggerFactory bridge
+
+### NuGet Packages
+
+- Serilog 4.2.0
+- Serilog.Extensions.Logging 8.0.0
+- Serilog.Sinks.File 6.0.0
+- Serilog.Sinks.Console 6.0.0
+- Serilog.Formatting.Compact 3.0.0
+
+### Tests
+
+- SerilogConfiguratorTests: 29 tests
+  - Log level parsing: 18 theory cases (valid + invalid inputs)
+  - Logger creation: 5 tests (default, debug, error, factory,
+    category logger)
+  - Log file paths: 2 tests (directory path, latest file)
+  - AppConfiguration: 2 tests (default value, settable)
+  - Logger factory integration: 2 tests
+- Total: 649 tests (645 pass, 4 skip, 0 fail)
+
 ## [0.1.9] - 2026-06-30
 
 Performance optimization: async file tree loading, chat list
