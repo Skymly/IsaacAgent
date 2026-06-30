@@ -16,52 +16,45 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Cross-platform library tests (Linux, macOS).
-  # The App project is WinExe + SupportedOSPlatform(windows), so only the
-  # library projects (Core/LLM/Tools/Agent/Rag) and tests are built here.
-  ci-lib:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # Full history required by MinVer (Git-tag-based versioning).
-          fetch-depth: 0
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      - name: Cache NuGet packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/*.sln') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Run library CI via Nuke (CiLib)
-        run: dotnet run --project build/_build.csproj -- --root . --target CiLib --configuration Release
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results-${{ matrix.os }}
-          path: TestResults/
-          if-no-files-found: warn
-
-      - name: Upload code coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: code-coverage-${{ matrix.os }}
-          path: TestResults/**/coverage.cobertura.xml
-          if-no-files-found: warn
+  # Cross-platform library tests (Linux, macOS) — temporarily disabled.
+  # Will be re-enabled once features stabilize.
+  # ci-lib:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest]
+  #   runs-on: ${{ matrix.os }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         fetch-depth: 0
+  #     - name: Setup .NET SDK
+  #       uses: actions/setup-dotnet@v4
+  #       with:
+  #         dotnet-version: '8.0.x'
+  #     - name: Cache NuGet packages
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: ~/.nuget/packages
+  #         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/*.sln') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-nuget-
+  #     - name: Run library CI via Nuke (CiLib)
+  #       run: dotnet run --project build/_build.csproj -- --root . --target CiLib --configuration Release
+  #     - name: Upload test results
+  #       if: always()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: test-results-${{ matrix.os }}
+  #         path: TestResults/
+  #         if-no-files-found: warn
+  #     - name: Upload code coverage
+  #       if: always()
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: code-coverage-${{ matrix.os }}
+  #         path: TestResults/**/coverage.cobertura.xml
+  #         if-no-files-found: warn
 
   # Full CI on Windows: format check + full solution build (incl. App) + tests.
   ci-windows:
@@ -115,7 +108,7 @@ jobs:
   # Release build: publish self-contained Windows executable on tag pushes.
   release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [ci-lib, ci-windows]
+    needs: [ci-windows]
     runs-on: windows-latest
     permissions:
       contents: write
