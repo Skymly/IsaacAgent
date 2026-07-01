@@ -46,15 +46,17 @@
                     <TextBlock DockPanel.Dock="Top" Text="{DynamicResource PanelProjectFiles}"
                                Classes="header" Margin="12,10,12,4" />
                     <TextBlock DockPanel.Dock="Top" Text="{Binding Project.ProjectName}"
-                               Classes="caption" Margin="12,0,12,8" />
+                               Classes="caption" Margin="12,0,12,8"
+                               IsVisible="{Binding Project.HasProject}" />
 
-                    <!-- File search box -->
+                    <!-- File search box (only when project loaded) -->
                     <TextBox DockPanel.Dock="Top"
                              Text="{Binding Project.FileSearchText}"
                              Watermark="{DynamicResource FileSearchWatermark}"
                              Classes="search"
                              InnerLeftContent="🔍"
-                             Margin="12,0,12,8" />
+                             Margin="12,0,12,8"
+                             IsVisible="{Binding Project.HasProject}" />
 
                     <Border DockPanel.Dock="Bottom"
                             IsVisible="{Binding Project.HasFilePreview}"
@@ -152,6 +154,21 @@
                             </TreeDataTemplate>
                         </TreeView.ItemTemplate>
                     </TreeView>
+
+                    <!-- Empty state: no project loaded -->
+                    <StackPanel IsVisible="{Binding !Project.HasProject}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Spacing="12" Margin="20">
+                        <TextBlock Text="📂" FontSize="40" HorizontalAlignment="Center" Opacity="0.3" />
+                        <TextBlock Text="No project loaded"
+                                   HorizontalAlignment="Center"
+                                   Classes="caption" FontSize="13" />
+                        <TextBlock Text="Open a mod folder via File menu&#x0a;or drag a folder here to begin"
+                                   HorizontalAlignment="Center"
+                                   Classes="caption" TextWrapping="Wrap"
+                                   TextAlignment="Center" MaxWidth="200" />
+                    </StackPanel>
                 </DockPanel>
             </Border>
 
@@ -213,6 +230,20 @@
                         </DockPanel>
                     </Border>
 
+                    <!-- Chat empty state: no active tab -->
+                    <StackPanel DockPanel.Dock="Top" IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNull}}"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Spacing="16" Margin="40">
+                        <TextBlock Text="💬" FontSize="48" HorizontalAlignment="Center" Opacity="0.3" />
+                        <TextBlock Text="Start a conversation"
+                                   HorizontalAlignment="Center"
+                                   FontSize="16" FontWeight="SemiBold" Opacity="0.7" />
+                        <TextBlock Text="Type a message below to chat with the AI agent&#x0a;about your Binding of Isaac mod project"
+                                   HorizontalAlignment="Center"
+                                   Classes="caption" TextWrapping="Wrap"
+                                   TextAlignment="Center" MaxWidth="320" />
+                    </StackPanel>
+
                     <!-- Chat content for active tab (virtualized for performance) -->
                     <ScrollViewer x:Name="ChatScrollViewer" DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto"
                                   IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNotNull}}">
@@ -232,6 +263,11 @@
                                             MaxWidth="640"
                                             BoxShadow="0 1 3 0 #20000000"
                                             Margin="0,3">
+                                        <Border.Transitions>
+                                            <Transitions>
+                                                <DoubleTransition Property="Opacity" Duration="0:0:0.2" />
+                                            </Transitions>
+                                        </Border.Transitions>
                                         <Grid>
                                             <!-- Tool call/result: collapsible card -->
                                             <StackPanel Spacing="6" IsVisible="{Binding IsTool}">
@@ -534,7 +570,8 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:ToastNotification">
-                        <Border Background="{DynamicResource IsaacSurfaceVariantBrush}"
+                        <Border Classes="toast"
+                                Background="{DynamicResource IsaacSurfaceVariantBrush}"
                                 CornerRadius="8"
                                 Padding="14,10"
                                 BorderBrush="{DynamicResource IsaacBorderSubtleBrush}"

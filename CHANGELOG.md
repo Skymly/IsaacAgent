@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-07-01
+
+Empty states and transition animations for a more polished feel.
+
+### Added
+
+- **Sidebar empty state**: when no project is loaded, shows a folder
+  icon, "No project loaded" message, and guidance to open a mod folder
+  via File menu or drag-and-drop. Search box and project name are
+  hidden until a project is opened.
+- **Chat empty state**: when no active tab exists, shows a chat icon,
+  "Start a conversation" heading, and guidance text about the AI
+  agent.
+- **Card hover transition**: `.card` borders have a 200ms opacity
+  transition that subtly lifts on hover (0.95 opacity).
+- **Toast fade transition**: `.toast` class with 300ms opacity
+  transition for smooth notification appearance.
+- **Message bubble transition**: chat message bubbles have a 200ms
+  opacity transition for smooth rendering.
+
+### Changed
+
+- MainWindow.axaml: sidebar search box and project name now bound to
+  `Project.HasProject` visibility. Empty state panel added with
+  centered icon + text layout.
+- MainWindow.axaml: chat area now has a DockPanel-Top empty state
+  visible when `Chat.ActiveTab` is null, with `ObjectConverters.IsNull`
+  check.
+- ControlStyles.axaml: `Border.card` style now includes `Transitions`
+  with `DoubleTransition` for Opacity. Added `Border.card:pointerover`
+  style. New `Border.toast` style with opacity transition.
+
+### Tests
+
+- Total: 649 tests (645 pass, 4 skip, 0 fail) — no regressions
+
 ## [0.2.1] - 2026-06-30
 
 UI visual overhaul: design tokens, control styles, card-based layout,
