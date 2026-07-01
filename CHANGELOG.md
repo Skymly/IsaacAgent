@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-07-01
+
+Replace all emoji icons with vector MaterialDesign icons for a
+crisp, professional look at any DPI.
+
+### Added
+
+- **Projektanker.Icons.Avalonia** (v9.1.2) + MaterialDesign icon
+  provider — registered in `Program.cs` at startup.
+- **MaterialDesign vector icons** throughout the UI:
+  - Sidebar: `mdi-magnify` (search), `mdi-folder` (file tree folders)
+  - Empty states: `mdi-folder-open` (no project), `mdi-chat` (no tab)
+  - Chat tabs: `mdi-plus` (new tab), `mdi-close` (close tab)
+  - Tool calls: `mdi-chevron-down` / `mdi-chevron-right` (expand/collapse)
+  - Snippets: `mdi-star` (custom snippet marker)
+  - Toolbar: `mdi-cog` (snippet manager settings)
+
+### Changed
+
+- `MainWindow.axaml`: added `xmlns:i` namespace, replaced all emoji
+  TextBlocks with `<i:Icon Value="mdi-..." />` elements.
+- `SnippetManagerWindow.axaml`: same icon replacement for star marker.
+- `Program.cs`: register `MaterialDesignIconProvider` before app start.
+- `IsaacAgent.App.csproj`: added Projektanker.Icons.Avalonia and
+  Projektanker.Icons.Avalonia.MaterialDesign packages.
+
+### Removed
+
+- All emoji characters (🔍📁📂💬✕▼▶★⚙) from XAML — replaced by
+  scalable vector icons.
+
 ## [0.2.2] - 2026-07-01
 
 Empty states and transition animations for a more polished feel.

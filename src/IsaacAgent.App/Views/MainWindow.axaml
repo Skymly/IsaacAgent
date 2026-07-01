@@ -4,6 +4,7 @@
         xmlns:services="using:IsaacAgent.App.Services"
         xmlns:conv="using:IsaacAgent.App.Converters"
         xmlns:md="using:IsaacAgent.App.Markdown"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
         x:Class="IsaacAgent.App.Views.MainWindow"
         Title="{DynamicResource AppTitle}"
         Width="1200" Height="800"
@@ -54,9 +55,12 @@
                              Text="{Binding Project.FileSearchText}"
                              Watermark="{DynamicResource FileSearchWatermark}"
                              Classes="search"
-                             InnerLeftContent="🔍"
                              Margin="12,0,12,8"
-                             IsVisible="{Binding Project.HasProject}" />
+                             IsVisible="{Binding Project.HasProject}">
+                        <TextBox.InnerLeftContent>
+                            <i:Icon Value="mdi-magnify" FontSize="14" Opacity="0.5" Margin="8,0,0,0" />
+                        </TextBox.InnerLeftContent>
+                    </TextBox>
 
                     <Border DockPanel.Dock="Bottom"
                             IsVisible="{Binding Project.HasFilePreview}"
@@ -140,9 +144,9 @@
                             <TreeDataTemplate x:DataType="vm:FileTreeItem"
                                               ItemsSource="{Binding Children}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <TextBlock Text="📁" FontSize="10"
-                                               IsVisible="{Binding IsDirectory}"
-                                               VerticalAlignment="Center" />
+                                    <i:Icon Value="mdi-folder" FontSize="14" Opacity="0.7"
+                                                   IsVisible="{Binding IsDirectory}"
+                                                   VerticalAlignment="Center" />
                                     <TextBlock Text="Lua" Foreground="{DynamicResource IsaacLuaTagBrush}"
                                                IsVisible="{Binding IsLua}"
                                                FontSize="10" VerticalAlignment="Center" />
@@ -160,7 +164,7 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 Spacing="12" Margin="20">
-                        <TextBlock Text="📂" FontSize="40" HorizontalAlignment="Center" Opacity="0.3" />
+                        <i:Icon Value="mdi-folder-open" FontSize="48" Opacity="0.3" HorizontalAlignment="Center" />
                         <TextBlock Text="No project loaded"
                                    HorizontalAlignment="Center"
                                    Classes="caption" FontSize="13" />
@@ -177,9 +181,11 @@
                     <!-- Tab bar -->
                     <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource IsaacBorderSubtleBrush}" BorderThickness="0,0,0,1" Padding="8,6,8,0">
                         <DockPanel>
-                            <Button DockPanel.Dock="Right" Content="+" Classes="icon"
+                            <Button DockPanel.Dock="Right" Classes="icon"
                                     Command="{Binding Chat.AddTabCommand}"
-                                    FontSize="16" Margin="4,0,0,0" />
+                                    Margin="4,0,0,0">
+                                <i:Icon Value="mdi-plus" FontSize="16" />
+                            </Button>
                             <ItemsControl ItemsSource="{Binding Chat.Tabs}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
@@ -202,8 +208,10 @@
                                                     <Button Classes="icon" Padding="2,0"
                                                             Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
                                                             CommandParameter="{Binding}"
-                                                            FontSize="10" Opacity="0.4" Content="✕"
-                                                            IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
+                                                            FontSize="12" Opacity="0.4"
+                                                            IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}">
+                                                        <i:Icon Value="mdi-close" FontSize="10" />
+                                                    </Button>
                                                 </StackPanel>
                                             </Border>
                                             <!-- Inactive tab: dimmed -->
@@ -219,8 +227,10 @@
                                                     <Button Classes="icon" Padding="2,0"
                                                             Command="{Binding $parent[ItemsControl].DataContext.Chat.CloseTabCommand}"
                                                             CommandParameter="{Binding}"
-                                                            FontSize="10" Opacity="0.3" Content="✕"
-                                                            IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}" />
+                                                            FontSize="12" Opacity="0.3"
+                                                            IsVisible="{Binding $parent[ItemsControl].DataContext.Chat.CanCloseTabs}">
+                                                        <i:Icon Value="mdi-close" FontSize="10" />
+                                                    </Button>
                                                 </StackPanel>
                                             </Border>
                                         </Panel>
@@ -234,7 +244,7 @@
                     <StackPanel DockPanel.Dock="Top" IsVisible="{Binding Chat.ActiveTab, Converter={x:Static ObjectConverters.IsNull}}"
                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                 Spacing="16" Margin="40">
-                        <TextBlock Text="💬" FontSize="48" HorizontalAlignment="Center" Opacity="0.3" />
+                        <i:Icon Value="mdi-chat" FontSize="56" Opacity="0.3" HorizontalAlignment="Center" />
                         <TextBlock Text="Start a conversation"
                                    HorizontalAlignment="Center"
                                    FontSize="16" FontWeight="SemiBold" Opacity="0.7" />
@@ -279,9 +289,9 @@
                                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                                         <TextBlock Text="{Binding RoleLabel}"
                                                                    Classes="mono caption" />
-                                                        <TextBlock Text="▼" FontSize="9" Opacity="0.4"
+                                                        <i:Icon Value="mdi-chevron-down" FontSize="10" Opacity="0.4"
                                                                    IsVisible="{Binding IsExpanded}" />
-                                                        <TextBlock Text="▶" FontSize="9" Opacity="0.4"
+                                                        <i:Icon Value="mdi-chevron-right" FontSize="10" Opacity="0.4"
                                                                    IsVisible="{Binding !IsExpanded}" />
                                                     </StackPanel>
                                                 </Button>
@@ -404,7 +414,7 @@
                                                                Foreground="{DynamicResource IsaacSyntaxKeywordBrush}"
                                                                Opacity="0.7" />
                                                     <TextBlock Text="{Binding Name}" FontSize="12" />
-                                                    <TextBlock Text="★" FontSize="10" Opacity="0.5"
+                                                    <i:Icon Value="mdi-star" FontSize="10" Opacity="0.5"
                                                                IsVisible="{Binding IsCustom}" />
                                                 </StackPanel>
                                                 <TextBlock Text="{Binding Description}" FontSize="10" Opacity="0.5" />
@@ -413,11 +423,11 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                                 <Button x:Name="SnippetManageBtn"
-                                        Content="⚙"
                                         Classes="icon"
-                                        FontSize="16"
                                         ToolTip.Tip="Manage custom snippets"
-                                        Click="OnSnippetManage" />
+                                        Click="OnSnippetManage">
+                                    <i:Icon Value="mdi-cog" FontSize="16" />
+                                </Button>
                             </StackPanel>
                             <Grid ColumnDefinitions="*,Auto,Auto">
                                 <TextBox x:Name="ChatInputBox" Grid.Column="0"
@@ -591,3 +601,5 @@
         </Panel>
     </Grid>
 </Window>
+
+

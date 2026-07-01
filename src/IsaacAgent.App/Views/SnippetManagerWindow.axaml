@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:services="using:IsaacAgent.App.Services"
+        xmlns:i="https://github.com/projektanker/icons.avalonia"
         x:Class="IsaacAgent.App.Views.SnippetManagerWindow"
         Title="Snippet Manager"
         Width="620" Height="520"
@@ -53,7 +54,7 @@
                                             <StackPanel Spacing="3">
                                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                                     <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" />
-                                                    <TextBlock Text="★" FontSize="10" Opacity="0.5"
+                                                    <i:Icon Value="mdi-star" FontSize="10" Opacity="0.5"
                                                                IsVisible="{Binding IsCustom}" />
                                                 </StackPanel>
                                                 <TextBlock Text="{Binding Description}" Classes="caption" />
