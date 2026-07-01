@@ -309,13 +309,12 @@ public sealed class LuaSnippetService
         foreach (var s in BuiltInSnippets)
             Snippets.Add(s);
 
-        // Load custom snippets on a background thread to avoid
-        // blocking startup if the JSON file is large or disk is slow.
-        _ = Task.Run(() =>
-        {
-            LoadCustomSnippets();
-            UpdateFiltered();
-        });
+        // Load custom snippets synchronously. The file is small
+        // (a handful of user snippets) and ObservableCollection is
+        // not thread-safe, so loading on a background thread caused
+        // race conditions where Snippets.Count and GroupedSnippets
+        // could observe different states.
+        LoadCustomSnippets();
         UpdateFiltered();
     }
 

@@ -1,3 +1,4 @@
+using System.IO;
 using IsaacAgent.App.Services;
 using Xunit;
 
@@ -7,9 +8,25 @@ namespace IsaacAgent.Tests;
 ///   Unit tests for LuaSnippetService — snippet catalog, custom
 ///   snippets, search filtering, and category grouping.
 /// </summary>
-public class LuaSnippetServiceTests
+public class LuaSnippetServiceTests : IDisposable
 {
+    private static string GetCustomSnippetsPath() => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+        "IsaacAgent", "custom_snippets.json");
+
     private static LuaSnippetService CreateService() => new();
+
+    public void Dispose()
+    {
+        // Clean up any custom snippets file left by tests so tests
+        // don't interfere with each other via shared AppData state.
+        try
+        {
+            var path = GetCustomSnippetsPath();
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch { /* ignore */ }
+    }
 
     // ── Built-in snippet catalog ───────────────────────────────
 
