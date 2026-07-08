@@ -20,7 +20,7 @@
 
 - [ ] `./build.ps1 --target CiAll --configuration Release` passes locally
 - [ ] New unit tests added for new functionality
-- [ ] All existing tests pass (192+)
+- [ ] All existing tests pass
 - [ ] No formatting violations (`Format` target passes)
 
 ## Checklist
@@ -30,6 +30,15 @@
 - [ ] Self-review of the code completed
 - [ ] Comments added for complex logic (only where necessary)
 - [ ] Documentation updated if needed (README, CHANGELOG, AGENTS.md)
+
+## Documentation (see [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md))
+
+- [ ] New/changed public API → Spec updated (`docs/spec/`)
+- [ ] New/changed tool or Skill → RFC + ADR + Spec updated
+- [ ] Implementation details changed → Design Doc updated (`docs/design/`)
+- [ ] New RFC → used `docs/rfc/_template.md`
+- [ ] RFC / Plan / Review status change → frontmatter updated + archive if applicable
+- [ ] CHANGELOG `[Unreleased]` entry added (if user-visible)
 
 ## Related Issues
 

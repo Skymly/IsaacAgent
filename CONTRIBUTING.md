@@ -3,6 +3,10 @@
 Thanks for your interest in contributing! This guide covers setup,
 conventions, and the pull request process.
 
+For the full **documentation-driven development** workflow, see
+[docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). Development setup
+details are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
 ## Development Setup
 
 ### Prerequisites
@@ -85,6 +89,7 @@ build/                  Nuke build script
 - Test files go in `tests/IsaacAgent.Tests/`
 - Follow the existing naming convention: `ClassNameTests.cs`
 - Use xUnit (`[Fact]` for single cases, `[Theory]` for parameterized)
+- Avalonia UI tests use `[AvaloniaFact]` (see `docs/design/App.md`)
 - Aim for meaningful coverage of edge cases, not just happy paths
 
 ### Formatting
@@ -97,6 +102,15 @@ before committing:
 ```
 
 CI will fail if formatting is not applied (`Format` target).
+
+## Documentation-Driven Changes
+
+Before implementing non-trivial features:
+
+1. Check [docs/DOCUMENTATION.md §11](docs/DOCUMENTATION.md#11-文档驱动开发流程) for required docs (RFC, ADR, Spec, Plan).
+2. New **tools** or **skills** require RFC + ADR + Spec updates.
+3. Implementation PRs must sync **Design Doc** and **CHANGELOG** `[Unreleased]`.
+4. Large tasks: create a plan in `docs/plans/` and a tracking Issue.
 
 ## Pull Request Process
 
@@ -111,7 +125,7 @@ CI will fail if formatting is not applied (`Format` target).
    ```powershell
    ./build.ps1 --target CiAll --configuration Release
    ```
-   This checks formatting, builds, and runs all 192+ tests.
+   This checks formatting, builds, and runs all tests.
 
 4. **Commit with clear messages**:
    - Use English, imperative mood ("Add feature X", not "Added feature X")
@@ -124,8 +138,8 @@ CI will fail if formatting is not applied (`Format` target).
    gh pr create --title "Add feature X" --body "Description..."
    ```
 
-6. **Ensure CI passes** — all three platforms (Linux, macOS, Windows)
-   must pass.
+6. **Ensure CI passes** — Windows full suite (`CiAll`); library tests
+   also run on Linux/macOS via `CiLib`.
 
 7. **Address review feedback** — push fixes to the same branch.
 
