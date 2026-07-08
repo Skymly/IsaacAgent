@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.Agent.Skills;
 using IsaacAgent.App.ViewModels;
@@ -32,7 +33,7 @@ public class CommandPaletteViewModelTests
         return new CommandPaletteViewModel(registry);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_RegistersCommands()
     {
         var vm = new CommandPaletteViewModel();
@@ -40,7 +41,7 @@ public class CommandPaletteViewModelTests
         Assert.NotEmpty(vm.FilteredCommands);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Empty_ShowsAllCommands()
     {
         var vm = new CommandPaletteViewModel
@@ -52,7 +53,7 @@ public class CommandPaletteViewModelTests
         Assert.True(vm.FilteredCommands.Count > 10);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_File_FiltersFileCommands()
     {
         var vm = new CommandPaletteViewModel
@@ -64,7 +65,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("New Project"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Skill_FiltersSkillCommands()
     {
         var vm = NewPaletteWithSkills();
@@ -74,7 +75,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Create Collectible"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_FuzzyMatch_MatchesSubsequence()
     {
         var vm = NewPaletteWithSkills();
@@ -84,7 +85,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Create Collectible"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_NoMatch_ReturnsEmpty()
     {
         var vm = new CommandPaletteViewModel
@@ -95,7 +96,7 @@ public class CommandPaletteViewModelTests
         Assert.Empty(vm.FilteredCommands);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_CategoryMatch_FiltersByCategory()
     {
         var vm = NewPaletteWithSkills();
@@ -105,7 +106,7 @@ public class CommandPaletteViewModelTests
         Assert.All(vm.FilteredCommands, c => Assert.True(c.Title.Contains("Create") || c.Title.Contains("Debug") || c.Title.Contains("Validate") || c.Title.Contains("Add")));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedCommand_SetToFirstResult_AfterFilter()
     {
         var vm = new CommandPaletteViewModel
@@ -117,7 +118,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains("Settings", vm.SelectedCommand!.Title);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedCommand_Null_WhenNoMatch()
     {
         var vm = new CommandPaletteViewModel
@@ -128,7 +129,7 @@ public class CommandPaletteViewModelTests
         Assert.Null(vm.SelectedCommand);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Debug_FindsDebugCommand()
     {
         var vm = NewPaletteWithSkills();
@@ -137,7 +138,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Debug"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Validate_FindsValidateCommand()
     {
         var vm = NewPaletteWithSkills();
@@ -146,7 +147,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Validate"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Add_FindsAllAddCommands()
     {
         var vm = NewPaletteWithSkills();
@@ -157,7 +158,7 @@ public class CommandPaletteViewModelTests
         Assert.True(addCommands.Count >= 5);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Trinket_FindsAddTrinketCommand()
     {
         var vm = NewPaletteWithSkills();
@@ -166,7 +167,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Trinket"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Boss_FindsAddBossCommand()
     {
         var vm = NewPaletteWithSkills();
@@ -175,21 +176,21 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Boss"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CommandItem_DisplayShortcut_ReturnsShortcut()
     {
         var item = new CommandItem { Title = "Test", Shortcut = "/create-item" };
         Assert.Equal("/create-item", item.DisplayShortcut);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CommandItem_DisplayShortcut_NullShortcut_ReturnsEmpty()
     {
         var item = new CommandItem { Title = "Test", Shortcut = null };
         Assert.Equal("", item.DisplayShortcut);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SetCloseAction_DoesNotThrow()
     {
         var vm = new CommandPaletteViewModel();
@@ -201,7 +202,7 @@ public class CommandPaletteViewModelTests
         Assert.False(wasCalled);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_PartialMatch_FindsCommands()
     {
         var vm = new CommandPaletteViewModel
@@ -212,7 +213,7 @@ public class CommandPaletteViewModelTests
         Assert.Contains(vm.FilteredCommands, c => c.Title.Contains("Open"));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchText_Clear_AfterSearch_ShowsAllCommands()
     {
         var vm = new CommandPaletteViewModel

@@ -1,5 +1,5 @@
-using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Threading;
 using Xunit;
 
 namespace IsaacAgent.Tests;
@@ -13,62 +13,51 @@ namespace IsaacAgent.Tests;
 public sealed class AvaloniaTestCollection : ICollectionFixture<AvaloniaFixture> { }
 
 /// <summary>
-///   Fixture instantiated once per collection — initializes the
-///   headless Avalonia application before any test in the collection runs.
+///   Ensures <see cref="HeadlessUnitTestSession"/> is started once per
+///   collection. Do not call AppBuilder.Setup* manually here.
 /// </summary>
 public sealed class AvaloniaFixture
 {
     public AvaloniaFixture()
     {
-        try
-        {
-            AppBuilder.Configure<HeadlessApp>()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                .SetupWithoutStarting();
-        }
-        catch
-        {
-            // Already initialized — safe to ignore.
-        }
-    }
-
-    private sealed class HeadlessApp : Avalonia.Application
-    {
-        public override void Initialize() { }
+        _ = HeadlessUnitTestSession.GetOrStartForAssembly(typeof(AvaloniaFixture).Assembly);
     }
 }
 
 /// <summary>
-///   Ensures the Avalonia headless application is initialized exactly once
-///   for test classes that use a static constructor rather than the
-///   collection fixture pattern.
+///   Helpers for Avalonia headless tests.
 /// </summary>
 internal static class AvaloniaTestHelper
 {
-    private static int _initialized;
-    private static readonly object _lock = new();
+    private static HeadlessUnitTestSession Session =>
+        HeadlessUnitTestSession.GetOrStartForAssembly(typeof(AvaloniaTestHelper).Assembly);
 
-    public static void EnsureInitialized()
+    /// <summary>
+    ///   Pumps the Avalonia dispatcher queue so pending Post callbacks
+    ///   execute before assertions.
+    /// </summary>
+    public static void FlushDispatcher()
     {
-        lock (_lock)
+        if (Dispatcher.UIThread.CheckAccess())
         {
-            if (_initialized != 0) return;
-            try
-            {
-                AppBuilder.Configure<HeadlessApp>()
-                    .UseHeadless(new AvaloniaHeadlessPlatformOptions())
-                    .SetupWithoutStarting();
-            }
-            catch
-            {
-                // Already initialized by another path — that's fine.
-            }
-            _initialized = 1;
+            Dispatcher.UIThread.RunJobs();
+            return;
         }
+
+        Session.Dispatch(() => Dispatcher.UIThread.RunJobs(), CancellationToken.None);
     }
 
-    private sealed class HeadlessApp : Avalonia.Application
-    {
-        public override void Initialize() { }
-    }
+    /// <summary>
+    ///   Runs an action on the Avalonia UI thread with proper dispatcher
+    ///   pumping (safe from any thread).
+    /// </summary>
+    public static void Dispatch(Action action)
+        => Session.Dispatch(action, CancellationToken.None);
+
+    /// <summary>
+    ///   Runs an async action on the Avalonia UI thread with proper
+    ///   dispatcher pumping (safe from any thread).
+    /// </summary>
+    public static Task DispatchAsync(Func<Task> action)
+        => Session.Dispatch(action, CancellationToken.None);
 }

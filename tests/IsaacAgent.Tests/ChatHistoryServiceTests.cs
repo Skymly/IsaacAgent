@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using System.Runtime.CompilerServices;
 using IsaacAgent.Agent;
 using IsaacAgent.Agent.Engine;
@@ -65,19 +66,19 @@ public class ChatHistoryServiceTests
 
     // ── GetHistoryPath ────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void GetHistoryPath_NullProjectDir_ReturnsNull()
     {
         Assert.Null(ChatHistoryService.GetHistoryPath(null));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void GetHistoryPath_EmptyProjectDir_ReturnsNull()
     {
         Assert.Null(ChatHistoryService.GetHistoryPath(""));
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void GetHistoryPath_ValidProjectDir_ReturnsPath()
     {
         var path = ChatHistoryService.GetHistoryPath("C:/test/project");
@@ -86,7 +87,7 @@ public class ChatHistoryServiceTests
         Assert.Contains("chat-history", path);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void GetHistoryPath_SanitizesInvalidChars()
     {
         // Build a path containing chars that are invalid on the current platform
@@ -103,7 +104,7 @@ public class ChatHistoryServiceTests
 
     // ── Save / Load ───────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void LoadSession_NonExistentProject_ReturnsNull()
     {
         var svc = new ChatHistoryService();
@@ -111,7 +112,7 @@ public class ChatHistoryServiceTests
         Assert.Null(result);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SaveAndLoadSession_RoundTrips()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_history_test_{Guid.NewGuid():N}");
@@ -139,7 +140,7 @@ public class ChatHistoryServiceTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void DeleteSession_RemovesHistoryFile()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_history_del_{Guid.NewGuid():N}");
@@ -165,7 +166,7 @@ public class ChatHistoryServiceTests
 
     // ── Export ────────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void ExportToMarkdown_GeneratesValidMarkdown()
     {
         var chat = CreateChatViewModel();
@@ -181,7 +182,7 @@ public class ChatHistoryServiceTests
         Assert.Contains("A callback is...", markdown);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ExportToJson_GeneratesValidJson()
     {
         var chat = CreateChatViewModel();
@@ -196,7 +197,7 @@ public class ChatHistoryServiceTests
 
     // ── Search ────────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchMessages_EmptyQuery_ReturnsEmpty()
     {
         var chat = CreateChatViewModel();
@@ -205,7 +206,7 @@ public class ChatHistoryServiceTests
         Assert.Empty(results);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchMessages_MatchingQuery_ReturnsResults()
     {
         var chat = CreateChatViewModel();
@@ -219,7 +220,7 @@ public class ChatHistoryServiceTests
         Assert.Contains("world", results[1].Message.Content);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchMessages_CaseInsensitive()
     {
         var chat = CreateChatViewModel();
@@ -229,7 +230,7 @@ public class ChatHistoryServiceTests
         Assert.Single(results);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SearchMessages_AcrossMultipleTabs()
     {
         var chat = CreateChatViewModel();

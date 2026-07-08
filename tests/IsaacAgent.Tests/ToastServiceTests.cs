@@ -1,4 +1,4 @@
-using Avalonia.Threading;
+using Avalonia.Headless.XUnit;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using Xunit;
@@ -8,21 +8,21 @@ namespace IsaacAgent.Tests;
 /// <summary>
 ///   Unit tests for ToastService and ToastNotification.
 ///   ToastService uses DispatcherTimer for auto-dismiss, so tests
-///   use the Avalonia collection fixture and clean up timers in finally.
+///   use the Avalonia collection fixture and pump the dispatcher.
 /// </summary>
 [Collection("Avalonia")]
 public class ToastServiceTests
 {
     /// <summary>
-    ///   Creates a ToastService with auto-dismiss disabled to prevent
-    ///   DispatcherTimer/Task.Delay from blocking the headless test runner.
+    ///   Creates a ToastService with auto-dismiss disabled so other tests
+    ///   are not affected by pending dismiss timers.
     /// </summary>
     private static ToastService CreateTestService()
     {
         return new ToastService { AutoDismissEnabled = false };
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ShowInfo_AddsToastToActiveToasts()
     {
         var service = CreateTestService();
@@ -33,7 +33,7 @@ public class ToastServiceTests
         Assert.Equal(ToastSeverity.Info, service.ActiveToasts[0].Severity);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ShowSuccess_AddsSuccessToast()
     {
         var service = CreateTestService();
@@ -44,7 +44,7 @@ public class ToastServiceTests
         Assert.Equal("Project loaded", service.ActiveToasts[0].Message);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ShowWarning_AddsWarningToast()
     {
         var service = CreateTestService();
@@ -54,7 +54,7 @@ public class ToastServiceTests
         Assert.Equal(ToastSeverity.Warning, service.ActiveToasts[0].Severity);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ShowError_AddsErrorToast()
     {
         var service = CreateTestService();
@@ -64,7 +64,7 @@ public class ToastServiceTests
         Assert.Equal(ToastSeverity.Error, service.ActiveToasts[0].Severity);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Show_MultipleToasts_AllAddedToList()
     {
         var service = CreateTestService();
@@ -75,17 +75,26 @@ public class ToastServiceTests
         Assert.Equal(3, service.ActiveToasts.Count);
     }
 
-    [Fact(Skip = "Auto-dismiss uses Task.Delay + Dispatcher.Post which blocks headless test runner")]
-    public async Task Show_AutoDismissesAfterDuration()
+    [AvaloniaFact]
+    public void Show_AutoDismissesAfterDuration()
     {
-        var service = new ToastService(); // auto-dismiss enabled
+        var scheduledMs = -1;
+        ToastService service = null!;
+        service = new ToastService
+        {
+            TestDismissScheduler = (toast, ms) =>
+            {
+                scheduledMs = ms;
+                service.Dismiss(toast);
+            }
+        };
+
         service.ShowInfo("Temporary", durationMs: 50);
-        Assert.Single(service.ActiveToasts);
-        await Task.Delay(200);
+        Assert.Equal(50, scheduledMs);
         Assert.Empty(service.ActiveToasts);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Dismiss_RemovesToastFromList()
     {
         var service = CreateTestService();
@@ -97,7 +106,7 @@ public class ToastServiceTests
         Assert.Empty(service.ActiveToasts);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Dismiss_NonExistentToast_DoesNotThrow()
     {
         var service = CreateTestService();
@@ -106,14 +115,14 @@ public class ToastServiceTests
         service.Dismiss(externalToast); // should not throw
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ToastNotification_DefaultDuration_Is4000Ms()
     {
         var toast = new ToastNotification("test");
         Assert.Equal(4000, toast.RemainingMs);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ToastNotification_CustomDuration_SetsRemainingMs()
     {
         var toast = new ToastNotification("test", ToastSeverity.Warning, 8000);
@@ -121,7 +130,7 @@ public class ToastServiceTests
         Assert.Equal(ToastSeverity.Warning, toast.Severity);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ToastNotification_Icon_MapsToSeverity()
     {
         Assert.Equal("ℹ", new ToastNotification("a", ToastSeverity.Info).Icon);
@@ -130,7 +139,7 @@ public class ToastServiceTests
         Assert.Equal("✗", new ToastNotification("a", ToastSeverity.Error).Icon);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ToastNotification_Message_SetCorrectly()
     {
         var toast = new ToastNotification("Hello world");

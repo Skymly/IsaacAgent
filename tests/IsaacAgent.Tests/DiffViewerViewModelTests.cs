@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -20,7 +21,7 @@ public class DiffViewerViewModelTests
         return new DiffViewerViewModel(diffService);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_InitializesWithDefaults()
     {
         var vm = CreateViewModel();
@@ -28,7 +29,7 @@ public class DiffViewerViewModelTests
         Assert.NotNull(vm.DiffService);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SetProjectDir_DoesNotThrow()
     {
         var vm = CreateViewModel();
@@ -36,14 +37,14 @@ public class DiffViewerViewModelTests
         // No public getter for _projectDir, but RefreshAsync will use it
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SetProjectDir_Null_DoesNotThrow()
     {
         var vm = CreateViewModel();
         vm.SetProjectDir(null);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task RefreshAsync_NoProjectDir_SetsStatusText()
     {
         var vm = CreateViewModel();
@@ -56,7 +57,7 @@ public class DiffViewerViewModelTests
     // subprocess, which can hang in test environments. Those integration
     // scenarios are covered by DiffServiceTests with mocked process output.
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedFile_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();
@@ -69,7 +70,7 @@ public class DiffViewerViewModelTests
         Assert.Same(file, vm.SelectedFile);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedFile_SetToNull_DoesNotThrow()
     {
         var vm = CreateViewModel();
@@ -77,7 +78,7 @@ public class DiffViewerViewModelTests
         Assert.Null(vm.SelectedFile);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void DiffService_ExposedAsProperty()
     {
         var vm = CreateViewModel();

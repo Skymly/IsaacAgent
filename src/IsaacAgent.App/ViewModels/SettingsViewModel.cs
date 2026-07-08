@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using IsaacAgent.App.Services;
 using IsaacAgent.LLM;
@@ -138,7 +139,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// </summary>
     public void SetIndexRebuilding(bool value)
     {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => IsRebuildingIndex = value);
+        Dispatcher.UIThread.Post(() => IsRebuildingIndex = value);
     }
 
     /// <summary>
@@ -147,6 +148,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// </summary>
     public void SetIndexStatus(string status)
     {
-        Avalonia.Threading.Dispatcher.UIThread.Post(() => IndexStatus = status);
+        Dispatcher.UIThread.Post(() => IndexStatus = status);
     }
 }

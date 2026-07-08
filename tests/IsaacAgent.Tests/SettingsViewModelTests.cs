@@ -1,4 +1,4 @@
-using Avalonia.Threading;
+using Avalonia.Headless.XUnit;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.LLM;
@@ -14,7 +14,7 @@ namespace IsaacAgent.Tests;
 /// <remarks>
 ///   Save() calls App.ReloadLlmProvider/ReloadEmbeddingProvider which
 ///   require a fully initialized DI container, so it is not tested here.
-///   SetIndexStatus/SetIndexRebuilding use Dispatcher.UIThread.Post.
+///   SetIndexStatus/SetIndexRebuilding marshal to the UI thread when needed.
 /// </remarks>
 [Collection("Avalonia")]
 public class SettingsViewModelTests
@@ -25,13 +25,7 @@ public class SettingsViewModelTests
         return new SettingsViewModel(config);
     }
 
-    private static void FlushDispatcher()
-    {
-        if (Dispatcher.UIThread.CheckAccess())
-            Dispatcher.UIThread.RunJobs();
-    }
-
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_LoadsConfigValues()
     {
         var config = new AppConfiguration
@@ -59,7 +53,7 @@ public class SettingsViewModelTests
         Assert.Equal("/path/to/vocab.txt", vm.OnnxEmbeddingVocabPath);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_Defaults_IndexStatusIsEmpty()
     {
         var vm = CreateViewModel();
@@ -67,7 +61,7 @@ public class SettingsViewModelTests
         Assert.False(vm.IsRebuildingIndex);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ProviderTypes_ContainsBothOptions()
     {
         var vm = CreateViewModel();
@@ -76,7 +70,7 @@ public class SettingsViewModelTests
         Assert.Contains(ProviderType.Ollama, vm.ProviderTypes);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void EmbeddingSources_ContainsBothOptions()
     {
         var vm = CreateViewModel();
@@ -85,36 +79,36 @@ public class SettingsViewModelTests
         Assert.Contains(EmbeddingSourceType.Onnx, vm.EmbeddingSources);
     }
 
-    [Fact(Skip = "SetIndexStatus uses Dispatcher.UIThread.Post which can't be reliably flushed in headless test runner when run as part of full suite")]
+    [AvaloniaFact]
     public void SetIndexStatus_UpdatesProperty()
     {
         var vm = CreateViewModel();
         vm.SetIndexStatus("Building index...");
-        FlushDispatcher();
+        AvaloniaTestHelper.FlushDispatcher();
         Assert.Equal("Building index...", vm.IndexStatus);
     }
 
-    [Fact(Skip = "SetIndexRebuilding uses Dispatcher.UIThread.Post which can't be reliably flushed in headless test runner when run as part of full suite")]
+    [AvaloniaFact]
     public void SetIndexRebuilding_True_SetsProperty()
     {
         var vm = CreateViewModel();
         vm.SetIndexRebuilding(true);
-        FlushDispatcher();
+        AvaloniaTestHelper.FlushDispatcher();
         Assert.True(vm.IsRebuildingIndex);
     }
 
-    [Fact(Skip = "SetIndexRebuilding uses Dispatcher.UIThread.Post which can't be reliably flushed in headless test runner when run as part of full suite")]
+    [AvaloniaFact]
     public void SetIndexRebuilding_False_SetsProperty()
     {
         var vm = CreateViewModel();
         vm.SetIndexRebuilding(true);
-        FlushDispatcher();
+        AvaloniaTestHelper.FlushDispatcher();
         vm.SetIndexRebuilding(false);
-        FlushDispatcher();
+        AvaloniaTestHelper.FlushDispatcher();
         Assert.False(vm.IsRebuildingIndex);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Endpoint_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();
@@ -122,7 +116,7 @@ public class SettingsViewModelTests
         Assert.Equal("https://new.endpoint/v1", vm.Endpoint);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Model_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();
@@ -130,7 +124,7 @@ public class SettingsViewModelTests
         Assert.Equal("claude-3", vm.Model);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ApiKey_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();
@@ -138,7 +132,7 @@ public class SettingsViewModelTests
         Assert.Equal("new-key", vm.ApiKey);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedProviderType_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();
@@ -146,7 +140,7 @@ public class SettingsViewModelTests
         Assert.Equal(ProviderType.Ollama, vm.SelectedProviderType);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedEmbeddingSource_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();
@@ -154,7 +148,7 @@ public class SettingsViewModelTests
         Assert.Equal(EmbeddingSourceType.Onnx, vm.SelectedEmbeddingSource);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_WithNullApiKey_DoesNotThrow()
     {
         var config = new AppConfiguration { ApiKey = null };
@@ -162,7 +156,7 @@ public class SettingsViewModelTests
         Assert.Null(vm.ApiKey);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_WithEmptyStrings_LoadsCorrectly()
     {
         var config = new AppConfiguration
@@ -177,7 +171,7 @@ public class SettingsViewModelTests
         Assert.Equal("", vm.Model);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_LoadsLanguageFromConfig()
     {
         var config = new AppConfiguration { Language = "zh" };
@@ -185,7 +179,7 @@ public class SettingsViewModelTests
         Assert.Equal("zh", vm.SelectedLanguage);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_LoadsThemeFromConfig()
     {
         var config = new AppConfiguration { Theme = "light" };
@@ -193,21 +187,21 @@ public class SettingsViewModelTests
         Assert.Equal("light", vm.SelectedTheme);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_DefaultLanguage_IsEnglish()
     {
         var vm = CreateViewModel();
         Assert.Equal("en", vm.SelectedLanguage);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_DefaultTheme_IsDark()
     {
         var vm = CreateViewModel();
         Assert.Equal("dark", vm.SelectedTheme);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AvailableLanguages_ContainsAllFour()
     {
         var vm = CreateViewModel();
@@ -218,7 +212,7 @@ public class SettingsViewModelTests
         Assert.Contains("ko", vm.AvailableLanguages);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AvailableThemes_ContainsDarkAndLight()
     {
         var vm = CreateViewModel();
@@ -227,7 +221,7 @@ public class SettingsViewModelTests
         Assert.Contains("light", vm.AvailableThemes);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedLanguage_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();
@@ -235,7 +229,7 @@ public class SettingsViewModelTests
         Assert.Equal("zh", vm.SelectedLanguage);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectedTheme_SetAndGet_WorksCorrectly()
     {
         var vm = CreateViewModel();

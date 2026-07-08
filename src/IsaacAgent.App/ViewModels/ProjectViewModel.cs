@@ -367,23 +367,35 @@ public sealed partial class ProjectViewModel : ObservableObject
 
     private async Task RefreshFilesAsync()
     {
-        Files.Clear();
-        if (string.IsNullOrEmpty(ProjectPath)) return;
+        if (string.IsNullOrEmpty(ProjectPath))
+        {
+            if (Dispatcher.UIThread.CheckAccess())
+                Files.Clear();
+            else
+                await Dispatcher.UIThread.InvokeAsync(Files.Clear);
+            return;
+        }
 
         var projectPath = ProjectPath;
         try
         {
-            // Build the tree on a background thread to avoid UI freezing
-            // for large projects with thousands of files.
             var items = await Task.Run(() => BuildFileTreeSync(projectPath, projectPath));
-            Files.Clear();
-            foreach (var item in items)
-                Files.Add(item);
+            if (Dispatcher.UIThread.CheckAccess())
+                ApplyFileTree(items);
+            else
+                await Dispatcher.UIThread.InvokeAsync(() => ApplyFileTree(items));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to refresh files");
         }
+    }
+
+    private void ApplyFileTree(IReadOnlyList<FileTreeItem> items)
+    {
+        Files.Clear();
+        foreach (var item in items)
+            Files.Add(item);
     }
 
     /// <summary>

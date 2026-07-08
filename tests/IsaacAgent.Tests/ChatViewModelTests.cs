@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using System.Runtime.CompilerServices;
 using IsaacAgent.Agent;
 using IsaacAgent.Agent.Engine;
@@ -65,7 +66,7 @@ public class ChatViewModelTests
 
     // ── Initialization ────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_CreatesOneTabByDefault()
     {
         var vm = CreateChatViewModel();
@@ -74,7 +75,7 @@ public class ChatViewModelTests
         Assert.Equal(vm.Tabs[0], vm.ActiveTab);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_FirstTab_IsNamedChat1()
     {
         var vm = CreateChatViewModel();
@@ -83,7 +84,7 @@ public class ChatViewModelTests
 
     // ── AddTab ────────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void AddTab_IncrementsTabCountAndSetsActive()
     {
         var vm = CreateChatViewModel();
@@ -95,7 +96,7 @@ public class ChatViewModelTests
         Assert.False(vm.Tabs[0].IsActive);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AddTab_SecondTab_IsNamedChat2()
     {
         var vm = CreateChatViewModel();
@@ -103,7 +104,7 @@ public class ChatViewModelTests
         Assert.Equal("Chat 2", vm.Tabs[1].Title);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void AddTab_CanCloseTabsBecomesTrue()
     {
         var vm = CreateChatViewModel();
@@ -115,7 +116,7 @@ public class ChatViewModelTests
 
     // ── CloseTab ──────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseTab_RemovesTabAndAdjustsActive()
     {
         var vm = CreateChatViewModel();
@@ -129,7 +130,7 @@ public class ChatViewModelTests
         Assert.Equal(vm.Tabs[0], vm.ActiveTab);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseTab_LastTabCannotBeClosed()
     {
         var vm = CreateChatViewModel();
@@ -141,7 +142,7 @@ public class ChatViewModelTests
         Assert.Same(onlyTab, vm.Tabs[0]);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseTab_NullParameter_DoesNothing()
     {
         var vm = CreateChatViewModel();
@@ -149,7 +150,7 @@ public class ChatViewModelTests
         Assert.Single(vm.Tabs);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseTab_MiddleTab_AdjustsActiveToRemaining()
     {
         var vm = CreateChatViewModel();
@@ -165,7 +166,7 @@ public class ChatViewModelTests
         Assert.DoesNotContain(middle, vm.Tabs);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CloseTab_CanCloseTabsBecomesFalseWhenOneRemains()
     {
         var vm = CreateChatViewModel();
@@ -178,7 +179,7 @@ public class ChatViewModelTests
 
     // ── SelectTab ─────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectTab_SetsActiveTab()
     {
         var vm = CreateChatViewModel();
@@ -194,7 +195,7 @@ public class ChatViewModelTests
         Assert.False(vm.Tabs[2].IsActive);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SelectTab_NullParameter_DoesNothing()
     {
         var vm = CreateChatViewModel();
@@ -205,7 +206,7 @@ public class ChatViewModelTests
 
     // ── SwitchToNextTab ───────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void SwitchToNextTab_SingleTab_DoesNothing()
     {
         var vm = CreateChatViewModel();
@@ -214,7 +215,7 @@ public class ChatViewModelTests
         Assert.Same(current, vm.ActiveTab);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void SwitchToNextTab_MultipleTabs_CyclesForward()
     {
         var vm = CreateChatViewModel();
@@ -240,7 +241,7 @@ public class ChatViewModelTests
 
     // ── OnProjectChanged ──────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void OnProjectChanged_PropagatesToAllTabs()
     {
         var vm = CreateChatViewModel();
@@ -256,7 +257,7 @@ public class ChatViewModelTests
         Assert.Empty(vm.Tabs[1].Messages);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OnProjectChanged_NullDir_PropagatesToAllTabs()
     {
         var vm = CreateChatViewModel();
@@ -271,7 +272,7 @@ public class ChatViewModelTests
 
     // ── ClearMessages ─────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void ClearMessages_ClearsActiveTabOnly()
     {
         var vm = CreateChatViewModel();
@@ -289,7 +290,7 @@ public class ChatViewModelTests
 
     // ── Dispose ───────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Dispose_ClearsAllTabs()
     {
         var vm = CreateChatViewModel();

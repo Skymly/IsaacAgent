@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using System.Collections.ObjectModel;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
@@ -29,7 +30,7 @@ public class ProjectViewModelTests
         return result;
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_ValidDirectory_SetsPropertiesAndLoadsFiles()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_{Guid.NewGuid():N}");
@@ -65,7 +66,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_NonexistentDirectory_DoesNothing()
     {
         var vm = CreateViewModel();
@@ -77,7 +78,7 @@ public class ProjectViewModelTests
         Assert.Empty(vm.Files);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_EmptyDirectory_LoadsNoFiles()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_empty_{Guid.NewGuid():N}");
@@ -97,7 +98,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_TreeStructure_DirectoriesComeBeforeFiles()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_tree_{Guid.NewGuid():N}");
@@ -128,7 +129,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_TreeStructure_NestedDirectories()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_nested_{Guid.NewGuid():N}");
@@ -159,7 +160,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_TreeStructure_ExcludesBuildArtifacts()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_excl_{Guid.NewGuid():N}");
@@ -190,7 +191,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_TreeStructure_EmptyDirectoriesAreSkipped()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_emptydir_{Guid.NewGuid():N}");
@@ -213,7 +214,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task LoadProject_TreeStructure_TopLevelDirectoriesExpandedByDefault()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_exp_{Guid.NewGuid():N}");
@@ -245,7 +246,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task OpenFileAsync_ValidFile_SetsPreview()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_open_{Guid.NewGuid():N}");
@@ -272,7 +273,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task OpenFileAsync_NullItem_DoesNothing()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_null_{Guid.NewGuid():N}");
@@ -292,7 +293,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task OpenFileAsync_DirectoryItem_DoesNothing()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_pvm_dir_{Guid.NewGuid():N}");
@@ -318,7 +319,7 @@ public class ProjectViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void FileTreeItem_Properties_SetCorrectly()
     {
         var item = new FileTreeItem
@@ -335,7 +336,7 @@ public class ProjectViewModelTests
         Assert.False(item.IsXml);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void FileTreeItem_DirectoryItem_HasChildrenCollection()
     {
         var dir = new FileTreeItem
@@ -357,7 +358,7 @@ public class ProjectViewModelTests
         Assert.Same(file, dir.Children[0]);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void FileTreeItem_FlattenFiles_FileReturnsSelf()
     {
         var file = new FileTreeItem { Name = "a.lua", Path = "a.lua", IsLua = true };
@@ -366,7 +367,7 @@ public class ProjectViewModelTests
         Assert.Same(file, result[0]);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void FileTreeItem_FlattenFiles_DirectoryReturnsAllDescendants()
     {
         var root = new FileTreeItem { Name = "scripts", Path = "scripts", IsDirectory = true };

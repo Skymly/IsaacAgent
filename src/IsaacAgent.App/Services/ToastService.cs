@@ -15,10 +15,15 @@ public sealed class ToastService
 
     /// <summary>
     ///   When true, toasts auto-dismiss after their duration.
-    ///   Set to false in tests to prevent DispatcherTimer/Task.Delay
-    ///   from blocking the headless test runner.
+    ///   Set to false in tests to prevent background timers from affecting
+    ///   unrelated assertions.
     /// </summary>
     internal bool AutoDismissEnabled { get; set; } = true;
+
+    /// <summary>
+    ///   Tests only — when set, replaces the default auto-dismiss scheduling.
+    /// </summary>
+    internal Action<ToastNotification, int>? TestDismissScheduler { get; set; }
 
     public ObservableCollection<ToastNotification> ActiveToasts { get; } = [];
 
@@ -39,14 +44,20 @@ public sealed class ToastService
         var toast = new ToastNotification(message, severity, durationMs);
         ActiveToasts.Add(toast);
 
-        if (AutoDismissEnabled)
+        if (!AutoDismissEnabled)
+            return;
+
+        if (TestDismissScheduler is { } scheduler)
         {
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(durationMs).ConfigureAwait(false);
-                Dispatcher.UIThread.Post(() => Dismiss(toast));
-            });
+            scheduler(toast, durationMs);
+            return;
         }
+
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(durationMs).ConfigureAwait(false);
+            Dispatcher.UIThread.Post(() => Dismiss(toast));
+        });
     }
 
     public void Dismiss(ToastNotification toast)

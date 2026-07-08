@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using System.Runtime.CompilerServices;
 using IsaacAgent.Agent;
 using IsaacAgent.Agent.Engine;
@@ -69,7 +70,7 @@ public class MainViewModelTests
         return new AgentSession(chat, registry, null, logger, null);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_InitializesAllProperties()
     {
         var (vm, _) = CreateMainViewModel();
@@ -85,7 +86,7 @@ public class MainViewModelTests
         Assert.False(vm.IsBusy);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ClearChat_SetsStatusText()
     {
         var (vm, _) = CreateMainViewModel();
@@ -94,7 +95,7 @@ public class MainViewModelTests
         Assert.NotEqual("", vm.StatusText);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ClearChat_ClearsActiveTabMessages()
     {
         var (vm, _) = CreateMainViewModel();
@@ -106,7 +107,7 @@ public class MainViewModelTests
         Assert.Empty(vm.Chat.ActiveTab.Messages);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void StatusText_SetAndGet_WorksCorrectly()
     {
         var (vm, _) = CreateMainViewModel();
@@ -114,7 +115,7 @@ public class MainViewModelTests
         Assert.Equal("Custom status", vm.StatusText);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void IsBusy_SetAndGet_WorksCorrectly()
     {
         var (vm, _) = CreateMainViewModel();
@@ -124,7 +125,7 @@ public class MainViewModelTests
         Assert.False(vm.IsBusy);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Chat_Property_IsSameInstance()
     {
         var (vm, sp) = CreateMainViewModel();
@@ -132,7 +133,7 @@ public class MainViewModelTests
         Assert.Same(chatFromSp, vm.Chat);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Project_Property_IsSameInstance()
     {
         var (vm, sp) = CreateMainViewModel();
@@ -140,7 +141,7 @@ public class MainViewModelTests
         Assert.Same(projectFromSp, vm.Project);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Toasts_Property_IsSameInstance()
     {
         var (vm, sp) = CreateMainViewModel();

@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using IsaacAgent.App.Markdown;
 using Xunit;
 
@@ -8,7 +9,7 @@ public class MarkdownRendererTests
 {
     // ── Table rendering ────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_SimpleTwoColumns_RendersAlignedRows()
     {
         var md = """
@@ -32,7 +33,7 @@ public class MarkdownRendererTests
         Assert.Contains("2.5", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_ColumnsArePaddedToEqualWidth()
     {
         var md = """
@@ -56,7 +57,7 @@ public class MarkdownRendererTests
         Assert.Contains("y", lines[2]);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_ThreeColumns_RendersAllColumns()
     {
         var md = """
@@ -75,7 +76,7 @@ public class MarkdownRendererTests
         Assert.Contains("Called on item use", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_WithUnevenCells_HandlesMissingColumns()
     {
         var md = """
@@ -93,7 +94,7 @@ public class MarkdownRendererTests
         Assert.Contains("C", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_WithEscapedPipeInCell_PreservesPipe()
     {
         var md = """
@@ -108,7 +109,7 @@ public class MarkdownRendererTests
         Assert.Contains("grep | a | b", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_SeparatorWithColons_IsRecognizedAsTable()
     {
         var md = """
@@ -127,7 +128,7 @@ public class MarkdownRendererTests
         Assert.Contains("c", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_FollowedByParagraph_BothRendered()
     {
         var md = """
@@ -145,7 +146,7 @@ public class MarkdownRendererTests
         Assert.Contains("This is a paragraph after the table.", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_NoTrailingPipe_StillParsed()
     {
         var md = """
@@ -163,7 +164,7 @@ public class MarkdownRendererTests
 
     // ── Non-table edge cases ───────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void NonTable_PipeInText_NotTreatedAsTable()
     {
         var md = "This has a | pipe in it but is not a table.";
@@ -175,7 +176,7 @@ public class MarkdownRendererTests
         Assert.DoesNotContain("------", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Table_OnlyHeaderAndSeparator_NoDataRows_StillRenders()
     {
         var md = """
@@ -192,21 +193,21 @@ public class MarkdownRendererTests
 
     // ── Existing markdown features (regression) ────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Bold_RendersCorrectly()
     {
         var text = MarkdownRenderer.RenderToText("**bold text**");
         Assert.Contains("bold text", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void InlineCode_RendersCorrectly()
     {
         var text = MarkdownRenderer.RenderToText("Use `Isaac.GetPlayer()` to get the player.");
         Assert.Contains("Isaac.GetPlayer()", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_RendersCorrectly()
     {
         var md = """
@@ -223,7 +224,7 @@ public class MarkdownRendererTests
         Assert.Contains("lua", text); // language label
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Header_AllLevels_RenderCorrectly()
     {
         var text = MarkdownRenderer.RenderToText("# H1\n## H2\n### H3\n#### H4");
@@ -233,7 +234,7 @@ public class MarkdownRendererTests
         Assert.Contains("H4", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void UnorderedList_RendersWithBullet()
     {
         var md = """
@@ -249,7 +250,7 @@ public class MarkdownRendererTests
         Assert.Contains("\u2022", text); // bullet character
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OrderedList_RendersWithNumbers()
     {
         var md = """
@@ -264,28 +265,28 @@ public class MarkdownRendererTests
         Assert.Contains("3.", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Link_RendersAsText()
     {
         var text = MarkdownRenderer.RenderToText("[Isaac Docs](https:// IsaacDocs.com)");
         Assert.Contains("Isaac Docs", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Blockquote_RendersAsText()
     {
         var text = MarkdownRenderer.RenderToText("> This is a quote");
         Assert.Contains("This is a quote", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void HorizontalRule_RendersAsDashes()
     {
         var text = MarkdownRenderer.RenderToText("---");
         Assert.Contains("\u2014", text); // em dash
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void EmptyString_RendersWithoutError()
     {
         var text = MarkdownRenderer.RenderToText("");
@@ -294,7 +295,7 @@ public class MarkdownRendererTests
 
     // ── Syntax highlighting ────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_Lua_RendersAllContent()
     {
         var md = """
@@ -316,7 +317,7 @@ public class MarkdownRendererTests
         Assert.Contains("end", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_LuaComment_RendersCommentText()
     {
         var md = """
@@ -330,7 +331,7 @@ public class MarkdownRendererTests
         Assert.Contains("local", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_LuaString_RendersStringContent()
     {
         var md = """
@@ -342,7 +343,7 @@ public class MarkdownRendererTests
         Assert.Contains("hello world", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_LuaKeyword_RendersKeyword()
     {
         var md = """
@@ -361,7 +362,7 @@ public class MarkdownRendererTests
         Assert.Contains("end", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_NoLanguage_RendersAsLuaHighlight()
     {
         var md = """
@@ -375,7 +376,7 @@ public class MarkdownRendererTests
         Assert.Contains("1", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_NonLuaLanguage_RendersAsPlainCode()
     {
         var md = """
@@ -390,7 +391,7 @@ public class MarkdownRendererTests
         Assert.Contains("pass", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CodeBlock_LuaBlockComment_RendersComment()
     {
         var md = """
@@ -406,7 +407,7 @@ public class MarkdownRendererTests
 
     // ── Task list ──────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void TaskList_Unchecked_RendersWithBallotBox()
     {
         var md = """
@@ -419,7 +420,7 @@ public class MarkdownRendererTests
         Assert.Contains("\u2610", text); // ☐ unchecked
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void TaskList_Checked_RendersWithCheckedBox()
     {
         var md = """
@@ -432,7 +433,7 @@ public class MarkdownRendererTests
         Assert.Contains("\u2612", text); // ☒ checked
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void TaskList_Mixed_RendersBothCheckboxes()
     {
         var md = """
@@ -448,14 +449,14 @@ public class MarkdownRendererTests
 
     // ── Strikethrough ──────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Strikethrough_RendersText()
     {
         var text = MarkdownRenderer.RenderToText("~~deleted text~~");
         Assert.Contains("deleted text", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Strikethrough_WithOtherFormatting_RendersAll()
     {
         var text = MarkdownRenderer.RenderToText("**bold** and ~~struck~~");
@@ -466,7 +467,7 @@ public class MarkdownRendererTests
 
     // ── Clickable links (URL visible) ──────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Link_RendersTextAndUrl()
     {
         var text = MarkdownRenderer.RenderToText("[Isaac Docs](https://isaacdocs.com)");
@@ -474,7 +475,7 @@ public class MarkdownRendererTests
         Assert.Contains("https://isaacdocs.com", text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Link_WithOtherText_RendersAll()
     {
         var text = MarkdownRenderer.RenderToText("See [docs](https://example.com) for info.");

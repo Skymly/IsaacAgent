@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using System.Runtime.CompilerServices;
 using Avalonia.Threading;
 using IsaacAgent.Agent;
@@ -100,18 +101,7 @@ public class ChatTabViewModelTests
 
     private static ChatChunk TextChunk(string text) => new(text, false, -1, null, null, null);
 
-    /// <summary>
-    ///   Pumps the Avalonia dispatcher queue so that pending Post
-    ///   callbacks (used by ChatTabViewModel for streaming updates)
-    ///   execute before assertions.
-    /// </summary>
-    private static void FlushDispatcher()
-    {
-        if (Dispatcher.UIThread.CheckAccess())
-            Dispatcher.UIThread.RunJobs();
-        else
-            Dispatcher.UIThread.Invoke(() => { }, DispatcherPriority.Background);
-    }
+    private static void FlushDispatcher() => AvaloniaTestHelper.FlushDispatcher();
 
     private static (ChatTabViewModel tab, ScriptedChatService chat) CreateTab(
         params List<ChatChunk>[] turns)
@@ -141,7 +131,7 @@ public class ChatTabViewModelTests
 
     // ── Constructor / initialization ──────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Constructor_InitializesWithDefaults()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -155,7 +145,7 @@ public class ChatTabViewModelTests
 
     // ── Send ──────────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_WithText_AddsUserAndAssistantMessages()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("Hello!") }]);
@@ -172,7 +162,7 @@ public class ChatTabViewModelTests
         Assert.Contains("Hello!", tab.Messages[1].Content);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_WithText_ClearsInputText()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("ok") }]);
@@ -183,7 +173,7 @@ public class ChatTabViewModelTests
         Assert.Equal("", tab.InputText);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_WithEmptyText_DoesNothing()
     {
         var (tab, chat) = CreateTab([new List<ChatChunk> { TextChunk("should not happen") }]);
@@ -195,7 +185,7 @@ public class ChatTabViewModelTests
         Assert.Equal(0, chat.CallCount);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_WhileGenerating_DoesNotSendAgain()
     {
         var (tab, chat) = CreateTab([
@@ -214,7 +204,7 @@ public class ChatTabViewModelTests
         Assert.Equal(2, chat.CallCount);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_StreamingAccumulatesIntoAssistantMessage()
     {
         var (tab, _) = CreateTab([
@@ -234,7 +224,7 @@ public class ChatTabViewModelTests
         Assert.Equal("Hello world!", assistantMsg.Content);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_OnError_AddsErrorMessage()
     {
         var chat = new ThrowingChatService();
@@ -259,7 +249,7 @@ public class ChatTabViewModelTests
 
     // ── Cancel ────────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_Cancel_RemovesEmptyAssistantAndAddsCancelledMessage()
     {
         // Use a chat service that yields slowly so we can cancel mid-stream
@@ -281,7 +271,7 @@ public class ChatTabViewModelTests
 
     // ── IsGenerating state ────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Send_SetsIsGeneratingDuringSend_ResetsAfter()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("done") }]);
@@ -295,7 +285,7 @@ public class ChatTabViewModelTests
 
     // ── ClearMessages ─────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public async Task ClearMessages_RemovesAllMessagesAndResetsTokens()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hello") }]);
@@ -313,7 +303,7 @@ public class ChatTabViewModelTests
 
     // ── OnProjectChanged ──────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void OnProjectChanged_ClearsMessagesAndResetsTokens()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -330,7 +320,7 @@ public class ChatTabViewModelTests
         Assert.Equal(0, tab.TotalOutputTokens);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void OnProjectChanged_NullDir_DoesNotThrow()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -340,7 +330,7 @@ public class ChatTabViewModelTests
 
     // ── ToggleExpand ──────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void ToggleExpand_TogglesIsExpanded()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -353,7 +343,7 @@ public class ChatTabViewModelTests
         Assert.False(msg.IsExpanded);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ToggleExpand_NullParameter_DoesNothing()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -363,14 +353,14 @@ public class ChatTabViewModelTests
 
     // ── Dispose ───────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Dispose_DoesNotThrow()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
         tab.Dispose(); // should not throw
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -380,7 +370,7 @@ public class ChatTabViewModelTests
 
     // ── InsertSnippet ─────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void InsertSnippet_EmptyInput_SetsInputText()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -389,7 +379,7 @@ public class ChatTabViewModelTests
         Assert.Equal("local x = 1", tab.InputText);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void InsertSnippet_ExistingInput_AppendsOnNewLine()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -400,7 +390,7 @@ public class ChatTabViewModelTests
         Assert.Contains("\n", tab.InputText);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void InsertSnippet_EmptySnippet_DoesNothing()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -411,7 +401,7 @@ public class ChatTabViewModelTests
 
     // ── ChatMessageViewModel editing ──────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void StartEdit_UserMessage_SetsIsEditingAndEditText()
     {
         var msg = new ChatMessageViewModel { Role = "user", Content = "Hello" };
@@ -420,7 +410,7 @@ public class ChatTabViewModelTests
         Assert.Equal("Hello", msg.EditText);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void StartEdit_AssistantMessage_DoesNotStartEditing()
     {
         var msg = new ChatMessageViewModel { Role = "assistant", Content = "Hi" };
@@ -428,7 +418,7 @@ public class ChatTabViewModelTests
         Assert.False(msg.IsEditing);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void CancelEdit_ResetsIsEditingAndEditText()
     {
         var msg = new ChatMessageViewModel { Role = "user", Content = "Hello" };
@@ -442,7 +432,7 @@ public class ChatTabViewModelTests
 
     // ── Message trimming (memory optimization) ────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Messages_BelowLimit_NotTrimmed()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("hi") }]);
@@ -459,7 +449,7 @@ public class ChatTabViewModelTests
         Assert.True(tab.Messages.Count >= 12); // 10 added + user + assistant
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Messages_AboveLimit_TrimmedAfterSend()
     {
         var (tab, _) = CreateTab([new List<ChatChunk> { TextChunk("response") }]);
