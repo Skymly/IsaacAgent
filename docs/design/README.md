@@ -1,13 +1,13 @@
 # Design Doc 索引
 
-实现细节文档（**how + why**）。
+每模块一份设计文档（API 面 + 不变量 + 实现细节 + 设计权衡）。
 
-- **格式**：见 [DOCUMENTATION.md](../DOCUMENTATION.md#5-design-doc--设计文档)
+- **约定**：见 [DOCUMENTATION.md](../DOCUMENTATION.md)
 - **模板**：[_template.md](_template.md)
 
-| Design Doc | 子系统 | 关联 Spec |
-|------------|--------|-----------|
-| [Agent.md](Agent.md) | `IsaacAgent.Agent` | [spec/Agent.md](../spec/Agent.md) |
-| [Tools.md](Tools.md) | `IsaacAgent.Tools` | [spec/Tools.md](../spec/Tools.md) |
-| [Rag.md](Rag.md) | `IsaacAgent.Rag` | [spec/Rag.md](../spec/Rag.md) |
-| [App.md](App.md) | `IsaacAgent.App` | — |
+| Design Doc | 子系统 |
+|------------|--------|
+| [Agent.md](Agent.md) | `IsaacAgent.Agent` |
+| [Tools.md](Tools.md) | `IsaacAgent.Tools` + RAG 工具 |
+| [Rag.md](Rag.md) | `IsaacAgent.Rag` |
+| [App.md](App.md) | `IsaacAgent.App` |

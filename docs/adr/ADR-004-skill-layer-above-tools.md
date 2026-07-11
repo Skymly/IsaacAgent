@@ -4,7 +4,7 @@
 |------|-----|
 | **状态** | Accepted |
 | **日期** | 2026-06-15 |
-| **关联 RFC** | 无 — 直接决策 |
+| **关联 Issue** | 无 — 直接决策 |
 
 ## 背景
 
@@ -27,5 +27,4 @@ Skill 不替代 Tool；LLM 仍通过 ToolRegistry 调用原子工具。
 
 ## 参考
 
-- [spec/Agent.md](../spec/Agent.md)
 - [design/Agent.md](../design/Agent.md)

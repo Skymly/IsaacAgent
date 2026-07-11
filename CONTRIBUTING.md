@@ -3,9 +3,8 @@
 Thanks for your interest in contributing! This guide covers setup,
 conventions, and the pull request process.
 
-For the full **documentation-driven development** workflow, see
-[docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). Development setup
-details are in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+Documentation conventions: [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md).
+Development setup: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Development Setup
 
@@ -103,14 +102,14 @@ before committing:
 
 CI will fail if formatting is not applied (`Format` target).
 
-## Documentation-Driven Changes
+## Documentation
 
-Before implementing non-trivial features:
+See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). In short:
 
-1. Check [docs/DOCUMENTATION.md §11](docs/DOCUMENTATION.md#11-文档驱动开发流程) for required docs (RFC, ADR, Spec, Plan).
-2. New **tools** or **skills** require RFC + ADR + Spec updates.
-3. Implementation PRs must sync **Design Doc** and **CHANGELOG** `[Unreleased]`.
-4. Large tasks: create a plan in `docs/plans/` and a tracking Issue.
+- Breaking architecture decisions → new ADR + update Design Doc
+- Tool / Skill / API / implementation changes → update Design Doc
+- User-visible changes → CHANGELOG `[Unreleased]`
+- Task tracking → GitHub Issues（not in-repo plan docs）
 
 ## Pull Request Process
 

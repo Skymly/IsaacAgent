@@ -1,12 +1,15 @@
 # Design Doc: <子系统名>
 
-> **关联 Spec**：[docs/spec/<Name>.md](../spec/<Name>.md)
-> **关联 RFC**：[docs/rfc/XXX.md](../rfc/XXX.md)（如有）
 > **关联 ADR**：ADR-XXX（如有）
+> **关联 Issue**：#XXX（如有）
 
 ## 概述
 
 ## 设计目标
+
+## API 面
+
+## 不变量
 
 ## 实现概览
 

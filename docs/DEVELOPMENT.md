@@ -1,6 +1,6 @@
 # 开发手册
 
-> 编码规范与模块边界见 [AGENTS.md](../AGENTS.md)；贡献与 PR 流程见 [CONTRIBUTING.md](../CONTRIBUTING.md)；文档驱动流程见 [DOCUMENTATION.md](DOCUMENTATION.md)。
+> 编码规范与模块边界见 [AGENTS.md](../AGENTS.md)；贡献与 PR 流程见 [CONTRIBUTING.md](../CONTRIBUTING.md)；文档约定见 [DOCUMENTATION.md](DOCUMENTATION.md)。
 
 ## 环境要求
 
@@ -71,12 +71,12 @@ docs/                   维护者文档（本体系）
 - API Key 经 DPAPI 加密存储
 - 嵌入 provider：`onnx`（默认）或 `ollama`
 
-## 文档驱动开发（摘要）
+## 文档更新（摘要）
 
-1. 非琐碎变更先查 [DOCUMENTATION.md §11](DOCUMENTATION.md#11-文档驱动开发流程) 决策表
-2. 新工具 / Skill → RFC + ADR + Spec
-3. 实现 PR 同步更新 Design Doc + CHANGELOG
-4. 大型任务先写 `docs/plans/`
+- 工具 / Skill / API / 实现变更 → 更新对应 Design Doc
+- 破坏性架构决策 → 新建 ADR + Design Doc
+- 用户可见行为 → CHANGELOG `[Unreleased]`
+- 任务追踪 → GitHub Issues
 
 ## 格式化
 

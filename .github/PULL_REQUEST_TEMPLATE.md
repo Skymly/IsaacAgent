@@ -29,16 +29,13 @@
 - [ ] No AI tool/model names in commits, code, or docs
 - [ ] Self-review of the code completed
 - [ ] Comments added for complex logic (only where necessary)
-- [ ] Documentation updated if needed (README, CHANGELOG, AGENTS.md)
 
 ## Documentation (see [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md))
 
-- [ ] New/changed public API → Spec updated (`docs/spec/`)
-- [ ] New/changed tool or Skill → RFC + ADR + Spec updated
-- [ ] Implementation details changed → Design Doc updated (`docs/design/`)
-- [ ] New RFC → used `docs/rfc/_template.md`
-- [ ] RFC / Plan / Review status change → frontmatter updated + archive if applicable
+- [ ] Design Doc updated if API / tool / Skill / implementation changed
+- [ ] ADR added if this is a breaking architecture decision
 - [ ] CHANGELOG `[Unreleased]` entry added (if user-visible)
+- [ ] No documentation changes needed
 
 ## Related Issues
 
