@@ -1,5 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <OnnxAssetsDir>$(MSBuildThisFileDirectory)Resources\onnx</OnnxAssetsDir>
+    <OnnxModelPath>$(OnnxAssetsDir)\model.onnx</OnnxModelPath>
+    <OnnxVocabPath>$(OnnxAssetsDir)\vocab.txt</OnnxVocabPath>
+    <OnnxModelUrl>https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx</OnnxModelUrl>
+    <OnnxVocabUrl>https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/vocab.txt</OnnxVocabUrl>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.17.1" />
@@ -18,5 +26,55 @@
     <EmbeddedResource Include="Resources\patterns\**\*.md" />
     <EmbeddedResource Include="Resources\schemas\**\*.xsd" />
   </ItemGroup>
+
+  <!--
+    Download ONNX assets before compile, then register Content + EmbeddedResource
+    inside this target. Static ItemGroup Condition="Exists(...)" is evaluated at
+    project-load time — before the download — so CI checkouts without model.onnx
+    would otherwise build with no bundled assets.
+  -->
+  <Target Name="EnsureOnnxAssets" BeforeTargets="PrepareForBuild;AssignTargetPaths;BeforePublish">
+    <MakeDir Directories="$(OnnxAssetsDir)" />
+    <DownloadFile Condition="!Exists('$(OnnxVocabPath)')"
+                  SourceUrl="$(OnnxVocabUrl)"
+                  DestinationFolder="$(OnnxAssetsDir)"
+                  DestinationFileName="vocab.txt" />
+    <DownloadFile Condition="!Exists('$(OnnxModelPath)')"
+                  SourceUrl="$(OnnxModelUrl)"
+                  DestinationFolder="$(OnnxAssetsDir)"
+                  DestinationFileName="model.onnx" />
+    <Error Condition="!Exists('$(OnnxModelPath)')"
+           Text="Bundled ONNX model missing after download: $(OnnxModelPath)" />
+    <Error Condition="!Exists('$(OnnxVocabPath)')"
+           Text="Bundled ONNX vocab missing after download: $(OnnxVocabPath)" />
+
+    <ItemGroup>
+      <_OnnxContent Remove="@(_OnnxContent)" />
+      <_OnnxEmbedded Remove="@(_OnnxEmbedded)" />
+
+      <_OnnxContent Include="$(OnnxModelPath)">
+        <Link>onnx\model.onnx</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </_OnnxContent>
+      <_OnnxContent Include="$(OnnxVocabPath)">
+        <Link>onnx\vocab.txt</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </_OnnxContent>
+
+      <_OnnxEmbedded Include="$(OnnxModelPath)">
+        <LogicalName>IsaacAgent.Rag.Onnx.model.onnx</LogicalName>
+      </_OnnxEmbedded>
+      <_OnnxEmbedded Include="$(OnnxVocabPath)">
+        <LogicalName>IsaacAgent.Rag.Onnx.vocab.txt</LogicalName>
+      </_OnnxEmbedded>
+
+      <Content Include="@(_OnnxContent)" />
+      <EmbeddedResource Include="@(_OnnxEmbedded)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

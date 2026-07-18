@@ -25,9 +25,13 @@ public sealed class OnnxEmbeddingProvider : IEmbeddingProvider, IDisposable
         _logger = logger;
 
         if (!File.Exists(modelPath))
-            throw new FileNotFoundException("ONNX embedding model not found. Download all-MiniLM-L6-v2 ONNX and place at configured path.", modelPath);
+            throw new FileNotFoundException(
+                "ONNX embedding model not found. Rebuild the project to restore the bundled all-MiniLM-L6-v2 model, or set a custom path in Settings.",
+                modelPath);
         if (!File.Exists(vocabPath))
-            throw new FileNotFoundException("Tokenizer vocab file not found.", vocabPath);
+            throw new FileNotFoundException(
+                "Tokenizer vocab file not found. Rebuild the project to restore bundled vocab.txt, or set a custom path in Settings.",
+                vocabPath);
 
         var options = new SessionOptions { GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL };
         _session = new InferenceSession(modelPath, options);

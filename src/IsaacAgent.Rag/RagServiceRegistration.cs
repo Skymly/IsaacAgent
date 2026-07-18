@@ -57,8 +57,8 @@ public static class RagServiceRegistration
                 config.OllamaModel,
                 sp.GetRequiredService<ILogger<OllamaEmbeddingProvider>>()),
             EmbeddingSourceType.Onnx => new OnnxEmbeddingProvider(
-                config.OnnxModelPath,
-                config.OnnxTokenizerPath,
+                DefaultOnnxAssets.ResolveModelPath(config.OnnxModelPath),
+                DefaultOnnxAssets.ResolveVocabPath(config.OnnxTokenizerPath),
                 sp.GetRequiredService<ILogger<OnnxEmbeddingProvider>>()),
             _ => throw new ArgumentException($"Unknown embedding source: {config.Source}")
         };
