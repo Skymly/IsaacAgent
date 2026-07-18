@@ -28,6 +28,12 @@
 | `ProjectViewModel` | 文件树；`RefreshFilesAsync` UI 线程 marshal |
 | `SettingsViewModel` | 配置编辑、索引状态、嵌入热切换 |
 
+### 设置与安全
+
+- **API Key**：内存明文 + DPAPI 持久化；`ApiKey` 带 `[JsonIgnore]`，磁盘仅写 `EncryptedApiKey`
+- **拖放**：文件夹打开为项目；文件注入聊天上下文，单文件上限 256 KB
+- **发布校验**：`IsaacAgent.exe --verify-onnx` 无 UI 校验捆绑 ONNX 可加载（供 Nuke `PublishVerify`）
+
 ### 测试策略（ADR-005）
 
 - `[assembly: AvaloniaTestApplication]` + `HeadlessTestApp`

@@ -125,4 +125,26 @@ public class AppConfigurationTests
         Assert.Equal(1600, restored.WindowWidth);
         Assert.True(restored.WindowMaximized);
     }
+
+    [Fact]
+    public void ApiKey_IsNotSerializedToJson()
+    {
+        var original = new AppConfiguration
+        {
+            ApiKey = "sk-super-secret",
+            EncryptedApiKey = "ciphertext-base64",
+            Endpoint = "https://custom.api/v1"
+        };
+
+        var json = JsonSerializer.Serialize(original);
+
+        Assert.DoesNotContain("sk-super-secret", json);
+        Assert.DoesNotContain("\"ApiKey\"", json);
+        Assert.Contains("EncryptedApiKey", json);
+        Assert.Contains("ciphertext-base64", json);
+
+        var restored = JsonSerializer.Deserialize<AppConfiguration>(json)!;
+        Assert.Null(restored.ApiKey);
+        Assert.Equal("ciphertext-base64", restored.EncryptedApiKey);
+    }
 }

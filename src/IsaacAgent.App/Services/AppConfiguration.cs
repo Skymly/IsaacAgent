@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
 
@@ -20,8 +21,9 @@ public sealed class AppConfiguration
     /// The API key. In memory this is plaintext. When saved to disk it is
     /// encrypted with DPAPI (CurrentUser scope) so that only the same Windows
     /// account can decrypt it. The <see cref="EncryptedApiKey"/> field holds
-    /// the base64-encoded ciphertext; this property is never serialized directly.
+    /// the base64-encoded ciphertext; this property is never serialized.
     /// </summary>
+    [JsonIgnore]
     public string? ApiKey { get; set; }
 
     /// <summary>
