@@ -36,9 +36,7 @@
 
 ## 暂缓
 
-| ID | 项 | 理由 |
-|----|-----|------|
-| R-030 | macOS / Linux 桌面构建 | 当前 Windows-only（[ADR-003](adr/ADR-003-windows-only-avalonia-desktop.md)）；库层已有 CiLib |
+（无）
 
 ---
 
@@ -46,6 +44,7 @@
 
 | ID | 项 | 理由 |
 |----|-----|------|
+| R-030 | macOS / Linux 桌面构建与跨平台库 CI | 严格 Windows-only（[ADR-003](adr/ADR-003-windows-only-avalonia-desktop.md)）；不维护 `CiLib` / `ci-lib` |
 | R-040 | 云端向量数据库 | 与本地 RAG 定位冲突（[ADR-002](adr/ADR-002-local-rag-embedded-knowledge.md)） |
 
 ---

@@ -11,7 +11,7 @@ Development setup: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 ### Prerequisites
 
 - **.NET 8 SDK** — [download](https://dotnet.microsoft.com/download/dotnet/8.0)
-- **Windows** — the Avalonia UI targets `windows` as its supported OS platform
+- **Windows x64** — the only officially supported platform (`SupportedOSPlatform: windows`; see [ADR-003](docs/adr/ADR-003-windows-only-avalonia-desktop.md)). macOS / Linux are not supported.
 - **Git** — with full history (needed by MinVer for versioning)
 
 ### Clone & Build
@@ -43,10 +43,11 @@ dotnet test IsaacAgent.sln
 | Target | Description |
 |--------|-------------|
 | `Ci` | Clean → Restore → Compile → UnitTest |
-| `CiLib` | Library-only CI (for Linux/macOS) |
 | `Format` | `dotnet format --verify-no-changes` |
 | `FormatFix` | `dotnet format` (applies fixes) |
 | `CiAll` | Format + Ci (full verification) |
+| `Publish` | Self-contained win-x64 exe |
+| `Release` | CiAll + PublishVerify |
 
 ## Project Structure
 
@@ -137,8 +138,8 @@ See [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). In short:
    gh pr create --title "Add feature X" --body "Description..."
    ```
 
-6. **Ensure CI passes** — Windows full suite (`CiAll`); library tests
-   also run on Linux/macOS via `CiLib`.
+6. **Ensure CI passes** — Windows full suite (`CiAll`) on `windows-latest`.
+   Official support is Windows-only ([ADR-003](docs/adr/ADR-003-windows-only-avalonia-desktop.md)); there is no cross-platform library CI.
 
 7. **Address review feedback** — push fixes to the same branch.
 

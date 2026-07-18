@@ -5,7 +5,7 @@
 ## 环境要求
 
 - **.NET 8 SDK**
-- **Windows** — App 目标平台（`SupportedOSPlatform: windows`）
+- **Windows x64** — 唯一官方支持平台（`SupportedOSPlatform: windows`；见 [ADR-003](adr/ADR-003-windows-only-avalonia-desktop.md)）。不维护 macOS / Linux 桌面或库层跨平台 CI。
 - **Git** — 完整历史（MinVer 从 tag 推导版本）
 
 ## 克隆与构建
@@ -43,10 +43,9 @@ dotnet test IsaacAgent.sln -c Release
 | 目标 | 说明 |
 |------|------|
 | `Ci` | Clean → Restore → Compile → UnitTest |
-| `CiLib` | 仅库项目（跨平台 CI） |
 | `CiAll` | Format + Ci |
 | `Format` / `FormatFix` | 格式化检查 / 修复 |
-| `Publish` | 自包含 exe → `artifacts/publish/` |
+| `Publish` | 自包含 win-x64 exe → `artifacts/publish/` |
 | `Release` | CiAll + PublishVerify |
 
 ## 解决方案布局
