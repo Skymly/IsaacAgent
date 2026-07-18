@@ -1,5 +1,6 @@
 using System.Text.Json;
 using IsaacAgent.App.Services;
+using IsaacAgent.Rag.Embedding;
 using Xunit;
 
 namespace IsaacAgent.Tests;
@@ -11,6 +12,12 @@ namespace IsaacAgent.Tests;
 /// </summary>
 public class AppConfigurationTests
 {
+    [Fact]
+    public void EmbeddingSource_Defaults_ToOnnx()
+    {
+        Assert.Equal(EmbeddingSourceType.Onnx, new AppConfiguration().EmbeddingSource);
+    }
+
     [Fact]
     public void WindowState_Defaults_AreZero()
     {

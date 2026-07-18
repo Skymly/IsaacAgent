@@ -29,7 +29,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private EmbeddingSourceType _selectedEmbeddingSource;
 
-    public ObservableCollection<EmbeddingSourceType> EmbeddingSources { get; } = [EmbeddingSourceType.Ollama, EmbeddingSourceType.Onnx];
+    public ObservableCollection<EmbeddingSourceType> EmbeddingSources { get; } = [EmbeddingSourceType.Onnx, EmbeddingSourceType.Ollama];
 
     [ObservableProperty]
     private string _ollamaEmbeddingEndpoint = "";

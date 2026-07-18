@@ -76,7 +76,7 @@
     <sys:String x:Key="SettingsEmbeddingModel">エンベディングモデル</sys:String>
     <sys:String x:Key="SettingsOnnxModelPath">ONNX モデルパス</sys:String>
     <sys:String x:Key="SettingsTokenizerVocabPath">トークナイザー語彙パス</sys:String>
-    <sys:String x:Key="SettingsEmbeddingNote">注意: エンベディングソースの変更は保存時に適用され、バックグラウンドでインデックスを再構築します。再起動は不要です。</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">注意: 既定は同梱の all-MiniLM-L6-v2 ONNX です（パスは空のままで可）。エンベディングソースの変更は保存時に適用され、バックグラウンドでインデックスを再構築します。再起動は不要です。</sys:String>
     <sys:String x:Key="SettingsAppearance">外観</sys:String>
     <sys:String x:Key="SettingsLanguage">言語</sys:String>
     <sys:String x:Key="SettingsTheme">テーマ</sys:String>

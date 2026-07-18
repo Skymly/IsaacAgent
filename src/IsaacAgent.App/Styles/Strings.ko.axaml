@@ -76,7 +76,7 @@
     <sys:String x:Key="SettingsEmbeddingModel">임베딩 모델</sys:String>
     <sys:String x:Key="SettingsOnnxModelPath">ONNX 모델 경로</sys:String>
     <sys:String x:Key="SettingsTokenizerVocabPath">토크나이저 어휘 경로</sys:String>
-    <sys:String x:Key="SettingsEmbeddingNote">참고: 임베딩 소스 변경 사항은 저장 시 적용되며 백그라운드 인덱스 재구축을 트리거합니다. 재시작이 필요하지 않습니다.</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">참고: 기본값은 번들 all-MiniLM-L6-v2 ONNX입니다(경로를 비워 두세요). 임베딩 소스 변경 사항은 저장 시 적용되며 백그라운드 인덱스 재구축을 트리거합니다. 재시작이 필요하지 않습니다.</sys:String>
     <sys:String x:Key="SettingsAppearance">외관</sys:String>
     <sys:String x:Key="SettingsLanguage">언어</sys:String>
     <sys:String x:Key="SettingsTheme">테마</sys:String>
