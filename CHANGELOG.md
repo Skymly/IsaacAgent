@@ -7,8 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Bundled ONNX embedding model** (all-MiniLM-L6-v2): `model.onnx` is
+  downloaded at build time into `src/IsaacAgent.Rag/Resources/onnx/`,
+  embedded in `IsaacAgent.Rag`, and extracted to `%APPDATA%/IsaacAgent/onnx/`
+  on first use when side-by-side files are absent. Empty Settings paths use
+  `DefaultOnnxAssets` (ADR-002).
+
 ### Changed
 
+- Default embedding source is **ONNX** (`AppConfiguration` /
+  `EmbeddingConfig`), matching ADR-002 and the README “no setup” claim.
+  Ollama remains available as an optional Settings choice.
 - Clarified **strict Windows-only** policy ([ADR-003](docs/adr/ADR-003-windows-only-avalonia-desktop.md)):
   removed dormant cross-platform `ci-lib` / Nuke `CiLib` / `UnitTestLib`
   targets; official CI and publish remain Windows `win-x64` only.
