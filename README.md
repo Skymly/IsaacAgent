@@ -44,7 +44,9 @@ On first launch, open **Settings** (Ctrl+,) and configure:
 | Model | `abab6.5s-chat` / `llama3` | Depends on your provider |
 | API Key | `your-key-here` | Stored encrypted with DPAPI |
 
-For embeddings (RAG), choose **ONNX** (local, no setup) or **Ollama**.
+For embeddings (RAG), **ONNX is the default** — a bundled
+`all-MiniLM-L6-v2` model ships with the app (no extra download). You can
+switch to **Ollama** in Settings if you prefer a remote embedder.
 
 ### 3. Start Coding
 
@@ -63,7 +65,8 @@ For embeddings (RAG), choose **ONNX** (local, no setup) or **Ollama**.
 - **Isaac API knowledge base** — built-in enums, classes, and callbacks for
   the vanilla API (74 callbacks) plus REPENTOGON extensions (130+ callbacks).
 - **Local RAG search** — semantic search over 480+ embedded modding docs
-  (MkDocs chunker + ONNX or Ollama embeddings, in-memory vector store).
+  (MkDocs chunker + **bundled ONNX** all-MiniLM-L6-v2 by default, or Ollama;
+  in-memory vector store with on-disk index cache).
 - **Multi-provider LLM** — any OpenAI-compatible endpoint (MiniMax, OpenAI,
   local servers) or Ollama.
 - **Project-aware tools** — file operations are sandboxed to the opened
