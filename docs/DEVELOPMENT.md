@@ -46,6 +46,7 @@ dotnet test IsaacAgent.sln -c Release
 | `CiAll` | Format + Ci |
 | `Format` / `FormatFix` | 格式化检查 / 修复 |
 | `Publish` | 自包含 win-x64 exe → `artifacts/publish/` |
+| `PublishVerify` | Publish + EXE 体积 / 旁路 ONNX / EXE-only `--verify-onnx` |
 | `Release` | CiAll + PublishVerify |
 
 ## 解决方案布局

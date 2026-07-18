@@ -1,5 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 using Nuke.Common;
 using Nuke.Common.Execution;
@@ -148,9 +150,9 @@ sealed class Build : NukeBuild
         });
 
     /// <summary>
-    ///   Verifies the published executable exists and has a reasonable size
-    ///   for a self-contained deployment (ONNX runtime + Avalonia natives
-    ///   typically produce >50 MB).
+    ///   Verifies the published executable: size, side-by-side ONNX assets,
+    ///   and a headless <c>--verify-onnx</c> run from an EXE-only folder
+    ///   (GitHub Release ships only the exe).
     /// </summary>
     Target PublishVerify => _ => _
         .DependsOn(Publish)
@@ -162,11 +164,77 @@ sealed class Build : NukeBuild
                 $"Published entry point not found. Expected {exe} in {PublishDirectory}");
 
             var sizeMb = new FileInfo(exe).Length / (1024.0 * 1024.0);
-            Assert.True(sizeMb > 50,
-                $"Published executable is only {sizeMb:F1} MB — expected >50 MB for a self-contained deployment. " +
-                "Native libraries (ONNX runtime, Avalonia) may be missing.");
+            Assert.True(sizeMb > 100,
+                $"Published executable is only {sizeMb:F1} MB — expected >100 MB for a self-contained " +
+                "deployment with the embedded ONNX model (~86 MB) plus Avalonia/ONNX Runtime natives.");
+
+            AbsolutePath sideModel = PublishDirectory / "onnx" / "model.onnx";
+            AbsolutePath sideVocab = PublishDirectory / "onnx" / "vocab.txt";
+            Assert.FileExists(sideModel,
+                $"Side-by-side ONNX model missing after publish: {sideModel}");
+            Assert.FileExists(sideVocab,
+                $"Side-by-side ONNX vocab missing after publish: {sideVocab}");
+
+            var modelMb = new FileInfo(sideModel).Length / (1024.0 * 1024.0);
+            Assert.True(modelMb > 80,
+                $"Side-by-side ONNX model is only {modelMb:F1} MB — expected >80 MB for all-MiniLM-L6-v2.");
+
+            AbsolutePath verifyDir = ArtifactsDirectory / "verify-onnx-exe";
+            verifyDir.CreateOrCleanDirectory();
+            AbsolutePath isolatedExe = verifyDir / "IsaacAgent.exe";
+            File.Copy(exe, isolatedExe);
+
+            // On GitHub Actions runners, force AppData extraction by clearing
+            // any prior onnx cache. Local runs keep existing AppData assets.
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable("GITHUB_ACTIONS"),
+                    "true",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                var appDataOnnx = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "IsaacAgent",
+                    "onnx");
+                if (Directory.Exists(appDataOnnx))
+                    Directory.Delete(appDataOnnx, recursive: true);
+            }
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = isolatedExe,
+                Arguments = "--verify-onnx",
+                WorkingDirectory = verifyDir,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+
+            using var proc = Process.Start(psi)
+                ?? throw new InvalidOperationException($"Failed to start {isolatedExe}");
+
+            var stdout = new StringBuilder();
+            var stderr = new StringBuilder();
+            proc.OutputDataReceived += (_, e) => { if (e.Data is not null) stdout.AppendLine(e.Data); };
+            proc.ErrorDataReceived += (_, e) => { if (e.Data is not null) stderr.AppendLine(e.Data); };
+            proc.BeginOutputReadLine();
+            proc.BeginErrorReadLine();
+
+            if (!proc.WaitForExit(120_000))
+            {
+                try { proc.Kill(entireProcessTree: true); } catch { /* best-effort */ }
+                throw new InvalidOperationException(
+                    $"--verify-onnx timed out after 120s.\nstdout:\n{stdout}\nstderr:\n{stderr}");
+            }
+
+            // Drain async readers
+            proc.WaitForExit();
+
+            Assert.True(proc.ExitCode == 0,
+                $"--verify-onnx failed with exit code {proc.ExitCode}.\nstdout:\n{stdout}\nstderr:\n{stderr}");
 
             Console.WriteLine($"Publish verified: {exe.Name} ({sizeMb:F1} MB) at {PublishDirectory}");
+            Console.WriteLine($"ONNX side-by-side model: {modelMb:F1} MB; --verify-onnx OK from EXE-only dir.");
         });
 
     /// <summary>

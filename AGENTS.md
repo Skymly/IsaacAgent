@@ -41,7 +41,7 @@ Nuke targets; the same commands run locally.
 | **Format** | `dotnet format --verify-no-changes` (fails if formatting needed) |
 | **FormatFix** | `dotnet format` (applies formatting in-place) |
 | **Publish** | Self-contained win-x64 single-file exe → `artifacts/publish/win-x64/` |
-| **PublishVerify** | `Publish` + verify exe exists and size >50 MB |
+| **PublishVerify** | `Publish` + size/side-by-side ONNX checks + EXE-only `--verify-onnx` |
 | **Release** | `CiAll` + `PublishVerify` (full release pipeline) |
 
 Parameters: `--configuration`, `--runtime` (default / expected `win-x64`), `--version` (override MinVer)
