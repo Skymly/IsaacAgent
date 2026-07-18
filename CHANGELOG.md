@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `DefaultOnnxAssets` (ADR-002).
 - **`IsaacAgent.exe --verify-onnx`**: headless check that bundled ONNX assets
   resolve and can embed (used by release publish verification).
+- Nuke **PublishVerify** now checks EXE size (>100 MB), side-by-side ONNX
+  assets, and runs `--verify-onnx` from an EXE-only directory.
 
 ### Changed
 
