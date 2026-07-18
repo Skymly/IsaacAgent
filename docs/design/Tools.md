@@ -65,7 +65,7 @@
 |------|------|
 | `scaffold_mod` | 生成 `metadata.xml` + `main.lua`；XML/Lua 转义 |
 | `diagnose_lua` | 剥离字符串/注释后检查括号、未知回调 |
-| `run_command` | 按 `&&`/`\|\|` 分割子命令；`GIT_TERMINAL_PROMPT=0` 等 git 加固 |
+| `run_command` | 按 `&&`/`\|\|`/`|`/`;` 分割子命令；扩展黑名单（encoded PowerShell、certutil、LOLBins）；`GIT_TERMINAL_PROMPT=0` / `GCM_INTERACTIVE=never` 防交互挂起；命令长度上限 4096 |
 | `parse_log` | 绝对路径仅允许默认 Isaac log；相对路径项目内解析 |
 | `diff_apply` | unified diff 解析与应用 |
 

@@ -395,6 +395,7 @@ public sealed class RunCommandTool : ITool
 
     private const int MaxTimeoutSeconds = 120;
     private const int ProcessKillWaitMs = 1000;
+    private const int MaxCommandLength = 4096;
 
     public async Task<string> ExecuteAsync(string arguments, CancellationToken ct = default)
     {
@@ -403,6 +404,12 @@ public sealed class RunCommandTool : ITool
         var timeoutSec = 30;
         if (args.TryGetProperty("timeout_seconds", out var ts))
             timeoutSec = Math.Clamp(ts.GetInt32(), 1, MaxTimeoutSeconds);
+
+        if (string.IsNullOrWhiteSpace(command))
+            return "Error: Command is empty.";
+
+        if (command.Length > MaxCommandLength)
+            return $"Error: Command exceeds maximum length of {MaxCommandLength} characters.";
 
         // Block dangerous commands
         if (IsDangerousCommand(command))
@@ -418,6 +425,13 @@ public sealed class RunCommandTool : ITool
             UseShellExecute = false,
             CreateNoWindow = true
         };
+
+        // Keep git and other CLIs non-interactive so the agent cannot hang on prompts.
+        psi.Environment["GIT_TERMINAL_PROMPT"] = "0";
+        psi.Environment["GCM_INTERACTIVE"] = "never";
+        psi.Environment["GIT_ASKPASS"] = "echo";
+        psi.Environment["TERM"] = "dumb";
+
         if (isWindows)
             psi.ArgumentList.Add($"/c {command}");
         else
@@ -490,12 +504,28 @@ public sealed class RunCommandTool : ITool
         Compile(@"\b(drop\s+table|drop\s+database|truncate)\b"),
         Compile(@"\bchmod\s+777\s+/"),
         Compile(@"\bsudo\b"),
-        Compile(@"\bcurl\s+.*\|\s*(bash|sh)\b"),
-        Compile(@"\bwget\s+.*\|\s*(bash|sh)\b"),
-        // PowerShell dangerous cmdlets
+        Compile(@"\bcurl\s+.*\|\s*(bash|sh|powershell|pwsh|iex)\b"),
+        Compile(@"\bwget\s+.*\|\s*(bash|sh|powershell|pwsh|iex)\b"),
+        // PowerShell dangerous cmdlets / encoded payloads
         Compile(@"\bRemove-Item\b.*(-Recurse|-Force)"),
         Compile(@"\bInvoke-Expression\b"),
+        Compile(@"\bInvoke-WebRequest\b.*\|\s*(iex|Invoke-Expression)\b"),
+        Compile(@"\bDownloadString\b"),
+        Compile(@"\bFromBase64String\b"),
         Compile(@"\bStart-Process\b"),
+        Compile(@"\b(powershell|pwsh)\b.*(-enc|-encodedcommand|-e\b)"),
+        Compile(@"\b(powershell|pwsh)\b.*-command\b"),
+        // Windows living-off-the-land binaries often abused for payload staging
+        Compile(@"\bcertutil\b"),
+        Compile(@"\bbitsadmin\b"),
+        Compile(@"\breg\s+(delete|add|import)\b"),
+        Compile(@"\bsc\s+(delete|stop|config)\b"),
+        Compile(@"\bnet\s+(user|localgroup)\b"),
+        Compile(@"\bwmic\b"),
+        Compile(@"\bmsiexec\b"),
+        Compile(@"\brundll32\b"),
+        Compile(@"\bmshta\b"),
+        Compile(@"\b(cscript|wscript)\b.*https?://"),
     ];
 
     private static Regex Compile(string pattern) => new(pattern, RegexOptions.IgnoreCase);
