@@ -56,3 +56,6 @@ appsettings.local.json
 
 ## Publish output
 publish/
+
+## Bundled ONNX model (downloaded at build; vocab.txt is tracked)
+src/IsaacAgent.Rag/Resources/onnx/model.onnx

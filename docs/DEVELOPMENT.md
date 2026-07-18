@@ -69,7 +69,7 @@ docs/                   维护者文档（本体系）
 
 - 用户配置：`%APPDATA%/IsaacAgent/config.json`
 - API Key 经 DPAPI 加密存储
-- 嵌入 provider：`onnx`（默认）或 `ollama`
+- 嵌入 provider：`onnx`（默认，捆绑 all-MiniLM-L6-v2；首次构建会下载 `Resources/onnx/model.onnx`）或 `ollama`
 
 ## 文档更新（摘要）
 

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Bundled ONNX embedding model** (all-MiniLM-L6-v2): `model.onnx` is
+  downloaded at build time into `src/IsaacAgent.Rag/Resources/onnx/`,
+  embedded in `IsaacAgent.Rag`, and extracted to `%APPDATA%/IsaacAgent/onnx/`
+  on first use when side-by-side files are absent. Empty Settings paths use
+  `DefaultOnnxAssets` (ADR-002).
+
+### Changed
+
+- Default embedding source is **ONNX** (`AppConfiguration` /
+  `EmbeddingConfig`), matching ADR-002 and the README “no setup” claim.
+  Ollama remains available as an optional Settings choice.
+
 ## [0.2.3] - 2026-07-01
 
 Replace all emoji icons with vector MaterialDesign icons for a

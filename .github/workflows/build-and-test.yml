@@ -79,6 +79,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nuget-
 
+      - name: Cache bundled ONNX embedding model
+        uses: actions/cache@v4
+        with:
+          path: src/IsaacAgent.Rag/Resources/onnx/model.onnx
+          key: onnx-all-minilm-l6-v2-model-onnx-v1
+
       - name: Run full CI via Nuke (CiAll)
         env:
           # dotnet format internally spawns a child process to load the
@@ -130,6 +136,12 @@ jobs:
           key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/*.sln') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
+
+      - name: Cache bundled ONNX embedding model
+        uses: actions/cache@v4
+        with:
+          path: src/IsaacAgent.Rag/Resources/onnx/model.onnx
+          key: onnx-all-minilm-l6-v2-model-onnx-v1
 
       - name: Run release pipeline via Nuke (Release)
         run: dotnet run --project build/_build.csproj -- --root . --target Release --configuration Release
