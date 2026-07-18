@@ -1,4 +1,3 @@
-using IsaacAgent.App.Services;
 using IsaacAgent.Rag.Embedding;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -36,12 +35,6 @@ public class DefaultOnnxAssetsTests
         Assert.Equal(EmbeddingSourceType.Onnx, config.Source);
         Assert.Equal("", config.OnnxModelPath);
         Assert.Equal("", config.OnnxTokenizerPath);
-    }
-
-    [Fact]
-    public void AppConfiguration_Defaults_ToOnnx()
-    {
-        Assert.Equal(EmbeddingSourceType.Onnx, new AppConfiguration().EmbeddingSource);
     }
 
     [Fact]

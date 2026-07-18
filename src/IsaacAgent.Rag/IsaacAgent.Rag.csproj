@@ -27,35 +27,13 @@
     <EmbeddedResource Include="Resources\schemas\**\*.xsd" />
   </ItemGroup>
 
-  <!-- Side-by-side copy for local/dotnet run and folder publish. -->
-  <ItemGroup>
-    <Content Include="$(OnnxModelPath)"
-             Condition="Exists('$(OnnxModelPath)')"
-             Link="onnx\model.onnx"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest"
-             ExcludeFromSingleFile="true" />
-    <Content Include="$(OnnxVocabPath)"
-             Condition="Exists('$(OnnxVocabPath)')"
-             Link="onnx\vocab.txt"
-             CopyToOutputDirectory="PreserveNewest"
-             CopyToPublishDirectory="PreserveNewest"
-             ExcludeFromSingleFile="true" />
-  </ItemGroup>
-
-  <!-- Embedded copies so the single-file Release exe can extract to %APPDATA%. -->
-  <ItemGroup Condition="Exists('$(OnnxModelPath)')">
-    <EmbeddedResource Include="$(OnnxModelPath)">
-      <LogicalName>IsaacAgent.Rag.Onnx.model.onnx</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup Condition="Exists('$(OnnxVocabPath)')">
-    <EmbeddedResource Include="$(OnnxVocabPath)">
-      <LogicalName>IsaacAgent.Rag.Onnx.vocab.txt</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
-
-  <Target Name="EnsureOnnxAssets" BeforeTargets="BeforeBuild;BeforePublish">
+  <!--
+    Download ONNX assets before compile, then register Content + EmbeddedResource
+    inside this target. Static ItemGroup Condition="Exists(...)" is evaluated at
+    project-load time — before the download — so CI checkouts without model.onnx
+    would otherwise build with no bundled assets.
+  -->
+  <Target Name="EnsureOnnxAssets" BeforeTargets="PrepareForBuild;AssignTargetPaths;BeforePublish">
     <MakeDir Directories="$(OnnxAssetsDir)" />
     <DownloadFile Condition="!Exists('$(OnnxVocabPath)')"
                   SourceUrl="$(OnnxVocabUrl)"
@@ -69,6 +47,34 @@
            Text="Bundled ONNX model missing after download: $(OnnxModelPath)" />
     <Error Condition="!Exists('$(OnnxVocabPath)')"
            Text="Bundled ONNX vocab missing after download: $(OnnxVocabPath)" />
+
+    <ItemGroup>
+      <_OnnxContent Remove="@(_OnnxContent)" />
+      <_OnnxEmbedded Remove="@(_OnnxEmbedded)" />
+
+      <_OnnxContent Include="$(OnnxModelPath)">
+        <Link>onnx\model.onnx</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </_OnnxContent>
+      <_OnnxContent Include="$(OnnxVocabPath)">
+        <Link>onnx\vocab.txt</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </_OnnxContent>
+
+      <_OnnxEmbedded Include="$(OnnxModelPath)">
+        <LogicalName>IsaacAgent.Rag.Onnx.model.onnx</LogicalName>
+      </_OnnxEmbedded>
+      <_OnnxEmbedded Include="$(OnnxVocabPath)">
+        <LogicalName>IsaacAgent.Rag.Onnx.vocab.txt</LogicalName>
+      </_OnnxEmbedded>
+
+      <Content Include="@(_OnnxContent)" />
+      <EmbeddedResource Include="@(_OnnxEmbedded)" />
+    </ItemGroup>
   </Target>
 
 </Project>
