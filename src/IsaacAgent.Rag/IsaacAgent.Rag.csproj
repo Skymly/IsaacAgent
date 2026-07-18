@@ -1,5 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <OnnxAssetsDir>$(MSBuildThisFileDirectory)Resources\onnx</OnnxAssetsDir>
+    <OnnxModelPath>$(OnnxAssetsDir)\model.onnx</OnnxModelPath>
+    <OnnxVocabPath>$(OnnxAssetsDir)\vocab.txt</OnnxVocabPath>
+    <OnnxModelUrl>https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/onnx/model.onnx</OnnxModelUrl>
+    <OnnxVocabUrl>https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/vocab.txt</OnnxVocabUrl>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.17.1" />
@@ -18,5 +26,49 @@
     <EmbeddedResource Include="Resources\patterns\**\*.md" />
     <EmbeddedResource Include="Resources\schemas\**\*.xsd" />
   </ItemGroup>
+
+  <!-- Side-by-side copy for local/dotnet run and folder publish. -->
+  <ItemGroup>
+    <Content Include="$(OnnxModelPath)"
+             Condition="Exists('$(OnnxModelPath)')"
+             Link="onnx\model.onnx"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest"
+             ExcludeFromSingleFile="true" />
+    <Content Include="$(OnnxVocabPath)"
+             Condition="Exists('$(OnnxVocabPath)')"
+             Link="onnx\vocab.txt"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest"
+             ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
+  <!-- Embedded copies so the single-file Release exe can extract to %APPDATA%. -->
+  <ItemGroup Condition="Exists('$(OnnxModelPath)')">
+    <EmbeddedResource Include="$(OnnxModelPath)">
+      <LogicalName>IsaacAgent.Rag.Onnx.model.onnx</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup Condition="Exists('$(OnnxVocabPath)')">
+    <EmbeddedResource Include="$(OnnxVocabPath)">
+      <LogicalName>IsaacAgent.Rag.Onnx.vocab.txt</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target Name="EnsureOnnxAssets" BeforeTargets="BeforeBuild;BeforePublish">
+    <MakeDir Directories="$(OnnxAssetsDir)" />
+    <DownloadFile Condition="!Exists('$(OnnxVocabPath)')"
+                  SourceUrl="$(OnnxVocabUrl)"
+                  DestinationFolder="$(OnnxAssetsDir)"
+                  DestinationFileName="vocab.txt" />
+    <DownloadFile Condition="!Exists('$(OnnxModelPath)')"
+                  SourceUrl="$(OnnxModelUrl)"
+                  DestinationFolder="$(OnnxAssetsDir)"
+                  DestinationFileName="model.onnx" />
+    <Error Condition="!Exists('$(OnnxModelPath)')"
+           Text="Bundled ONNX model missing after download: $(OnnxModelPath)" />
+    <Error Condition="!Exists('$(OnnxVocabPath)')"
+           Text="Bundled ONNX vocab missing after download: $(OnnxVocabPath)" />
+  </Target>
 
 </Project>

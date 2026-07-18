@@ -11,6 +11,7 @@
 - 离线可用，无外部向量服务
 - 嵌入资源随程序发布，与 Isaac API 版本对齐
 - 设置页可热切换嵌入 provider 并后台重建索引
+- **ONNX 默认零配置**：随包分发 all-MiniLM-L6-v2（`model.onnx` + `vocab.txt`）
 
 ## API 面
 
@@ -30,21 +31,24 @@
 - 25 Mod patterns
 - 35 官方 XSD
 
-### 配置（`AppConfiguration`）
+### 配置（`AppConfiguration` / `EmbeddingConfig`）
 
 | 字段 | 说明 |
 |------|------|
-| `EmbeddingProvider` | `onnx`（默认）或 `ollama` |
-| `OllamaBaseUrl` / `OllamaEmbeddingModel` | Ollama 嵌入端点 |
-| `OnnxModelPath` | 本地 ONNX 模型路径（可选） |
+| `EmbeddingSource` | **`Onnx`（默认）** 或 `Ollama` |
+| `OllamaEmbeddingEndpoint` / `OllamaEmbeddingModel` | Ollama 嵌入端点 |
+| `OnnxEmbeddingModelPath` / `OnnxEmbeddingVocabPath` | 可选覆盖；**留空则使用捆绑资源** `onnx/model.onnx` 与 `onnx/vocab.txt`（相对 `AppContext.BaseDirectory`） |
+
+路径解析由 `DefaultOnnxAssets.ResolveModelPath` / `ResolveVocabPath` 完成。
 
 ## 不变量
 
-1. 索引在内存 `InMemoryVectorStore`；启动或设置变更时后台重建。
+1. 查询期使用内存 `InMemoryVectorStore`；磁盘缓存为 `%APPDATA%\IsaacAgent\rag\index.bin`（启动时优先加载，模型名/维度不匹配时全量重建）。
 2. `InMemoryVectorStore.Search` 使用防御性快照（`ToList()`），避免并发修改。
 3. ONNX 嵌入维度从模型输出推断，不硬编码。
 4. `search_knowledge` / `get_pattern` 依赖已构建索引；索引未就绪时返回明确错误。
 5. 嵌入资源文档为**产品知识**，与维护者 `docs/` 体系分离。
+6. 默认 ONNX 路径为空时必须解析到捆绑资产；不得要求用户手动下载模型才能首次使用。
 
 ## 实现概览
 
@@ -55,14 +59,17 @@ Resources/docs/**/*.md
   → ApiDocChunker / PatternChunker（MkDocs 风格分块）
   → IndexBuilder（批量嵌入，O(batch) GetRange）
   → InMemoryVectorStore.ReplaceAll
+  → SaveAsync(index.bin)
 ```
 
 ### 嵌入 Provider
 
 | Provider | 实现 | 备注 |
 |----------|------|------|
-| ONNX | `OnnxEmbeddingProvider` | 默认；`_sessionLock` 保护 InferenceSession |
-| Ollama | `OllamaEmbeddingProvider` | 远程嵌入 API |
+| ONNX | `OnnxEmbeddingProvider` | **默认**；捆绑 all-MiniLM-L6-v2；`_sessionLock` 保护 InferenceSession |
+| Ollama | `OllamaEmbeddingProvider` | 可选远程嵌入 API |
+
+构建：`IsaacAgent.Rag.csproj` 的 `EnsureOnnxAssets` 在缺少 `Resources/onnx/model.onnx` 时从 Hugging Face 下载；`vocab.txt` 入库。资产同时作为 Content（旁路 `onnx/`）与 EmbeddedResource 打包；单文件发布时由 `DefaultOnnxAssets` 解压到 `%APPDATA%\IsaacAgent\onnx\`。
 
 `EmbeddingProviderProxy` 支持热替换并 Dispose 旧 session。
 
@@ -72,19 +79,20 @@ Resources/docs/**/*.md
 
 ### App 集成
 
-- 启动时 `PrewarmRagIndexAsync` 后台构建
+- 启动时 `PrewarmRagIndexAsync` 后台确保索引（加载缓存或重建）
 - 失败时 `SettingsViewModel.SetIndexStatus` 显示错误
 - Settings 保存触发 `ReloadEmbeddingProvider` + 重建
 
 ## 设计权衡
 
-- **内存索引 vs 持久化**：简化部署；代价是每次启动重建、内存占用。
-- **嵌入资源 vs 在线拉取**：保证离线；更新知识需发版或后续支持用户扩展目录。
+- **内存查询 + 磁盘缓存**：冷启动可跳过重建；模型/维度变化仍全量 ReplaceAll。
+- **捆绑 ONNX vs 在线拉取**：默认离线可用；约 90 MB 模型不入库，由构建目标下载并经 CI cache 加速。
+- **嵌入资源知识 vs 用户扩展**：产品知识随发版；用户目录追加知识见 Roadmap R-012。
 
 ## 兼容基线
 
 - .NET 8
-- Windows（App 层索引 UI）；库层可在 CI `CiLib` 跨平台测试
+- Windows x64（严格 Windows-only；见 [ADR-003](../adr/ADR-003-windows-only-avalonia-desktop.md)）
 
 ## 不在范围内
 
@@ -93,10 +101,12 @@ Resources/docs/**/*.md
 
 ## 已知局限
 
-- 大知识库首次索引耗时数秒至数十秒
+- 大知识库首次索引（无可用 `index.bin` 时）耗时数秒至数十秒
 - 无增量索引；全量 ReplaceAll
+- 自包含发布体积因捆绑 ONNX 模型明显增大
 
 ## 参考
 
 - `src/IsaacAgent.Rag/Indexing/`
-- `src/IsaacAgent.Rag/Resources/`
+- `src/IsaacAgent.Rag/Embedding/DefaultOnnxAssets.cs`
+- `src/IsaacAgent.Rag/Resources/onnx/`
