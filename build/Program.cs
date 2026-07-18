@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 
 using Nuke.Common;
 using Nuke.Common.Execution;
@@ -25,9 +24,10 @@ sealed class Build : NukeBuild
     readonly string? Version = Environment.GetEnvironmentVariable("VERSION");
 
     /// <summary>
-    ///   Target runtime for self-contained publish (default: win-x64).
+    ///   Target runtime for self-contained publish. Official support is
+    ///   Windows-only (ADR-003); default and expected value is win-x64.
     /// </summary>
-    [Parameter("Target runtime identifier for publish (e.g. win-x64, linux-x64)")]
+    [Parameter("Target runtime identifier for publish (win-x64)")]
     readonly string Runtime = "win-x64";
 
     AbsolutePath Root => RootDirectory;
@@ -100,34 +100,6 @@ sealed class Build : NukeBuild
         });
 
     /// <summary>
-    ///   Cross-platform library test target. Builds and tests only the test
-    ///   project (which transitively builds Core/LLM/Tools/Agent/Rag but NOT
-    ///   the Windows-only App project). Safe to run on Linux/macOS.
-    /// </summary>
-    Target UnitTestLib => _ => _
-        .DependsOn(Clean)
-        .Executes(() =>
-        {
-            foreach (string relativePath in TestProjectRelativePaths)
-            {
-                AbsolutePath projectFile = Root / relativePath;
-                if (!projectFile.FileExists())
-                {
-                    throw new InvalidOperationException($"Test project not found: {projectFile}");
-                }
-
-                // No --no-build: dotnet test will build the test project and
-                // its library dependencies automatically, skipping the App project.
-                DotNetTest(s => s
-                    .SetProjectFile(projectFile)
-                    .SetConfiguration(Configuration)
-                    .SetResultsDirectory(TestResultsDirectory)
-                    .SetLoggers("trx;LogFileName=" + projectFile.NameWithoutExtension + ".trx")
-                    .SetDataCollector("XPlat Code Coverage"));
-            }
-        });
-
-    /// <summary>
     ///   Convenience alias for UnitTest.
     /// </summary>
     Target Test => _ => _
@@ -185,19 +157,16 @@ sealed class Build : NukeBuild
         .Executes(() =>
         {
             AbsolutePath exe = PublishDirectory / "IsaacAgent.exe";
-            AbsolutePath dll = PublishDirectory / "IsaacAgent.dll";
 
-            // On non-Windows runtimes the output is .dll; on Windows it's .exe.
-            AbsolutePath entryPoint = exe.FileExists() ? exe : dll;
-            Assert.FileExists(entryPoint,
-                $"Published entry point not found. Expected {exe} or {dll} in {PublishDirectory}");
+            Assert.FileExists(exe,
+                $"Published entry point not found. Expected {exe} in {PublishDirectory}");
 
-            var sizeMb = new FileInfo(entryPoint).Length / (1024.0 * 1024.0);
+            var sizeMb = new FileInfo(exe).Length / (1024.0 * 1024.0);
             Assert.True(sizeMb > 50,
                 $"Published executable is only {sizeMb:F1} MB — expected >50 MB for a self-contained deployment. " +
                 "Native libraries (ONNX runtime, Avalonia) may be missing.");
 
-            Console.WriteLine($"Publish verified: {entryPoint.Name} ({sizeMb:F1} MB) at {PublishDirectory}");
+            Console.WriteLine($"Publish verified: {exe.Name} ({sizeMb:F1} MB) at {PublishDirectory}");
         });
 
     /// <summary>
@@ -208,17 +177,6 @@ sealed class Build : NukeBuild
         .Executes(() =>
         {
             Console.WriteLine("CI build completed successfully.");
-        });
-
-    /// <summary>
-    ///   Cross-platform CI entry point: Clean → UnitTestLib (library tests
-    ///   only, no App project). Safe for Linux/macOS runners.
-    /// </summary>
-    Target CiLib => _ => _
-        .DependsOn(UnitTestLib)
-        .Executes(() =>
-        {
-            Console.WriteLine("Cross-platform library CI completed successfully.");
         });
 
     /// <summary>

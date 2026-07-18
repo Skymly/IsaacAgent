@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Clarified **strict Windows-only** policy ([ADR-003](docs/adr/ADR-003-windows-only-avalonia-desktop.md)):
+  removed dormant cross-platform `ci-lib` / Nuke `CiLib` / `UnitTestLib`
+  targets; official CI and publish remain Windows `win-x64` only.
+
 ## [0.2.3] - 2026-07-01
 
 Replace all emoji icons with vector MaterialDesign icons for a

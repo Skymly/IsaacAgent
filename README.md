@@ -157,7 +157,7 @@ user's message matches a keyword pattern, or explicitly via a slash command
 ## Prerequisites
 
 - .NET 8 SDK
-- Windows (the UI targets `windows` as its supported OS platform)
+- **Windows x64** — the only officially supported platform (`SupportedOSPlatform: windows`; see [ADR-003](docs/adr/ADR-003-windows-only-avalonia-desktop.md)). macOS / Linux are not supported.
 - An LLM API endpoint (OpenAI-compatible or Ollama)
 
 ### Configuration

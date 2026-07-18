@@ -26,7 +26,6 @@
       "enum": [
         "Ci",
         "CiAll",
-        "CiLib",
         "Clean",
         "Compile",
         "Format",
@@ -36,8 +35,7 @@
         "Release",
         "Restore",
         "Test",
-        "UnitTest",
-        "UnitTestLib"
+        "UnitTest"
       ]
     },
     "Verbosity": {
@@ -117,7 +115,7 @@
         },
         "Runtime": {
           "type": "string",
-          "description": "Target runtime identifier for publish (e.g. win-x64, linux-x64)"
+          "description": "Target runtime identifier for publish (win-x64)"
         },
         "Version": {
           "type": "string",

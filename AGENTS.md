@@ -36,16 +36,15 @@ Nuke targets; the same commands run locally.
 | Nuke target | Description |
 |-------------|-------------|
 | **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` |
-| **CiLib** | Cross-platform library tests only (no App project) |
 | **CiAll** | `Format` + `Ci` (full local/CI verification) |
 | **Test** | Alias for `UnitTest` |
 | **Format** | `dotnet format --verify-no-changes` (fails if formatting needed) |
 | **FormatFix** | `dotnet format` (applies formatting in-place) |
-| **Publish** | Self-contained single-file exe → `artifacts/publish/{Runtime}/` |
+| **Publish** | Self-contained win-x64 single-file exe → `artifacts/publish/win-x64/` |
 | **PublishVerify** | `Publish` + verify exe exists and size >50 MB |
 | **Release** | `CiAll` + `PublishVerify` (full release pipeline) |
 
-Parameters: `--configuration`, `--runtime` (default `win-x64`), `--version` (override MinVer)
+Parameters: `--configuration`, `--runtime` (default / expected `win-x64`), `--version` (override MinVer)
 
 ```powershell
 # CI-equivalent (what the workflow runs)

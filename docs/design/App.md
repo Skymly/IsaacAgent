@@ -41,7 +41,7 @@
 
 ## 已知局限
 
-- 无 macOS/Linux 官方构建
+- 无 macOS / Linux 官方构建或库层跨平台 CI（严格 Windows-only；见 ADR-003）
 - Toast 自动消失依赖 `TestDismissScheduler` 测试 hook
 
 ## 参考
