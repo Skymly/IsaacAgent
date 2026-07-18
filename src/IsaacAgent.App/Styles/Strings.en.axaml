@@ -76,7 +76,7 @@
     <sys:String x:Key="SettingsEmbeddingModel">Embedding Model</sys:String>
     <sys:String x:Key="SettingsOnnxModelPath">ONNX Model Path</sys:String>
     <sys:String x:Key="SettingsTokenizerVocabPath">Tokenizer Vocab Path</sys:String>
-    <sys:String x:Key="SettingsEmbeddingNote">Note: Embedding source changes are applied on save and trigger a background index rebuild. No restart required.</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">Note: ONNX is the default and uses the bundled all-MiniLM-L6-v2 model (leave paths empty). Embedding source changes are applied on save and trigger a background index rebuild. No restart required.</sys:String>
     <sys:String x:Key="SettingsAppearance">Appearance</sys:String>
     <sys:String x:Key="SettingsLanguage">Language</sys:String>
     <sys:String x:Key="SettingsTheme">Theme</sys:String>

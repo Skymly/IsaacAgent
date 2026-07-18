@@ -82,10 +82,10 @@
                         <!-- ONNX embedding settings -->
                         <StackPanel Spacing="8" IsVisible="{Binding SelectedEmbeddingSource, Converter={x:Static conv:EmbeddingSourceVisibilityConverter.OnnxInstance}}">
                             <TextBlock Text="{DynamicResource SettingsOnnxModelPath}" FontWeight="SemiBold" />
-                            <TextBox Text="{Binding OnnxEmbeddingModelPath}" Watermark="C:\path\to\model.onnx" Classes="isaac" />
+                            <TextBox Text="{Binding OnnxEmbeddingModelPath}" Watermark="(bundled all-MiniLM-L6-v2 — leave empty)" Classes="isaac" />
 
                             <TextBlock Text="{DynamicResource SettingsTokenizerVocabPath}" FontWeight="SemiBold" />
-                            <TextBox Text="{Binding OnnxEmbeddingVocabPath}" Watermark="C:\path\to\vocab.txt" Classes="isaac" />
+                            <TextBox Text="{Binding OnnxEmbeddingVocabPath}" Watermark="(bundled vocab.txt — leave empty)" Classes="isaac" />
                         </StackPanel>
 
                         <TextBlock Text="{DynamicResource SettingsEmbeddingNote}"

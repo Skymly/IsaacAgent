@@ -76,7 +76,7 @@
     <sys:String x:Key="SettingsEmbeddingModel">嵌入模型</sys:String>
     <sys:String x:Key="SettingsOnnxModelPath">ONNX 模型路径</sys:String>
     <sys:String x:Key="SettingsTokenizerVocabPath">分词器词表路径</sys:String>
-    <sys:String x:Key="SettingsEmbeddingNote">注意: 嵌入源更改在保存时生效,会触发后台索引重建。无需重启。</sys:String>
+    <sys:String x:Key="SettingsEmbeddingNote">注意: 默认使用内置 all-MiniLM-L6-v2 的 ONNX（路径留空即可）。嵌入源更改在保存时生效,会触发后台索引重建。无需重启。</sys:String>
     <sys:String x:Key="SettingsAppearance">外观</sys:String>
     <sys:String x:Key="SettingsLanguage">语言</sys:String>
     <sys:String x:Key="SettingsTheme">主题</sys:String>
