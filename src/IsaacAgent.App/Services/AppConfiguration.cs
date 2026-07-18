@@ -30,7 +30,8 @@ public sealed class AppConfiguration
     /// </summary>
     public string? EncryptedApiKey { get; set; }
 
-    public EmbeddingSourceType EmbeddingSource { get; set; } = EmbeddingSourceType.Ollama;
+    /// <summary>Default ONNX uses the bundled all-MiniLM-L6-v2 model (ADR-002).</summary>
+    public EmbeddingSourceType EmbeddingSource { get; set; } = EmbeddingSourceType.Onnx;
     public string OllamaEmbeddingEndpoint { get; set; } = "http://localhost:11434";
     public string OllamaEmbeddingModel { get; set; } = "nomic-embed-text";
     public string? OnnxEmbeddingModelPath { get; set; }
