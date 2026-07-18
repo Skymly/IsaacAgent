@@ -16,6 +16,9 @@ namespace IsaacAgent.App.Views;
 
 public sealed partial class MainWindow : Window
 {
+    /// <summary>Max bytes for a dropped file injected into chat input.</summary>
+    internal const long MaxDropFileBytes = 256 * 1024;
+
     private ChatTabViewModel? _scrollTab;
     private MainViewModel? _mainVm;
 
@@ -179,6 +182,14 @@ public sealed partial class MainWindow : Window
             var filePath = file.Path.LocalPath;
             try
             {
+                var length = new FileInfo(filePath).Length;
+                if (length > MaxDropFileBytes)
+                {
+                    _mainVm.Toasts.ShowError(
+                        $"Dropped file is too large ({length / 1024} KB). Max is {MaxDropFileBytes / 1024} KB.");
+                    return;
+                }
+
                 var content = await File.ReadAllTextAsync(filePath);
                 var fileName = Path.GetFileName(filePath);
                 var tab = _mainVm.Chat.ActiveTab;
@@ -190,6 +201,7 @@ public sealed partial class MainWindow : Window
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Drop file read failed: {ex.Message}");
+                _mainVm.Toasts.ShowError($"Could not read dropped file: {ex.Message}");
             }
         }
     }

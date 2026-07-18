@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   embedded in `IsaacAgent.Rag`, and extracted to `%APPDATA%/IsaacAgent/onnx/`
   on first use when side-by-side files are absent. Empty Settings paths use
   `DefaultOnnxAssets` (ADR-002).
+- **`IsaacAgent.exe --verify-onnx`**: headless check that bundled ONNX assets
+  resolve and can embed (used by release publish verification).
 
 ### Changed
 
@@ -23,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clarified **strict Windows-only** policy ([ADR-003](docs/adr/ADR-003-windows-only-avalonia-desktop.md)):
   removed dormant cross-platform `ci-lib` / Nuke `CiLib` / `UnitTestLib`
   targets; official CI and publish remain Windows `win-x64` only.
+
+### Security
+
+- `AppConfiguration.ApiKey` is marked `[JsonIgnore]` so plaintext keys cannot
+  leak into `config.json` via accidental serialization.
+- Drag-and-drop into chat rejects files larger than 256 KB.
 
 ## [0.2.3] - 2026-07-01
 
