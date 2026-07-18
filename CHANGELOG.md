@@ -31,6 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `AppConfiguration.ApiKey` is marked `[JsonIgnore]` so plaintext keys cannot
   leak into `config.json` via accidental serialization.
 - Drag-and-drop into chat rejects files larger than 256 KB.
+- Hardened `run_command`: block encoded PowerShell / LOLBins (`certutil`,
+  `rundll32`, …), reject empty/oversized commands, and force non-interactive
+  git (`GIT_TERMINAL_PROMPT=0`, `GCM_INTERACTIVE=never`).
+
 
 ## [0.2.3] - 2026-07-01
 

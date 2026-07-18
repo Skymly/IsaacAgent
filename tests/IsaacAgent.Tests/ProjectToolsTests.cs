@@ -412,4 +412,37 @@ public class ProjectToolsTests : IDisposable
         var result = await tool.ExecuteAsync("""{"command":"sudo rm /etc/passwd"}""");
         Assert.Contains("blocked", result, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task RunCommand_BlocksEncodedPowerShell()
+    {
+        var tool = new RunCommandTool(_tempDir);
+        var result = await tool.ExecuteAsync("""{"command":"powershell -EncodedCommand AQID"}""");
+        Assert.Contains("blocked", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RunCommand_BlocksCertutil()
+    {
+        var tool = new RunCommandTool(_tempDir);
+        var result = await tool.ExecuteAsync("""{"command":"certutil -decode payload.b64 payload.exe"}""");
+        Assert.Contains("blocked", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RunCommand_RejectsEmptyCommand()
+    {
+        var tool = new RunCommandTool(_tempDir);
+        var result = await tool.ExecuteAsync("""{"command":"   "}""");
+        Assert.Contains("empty", result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task RunCommand_RejectsOversizedCommand()
+    {
+        var tool = new RunCommandTool(_tempDir);
+        var huge = new string('a', 5000);
+        var result = await tool.ExecuteAsync($$"""{"command":"{{huge}}"}""");
+        Assert.Contains("maximum length", result, StringComparison.OrdinalIgnoreCase);
+    }
 }
