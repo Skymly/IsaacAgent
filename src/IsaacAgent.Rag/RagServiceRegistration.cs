@@ -36,7 +36,7 @@ public static class RagServiceRegistration
             return new IndexBuilder(embedding, store, examplesDir, logger);
         });
 
-        services.AddSingleton<IRetriever>(sp =>
+        services.AddSingleton<Retriever>(sp =>
         {
             var embedding = sp.GetRequiredService<IEmbeddingProvider>();
             var store = sp.GetRequiredService<InMemoryVectorStore>();
@@ -44,6 +44,13 @@ public static class RagServiceRegistration
             var logger = sp.GetRequiredService<ILogger<Retriever>>();
             return new Retriever(embedding, store, builder, indexPath, logger);
         });
+        services.AddSingleton<IRetriever>(sp => sp.GetRequiredService<Retriever>());
+
+        services.AddSingleton<EmbeddingApply>(sp => new EmbeddingApply(
+            sp.GetRequiredService<EmbeddingProviderProxy>(),
+            sp.GetRequiredService<Retriever>(),
+            sp.GetRequiredService<InMemoryVectorStore>(),
+            indexPath));
 
         return services;
     }

@@ -22,6 +22,7 @@
 | `IRetriever` | 向量检索入口 |
 | `IEmbeddingProvider` | 文本 → 向量（ONNX 或 Ollama） |
 | `IVectorStore` | 内存向量存储与余弦相似度搜索 |
+| `EmbeddingApply` | **Embedding apply**：换嵌入 provider（允许维度变化）→ 作废知识索引 → 重建 |
 
 ### 知识库资源
 
@@ -71,7 +72,7 @@ Resources/docs/**/*.md
 
 构建：`IsaacAgent.Rag.csproj` 的 `EnsureOnnxAssets` 在缺少 `Resources/onnx/model.onnx` 时从 Hugging Face 下载；`vocab.txt` 入库。资产同时作为 Content（旁路 `onnx/`）与 EmbeddedResource 打包；单文件发布时由 `DefaultOnnxAssets` 解压到 `%APPDATA%\IsaacAgent\onnx\`。
 
-`EmbeddingProviderProxy` 支持热替换并 Dispose 旧 session。
+`EmbeddingProviderProxy` 支持热替换并 Dispose 旧 session。维度变化时须走 **Embedding apply**（`EmbeddingApply.ApplyAsync`）：先 `ResetReady` + 清空内存索引 + 删除磁盘缓存，再 `Replace`，再 `RebuildIndexAsync`。裸 `Replace` 不再拦截维度不匹配。
 
 ### 检索
 
@@ -81,7 +82,7 @@ Resources/docs/**/*.md
 
 - 启动时 `PrewarmRagIndexAsync` 后台确保索引（加载缓存或重建）
 - 失败时 `SettingsViewModel.SetIndexStatus` 显示错误
-- Settings 保存触发 `ReloadEmbeddingProvider` + 重建
+- Settings 保存将改为 **Settings apply**（见 CONTEXT.md）；现阶段仍可能经 `ReloadEmbeddingProvider` 手搓，目标路径为 `EmbeddingApply`
 
 ## 设计权衡
 
