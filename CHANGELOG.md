@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Embedding apply** (`EmbeddingApply`): switch embedding provider including
+  dimension changes, invalidate the knowledge index, and rebuild (issue #12).
+
 ## [0.2.5] - 2026-07-19
 
 Bundled ONNX-by-default embedding, stronger Release publish verification, and App/Tools hardening.

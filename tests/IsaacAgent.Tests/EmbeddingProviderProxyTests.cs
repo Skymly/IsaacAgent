@@ -92,10 +92,13 @@ public class EmbeddingProviderProxyTests
     }
 
     [Fact]
-    public void Replace_DimensionMismatch_Throws()
+    public void Replace_DimensionMismatch_Allowed()
     {
+        // Dimension policy lives in Embedding apply (invalidate + rebuild), not on Replace.
         var proxy = new EmbeddingProviderProxy(new PlainEmbeddingProvider());
-        Assert.Throws<ArgumentException>(() => proxy.Replace(new MismatchedEmbeddingProvider()));
+        proxy.Replace(new MismatchedEmbeddingProvider());
+        Assert.Equal(2, proxy.Dimensions);
+        Assert.Equal("mismatched-model", proxy.ModelName);
     }
 
     [Fact]

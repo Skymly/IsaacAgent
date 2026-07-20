@@ -30,6 +30,17 @@ public sealed class InMemoryVectorStore
     public int Count { get { lock (_lock) return _entries.Count; } }
     public DateTimeOffset BuiltAt => _builtAt;
 
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _modelName = "";
+            _dimensions = 0;
+            _entries = [];
+            _builtAt = default;
+        }
+    }
+
     public void ReplaceAll(string modelName, int dimensions, IEnumerable<VectorStoreEntry> entries)
     {
         lock (_lock)
