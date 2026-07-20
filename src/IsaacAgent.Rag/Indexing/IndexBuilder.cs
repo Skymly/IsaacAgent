@@ -85,6 +85,10 @@ public sealed class IndexBuilder
                 for (var j = 0; j < batch.Count; j++)
                     entries.Add(new VectorStoreEntry { Chunk = batch[j], Vector = vectors[j] });
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Embedding failed for batch starting at chunk {Index}/{Total}, skipping {BatchCount} chunks", i, chunks.Count, batch.Count);
@@ -96,6 +100,7 @@ public sealed class IndexBuilder
                 _logger.LogInformation("Embedded {Done}/{Total} ({Pct:F1}%)", done, chunks.Count, 100.0 * done / chunks.Count);
         }
 
+        ct.ThrowIfCancellationRequested();
         _store.ReplaceAll(_embedding.ModelName, _embedding.Dimensions, entries);
         _logger.LogInformation("RAG index built: {Count} entries, {Failed} chunks skipped due to embedding failures", entries.Count, failedChunks);
     }
