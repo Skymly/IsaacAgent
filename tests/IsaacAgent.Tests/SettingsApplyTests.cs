@@ -226,7 +226,7 @@ public class SettingsApplyTests
     }
 
     [AvaloniaFact]
-    public async Task SettingsApplyProgress_UpdatesSettingsFlagsAndStatus()
+    public void SettingsApplyProgress_UpdatesSettingsFlagsAndStatus()
     {
         var vm = new SettingsViewModel(new AppConfiguration());
         var progress = new SettingsApplyProgress(vm);
