@@ -5,11 +5,10 @@ using IsaacAgent.Agent;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.App.Views;
+using IsaacAgent.Core.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag;
 using IsaacAgent.Rag.Embedding;
-using IsaacAgent.Rag.Retrieval;
-using IsaacAgent.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -18,7 +17,6 @@ namespace IsaacAgent.App;
 
 public sealed class App : Application
 {
-    private static readonly object _reloadLock = new();
     private static readonly CancellationTokenSource _shutdownCts = new();
 
     public static IServiceProvider Services { get; private set; } = null!;
@@ -87,6 +85,17 @@ public sealed class App : Application
 
         services.AddIsaacAgent();
 
+        services.AddSingleton<IEmbeddingApply>(sp =>
+            new EmbeddingApplyAdapter(sp.GetRequiredService<EmbeddingApply>()));
+        services.AddSingleton<ISettingsApply>(sp => new SettingsApply(
+            sp.GetRequiredService<ChatServiceProxy>(),
+            cfg => LlmServiceRegistration.BuildProvider(sp, cfg),
+            sp.GetRequiredService<IEmbeddingApply>(),
+            emb => RagServiceRegistration.BuildEmbeddingProvider(sp, emb),
+            config.ToEmbeddingConfig(),
+            _shutdownCts.Token,
+            sp.GetRequiredService<ILogger<SettingsApply>>()));
+
         services.AddSingleton<MainWindow>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<ChatViewModel>();
@@ -104,57 +113,6 @@ public sealed class App : Application
         services.AddSingleton<LuaSnippetService>();
 
         return services.BuildServiceProvider();
-    }
-
-    public static void ReloadLlmProvider()
-    {
-        lock (_reloadLock)
-        {
-            var config = AppConfiguration.Load();
-            var proxy = Services.GetRequiredService<ChatServiceProxy>();
-            var newProvider = LlmServiceRegistration.BuildProvider(Services, new ProviderConfig(
-                config.ProviderType, config.Endpoint, config.Model, config.ApiKey, 120));
-            proxy.Replace(newProvider);
-        }
-    }
-
-    public static void ReloadEmbeddingProvider()
-    {
-        lock (_reloadLock)
-        {
-            var config = AppConfiguration.Load();
-            var proxy = Services.GetRequiredService<EmbeddingProviderProxy>();
-            var newProvider = RagServiceRegistration.BuildEmbeddingProvider(Services, config.ToEmbeddingConfig());
-            proxy.Replace(newProvider);
-
-            if (Services.GetRequiredService<IRetriever>() is Retriever retriever)
-            {
-                retriever.ResetReady();
-                var settings = Services.GetService<SettingsViewModel>();
-                settings?.SetIndexRebuilding(true);
-
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await retriever.RebuildIndexAsync(_shutdownCts.Token);
-                        settings?.SetIndexStatus("Index rebuilt successfully.");
-                        Services.GetService<ToastService>()?.ShowSuccess("Knowledge index rebuilt successfully.");
-                    }
-                    catch (Exception ex)
-                    {
-                        var logger = Services.GetRequiredService<ILogger<App>>();
-                        logger.LogError(ex, "Index rebuild failed");
-                        settings?.SetIndexStatus($"Index rebuild failed: {ex.Message}");
-                        Services.GetService<ToastService>()?.ShowError($"Index rebuild failed: {ex.Message}");
-                    }
-                    finally
-                    {
-                        settings?.SetIndexRebuilding(false);
-                    }
-                }, _shutdownCts.Token);
-            }
-        }
     }
 
     private static async Task PrewarmRagIndexAsync(CancellationToken ct)

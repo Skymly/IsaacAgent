@@ -9,10 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Settings apply** (`ISettingsApply` / `SettingsApply`): Save injects provider
+  intent — chat provider swaps immediately; embedding field changes kick off
+  Embedding apply in the background with progress driving Settings status/toasts;
+  LLM-only saves skip rebuild; a newer embedding Save cancels the in-flight
+  rebuild (issue #15).
 - **Embedding apply** (`EmbeddingApply`): switch embedding provider including
   dimension changes, invalidate the knowledge index, and rebuild (issue #12).
   Newer apply or external/shutdown cancellation stops an in-flight rebuild
   without leaving the knowledge index marked ready (issue #14).
+
+### Removed
+
+- Static `App.ReloadLlmProvider` / `App.ReloadEmbeddingProvider` entry points
+  (replaced by Settings apply).
 
 ## [0.2.5] - 2026-07-19
 
