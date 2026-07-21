@@ -75,10 +75,17 @@ public sealed partial class SettingsViewModel : ObservableObject
         ["Verbose", "Debug", "Information", "Warning", "Error", "Fatal"];
 
     private readonly AppConfiguration _config;
+    private readonly ISettingsApply _settingsApply;
+    private readonly ToastService? _toasts;
 
-    public SettingsViewModel(AppConfiguration config)
+    public SettingsViewModel(
+        AppConfiguration config,
+        ISettingsApply? settingsApply = null,
+        ToastService? toasts = null)
     {
         _config = config;
+        _settingsApply = settingsApply ?? NoOpSettingsApply.Instance;
+        _toasts = toasts;
         _endpoint = config.Endpoint;
         _model = config.Model;
         _apiKey = config.ApiKey;
@@ -109,7 +116,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _config.OnnxEmbeddingModelPath = OnnxEmbeddingModelPath;
         _config.OnnxEmbeddingVocabPath = OnnxEmbeddingVocabPath;
 
-        // Apply language and theme changes at runtime.
+        // Apply language and theme changes at runtime (chrome — not Settings apply).
         var languageChanged = _config.Language != SelectedLanguage;
         var themeChanged = _config.Theme != SelectedTheme;
         var accentChanged = _config.AccentColor != AccentColor;
@@ -120,8 +127,15 @@ public sealed partial class SettingsViewModel : ObservableObject
         _config.LogLevel = SelectedLogLevel;
 
         _config.Save();
-        App.ReloadLlmProvider();
-        App.ReloadEmbeddingProvider();
+
+        var intent = new ProviderIntent(
+            new ProviderConfig(
+                SelectedProviderType,
+                Endpoint,
+                Model,
+                ApiKey),
+            _config.ToEmbeddingConfig());
+        _settingsApply.Apply(intent, new SettingsApplyProgress(this, _toasts));
 
         if (languageChanged)
             App.Services.GetRequiredService<LocalizationService>().SetLanguage(SelectedLanguage);
@@ -134,8 +148,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Called from <see cref="App.ReloadEmbeddingProvider"/> to reflect index
-    /// rebuild progress in the UI. Safe to call from any thread.
+    /// Reflects knowledge-index rebuild progress in the UI. Safe to call from any thread.
     /// </summary>
     public void SetIndexRebuilding(bool value)
     {
@@ -143,8 +156,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Called from <see cref="App.ReloadEmbeddingProvider"/> to report index
-    /// rebuild success/failure. Safe to call from any thread.
+    /// Reports knowledge-index rebuild success/failure. Safe to call from any thread.
     /// </summary>
     public void SetIndexStatus(string status)
     {

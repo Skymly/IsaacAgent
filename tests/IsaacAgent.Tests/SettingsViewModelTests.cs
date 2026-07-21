@@ -9,20 +9,15 @@ namespace IsaacAgent.Tests;
 
 /// <summary>
 ///   Unit tests for SettingsViewModel — config loading, property sync,
-///   and index status reporting.
+///   index status reporting, and Save via injected Settings apply.
 /// </summary>
-/// <remarks>
-///   Save() calls App.ReloadLlmProvider/ReloadEmbeddingProvider which
-///   require a fully initialized DI container, so it is not tested here.
-///   SetIndexStatus/SetIndexRebuilding marshal to the UI thread when needed.
-/// </remarks>
 [Collection("Avalonia")]
 public class SettingsViewModelTests
 {
-    private static SettingsViewModel CreateViewModel(AppConfiguration? config = null)
+    private static SettingsViewModel CreateViewModel(AppConfiguration? config = null, ISettingsApply? settingsApply = null)
     {
         config ??= new AppConfiguration();
-        return new SettingsViewModel(config);
+        return new SettingsViewModel(config, settingsApply);
     }
 
     [AvaloniaFact]
@@ -235,5 +230,42 @@ public class SettingsViewModelTests
         var vm = CreateViewModel();
         vm.SelectedTheme = "light";
         Assert.Equal("light", vm.SelectedTheme);
+    }
+
+    [AvaloniaFact]
+    public void Save_PersistsProviderIntentAndInvokesSettingsApply()
+    {
+        var config = new AppConfiguration
+        {
+            Endpoint = "https://old.api/v1",
+            Model = "old-model",
+            ProviderType = ProviderType.OpenAICompatible,
+            EmbeddingSource = EmbeddingSourceType.Onnx
+        };
+
+        ProviderIntent? applied = null;
+        var fakeApply = new RecordingSettingsApply(intent => applied = intent);
+
+        var vm = CreateViewModel(config, fakeApply);
+        vm.Endpoint = "https://new.api/v1";
+        vm.Model = "new-model";
+        vm.Save();
+
+        Assert.Equal("https://new.api/v1", config.Endpoint);
+        Assert.Equal("new-model", config.Model);
+        Assert.NotNull(applied);
+        Assert.Equal("https://new.api/v1", applied!.Chat.Endpoint);
+        Assert.Equal("new-model", applied.Chat.Model);
+        Assert.Equal(EmbeddingSourceType.Onnx, applied.Embedding.Source);
+    }
+
+    private sealed class RecordingSettingsApply : ISettingsApply
+    {
+        private readonly Action<ProviderIntent> _onApply;
+
+        public RecordingSettingsApply(Action<ProviderIntent> onApply) => _onApply = onApply;
+
+        public void Apply(ProviderIntent intent, ISettingsApplyProgress progress)
+            => _onApply(intent);
     }
 }
