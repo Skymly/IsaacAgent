@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Embedding apply** (`EmbeddingApply`): switch embedding provider including
   dimension changes, invalidate the knowledge index, and rebuild (issue #12).
+  Newer apply or external/shutdown cancellation stops an in-flight rebuild
+  without leaving the knowledge index marked ready (issue #14).
 
 ## [0.2.5] - 2026-07-19
 

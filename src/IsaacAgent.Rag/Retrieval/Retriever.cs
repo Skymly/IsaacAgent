@@ -71,8 +71,15 @@ public sealed class Retriever : IRetriever, IDisposable
         {
             Interlocked.Exchange(ref _isReady, 0);
             await _builder.BuildAsync(ct);
+            ct.ThrowIfCancellationRequested();
             await _store.SaveAsync(_indexPath, ct);
+            ct.ThrowIfCancellationRequested();
             Interlocked.Exchange(ref _isReady, 1);
+        }
+        catch (OperationCanceledException)
+        {
+            Interlocked.Exchange(ref _isReady, 0);
+            throw;
         }
         finally
         {

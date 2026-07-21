@@ -10,7 +10,7 @@ using Xunit;
 namespace IsaacAgent.Tests;
 
 /// <summary>
-/// Embedding apply seam (#12): switch provider (any dimensions), invalidate knowledge index, rebuild.
+/// Embedding apply seam (#12/#14): switch provider, invalidate knowledge index, rebuild; cancel in-flight.
 /// </summary>
 public class EmbeddingApplyTests
 {
@@ -34,6 +34,27 @@ public class EmbeddingApplyTests
                     v[0] = 1f;
                     return v;
                 }).ToList());
+    }
+
+    /// <summary>Blocks in EmbedBatchAsync until cancelled so tests can cancel mid-rebuild.</summary>
+    private sealed class BlockingEmbeddingProvider : IEmbeddingProvider
+    {
+        private readonly TaskCompletionSource _started =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public required string ModelName { get; init; }
+        public required int Dimensions { get; init; }
+        public Task Started => _started.Task;
+
+        public Task<float[]> EmbedAsync(string text, CancellationToken ct = default)
+            => EmbedBatchAsync([text], ct).ContinueWith(t => t.Result[0], ct);
+
+        public async Task<IReadOnlyList<float[]>> EmbedBatchAsync(IReadOnlyList<string> texts, CancellationToken ct = default)
+        {
+            _started.TrySetResult();
+            await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
+            return texts.Select(_ => new float[Dimensions]).ToList();
+        }
     }
 
     private static (EmbeddingApply Apply, EmbeddingProviderProxy Proxy, Retriever Retriever, InMemoryVectorStore Store, string IndexPath, string TempDir)
@@ -131,6 +152,91 @@ public class EmbeddingApplyTests
             var hits = await retriever.SearchAsync("callback");
             Assert.NotEmpty(hits);
             Assert.True(retriever.IsReady);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+    [Fact]
+    public async Task ApplyAsync_WhenCancelled_DoesNotLeaveIndexReady()
+    {
+        var initial = new StubEmbeddingProvider { ModelName = "dim-3", Dimensions = 3 };
+        var (apply, _, retriever, _, _, tempDir) = CreateSut(initial);
+
+        try
+        {
+            await retriever.RebuildIndexAsync();
+            Assert.True(retriever.IsReady);
+
+            var blocking = new BlockingEmbeddingProvider { ModelName = "slow", Dimensions = 4 };
+            using var cts = new CancellationTokenSource();
+            var applyTask = apply.ApplyAsync(blocking, cts.Token);
+            await blocking.Started.WaitAsync(TimeSpan.FromSeconds(10));
+
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => applyTask);
+            Assert.False(retriever.IsReady);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAsync_AfterCancel_CanCompleteSuccessfully()
+    {
+        var initial = new StubEmbeddingProvider { ModelName = "dim-3", Dimensions = 3 };
+        var (apply, proxy, retriever, store, _, tempDir) = CreateSut(initial);
+
+        try
+        {
+            var blocking = new BlockingEmbeddingProvider { ModelName = "slow", Dimensions = 4 };
+            using var cts = new CancellationTokenSource();
+            var cancelled = apply.ApplyAsync(blocking, cts.Token);
+            await blocking.Started.WaitAsync(TimeSpan.FromSeconds(10));
+            cts.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => cancelled);
+
+            var next = new StubEmbeddingProvider { ModelName = "dim-5", Dimensions = 5 };
+            await apply.ApplyAsync(next);
+
+            Assert.Equal("dim-5", proxy.ModelName);
+            Assert.True(retriever.IsReady);
+            Assert.Equal(5, store.Dimensions);
+            Assert.NotEmpty(await retriever.SearchAsync("callback"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyAsync_NewerApply_CancelsInFlightAndCompletesWithLatest()
+    {
+        var initial = new StubEmbeddingProvider { ModelName = "dim-3", Dimensions = 3 };
+        var (apply, proxy, retriever, store, _, tempDir) = CreateSut(initial);
+
+        try
+        {
+            var blocking = new BlockingEmbeddingProvider { ModelName = "slow", Dimensions = 4 };
+            var first = apply.ApplyAsync(blocking);
+            await blocking.Started.WaitAsync(TimeSpan.FromSeconds(10));
+
+            var latest = new StubEmbeddingProvider { ModelName = "latest", Dimensions = 7 };
+            var second = apply.ApplyAsync(latest);
+
+            // Complete the newer apply first so a late cancelled catch cannot clear ready.
+            await second;
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+
+            Assert.Equal("latest", proxy.ModelName);
+            Assert.Equal(7, store.Dimensions);
+            Assert.True(retriever.IsReady);
+            Assert.NotEmpty(await retriever.SearchAsync("item"));
         }
         finally
         {
