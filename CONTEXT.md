@@ -37,3 +37,29 @@ _Avoid_: Workflow macro, agent mode (when you mean Skill)
 **Tool**:
 An atomic, schema-described capability the agent may invoke (file ops, scaffold, search, …).
 _Avoid_: Function, action (when you mean Tool)
+
+### Checkpoints
+
+**Checkpoint**:
+An in-session anchor created automatically before a user message is processed in a live chat tab / AgentSession; Restore targets it.
+_Avoid_: Restore point, Snapshot, Undo point (when you mean this anchor)
+
+**Restore**:
+The user act of returning a live session to a Checkpoint: truncate that turn and later conversation, and revert tracked tool writes per the Checkpoint contract.
+_Avoid_: Rewind, Rollback, Undo (when you mean this act)
+
+**Before-image**:
+The captured prior file state (or tombstone for a create) recorded lazily before a tracked tool first mutates a path after a Checkpoint.
+_Avoid_: File snapshot, Backup, Prior content (when you mean this capture)
+
+**Tracked write**:
+A project-file mutation by write_file, diff_apply, batch_edit, or scaffold_mod that the Checkpoint contract obligates to be restorable via Before-images. run_command mutations are not Tracked writes.
+_Avoid_: Tool write, File mutation, Side effect (when you mean this obligation)
+
+**Hand-edit**:
+On-disk divergence from the content tip left by the agent's last successful Tracked write to that path, including deletion of the file.
+_Avoid_: Manual edit, user tweak, dirty buffer (when you mean this divergence)
+
+**Hand-edit conflict mode**:
+Configurable Restore policy when a Hand-edit (or an unreadable path that cannot be compared to the tip) is present: force (default) always applies Before-images; skip leaves those paths unchanged, lists them, and still completes the rest of Restore (conversation truncate + safe Before-image applies).
+_Avoid_: Conflict strategy, overwrite policy, merge mode
