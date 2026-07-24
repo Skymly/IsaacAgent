@@ -3,7 +3,7 @@
 > 滚动维护的功能与技术 backlog。技术债明细见 [ISSUES.md](../ISSUES.md)。
 > 状态：`候选` → `排期` → `进行中` → `已完成（归档）` / `暂缓` / `明确不做`
 
-最后更新：2026-07-11
+最后更新：2026-07-24
 
 ---
 
@@ -17,7 +17,6 @@
 
 | ID | 项 | 说明 | 目标阶段 |
 |----|-----|------|----------|
-| R-010 | LLM Design Doc | 为 `IsaacAgent.LLM` 补充 Design Doc | v0.3 |
 | R-011 | E2E 测试扩展 | 扩展 `IsaacAgent.E2ETest` 覆盖关键用户流程 | v0.3 |
 | R-012 | 用户可扩展 RAG 知识 | 支持用户目录追加知识块 | v0.4 |
 
@@ -53,6 +52,7 @@
 
 | ID | 项 | 完成版本 | 备注 |
 |----|-----|----------|------|
+| R-010 | LLM Design Doc | — | [design/LLM.md](design/LLM.md) |
 | R-001 | 文档体系落地并精简 | — | 保留 ADR + Design Doc + Roadmap；RFC/Spec/Plan/Review 已移除 |
 | R-100 | Avalonia 测试稳定性 | v0.2.4 | [ADR-005](adr/ADR-005-headless-unit-test-session.md) |
 | R-101 | MinVer 版本管理 | v0.2.0 | Git tag 驱动 |

@@ -121,6 +121,7 @@ dotnet test IsaacAgent.sln -c Release
 | Design Doc | 模块 |
 |------------|------|
 | [Agent.md](docs/design/Agent.md) | `IsaacAgent.Agent` |
+| [LLM.md](docs/design/LLM.md) | `IsaacAgent.LLM` |
 | [Tools.md](docs/design/Tools.md) | `IsaacAgent.Tools` + RAG 工具 |
 | [Rag.md](docs/design/Rag.md) | `IsaacAgent.Rag` |
 | [App.md](docs/design/App.md) | `IsaacAgent.App` |
