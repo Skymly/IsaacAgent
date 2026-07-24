@@ -8,6 +8,7 @@
 | Design Doc | 子系统 |
 |------------|--------|
 | [Agent.md](Agent.md) | `IsaacAgent.Agent` |
+| [LLM.md](LLM.md) | `IsaacAgent.LLM` |
 | [Tools.md](Tools.md) | `IsaacAgent.Tools` + RAG 工具 |
 | [Rag.md](Rag.md) | `IsaacAgent.Rag` |
 | [App.md](App.md) | `IsaacAgent.App` |
