@@ -49,6 +49,20 @@
 3. **危险命令**：`run_command` 拦截 `rm -rf`、`format`、PowerShell 危险模式等。
 4. 工具注册在 `ToolRegistry`；reconfigure 与 lookup 须线程安全（`SemaphoreSlim`）。
 
+## Checkpoint：Tracked write 与可观察性
+
+核心合同见 [Agent.md](Agent.md) Checkpoint 节与 `CONTEXT.md`。Tools 侧约定：
+
+| 合同类 | 工具 | 说明 |
+|--------|------|------|
+| **Tracked write** | `write_file`、`diff_apply`、`batch_edit`、`scaffold_mod` | 懒 Before-image 义务；捕获在 **Agent** `ToolRegistry.ExecuteAsync`，**不**要求改各 `ITool` 实现体 |
+| **Untracked** | `run_command` | 可改盘，**不**保证 Restore |
+
+- **`scaffold_mod`**：多文件按路径各自跟踪（非整次调用原子回滚）；路径推导使用与工具一致的固定输出名列表。
+- **`batch_edit`**：仍无事务；Before-image 按路径首次触碰捕获（Registry 宜预扫 `edits[].path`）。
+- **可观察性**：Checkpoint / Restore 生命周期日志在 Agent；Tools Design Doc 仅记录上表分类，便于工具作者勿把 `run_command` 当成可恢复写入。若未来在 Tools 模块增加显式钩子，再单开 Tools PR。
+- 清单研究：[checkpoint-tracked-write-hooks.md](../research/checkpoint-tracked-write-hooks.md)。
+
 ## 实现概览
 
 ### 路径安全
@@ -63,11 +77,11 @@
 
 | 工具 | 要点 |
 |------|------|
-| `scaffold_mod` | 生成 `metadata.xml` + `main.lua`；XML/Lua 转义 |
+| `scaffold_mod` | 生成 `metadata.xml` + `main.lua`；XML/Lua 转义；Checkpoint 下按路径 Tracked |
 | `diagnose_lua` | 剥离字符串/注释后检查括号、未知回调 |
-| `run_command` | 按 `&&`/`\|\|`/`|`/`;` 分割子命令；扩展黑名单（encoded PowerShell、certutil、LOLBins）；`GIT_TERMINAL_PROMPT=0` / `GCM_INTERACTIVE=never` 防交互挂起；命令长度上限 4096 |
+| `run_command` | 按 `&&`/`\|\|`/`|`/`;` 分割子命令；扩展黑名单（encoded PowerShell、certutil、LOLBins）；`GIT_TERMINAL_PROMPT=0` / `GCM_INTERACTIVE=never` 防交互挂起；命令长度上限 4096；**Checkpoint untracked** |
 | `parse_log` | 绝对路径仅允许默认 Isaac log；相对路径项目内解析 |
-| `diff_apply` | unified diff 解析与应用 |
+| `diff_apply` | unified diff 解析与应用；Tracked write |
 
 ### 注册
 
@@ -76,7 +90,7 @@
 ## 设计权衡
 
 - **内置 API 知识 vs RAG**：`search_isaac_api` 用结构化字典（快、确定）；`search_knowledge` 用语义检索（广、需索引）。
-- **run_command 能力**：提供强大调试能力，但以危险命令黑名单约束。
+- **run_command 能力**：提供强大调试能力，但以危险命令黑名单约束；与 Checkpoint 合同一致——不假装可 Restore。
 
 ## 兼容基线
 
@@ -87,13 +101,16 @@
 
 - Skill 层工作流（见 [Agent.md](Agent.md)）
 - RAG 索引构建（见 [Rag.md](Rag.md)）
+- Checkpoint 捕获实现（Agent `ToolRegistry` 缝）
 
 ## 已知局限
 
-- `batch_edit` 无事务回滚
+- `batch_edit` 无事务回滚（与 Checkpoint 按路径 Before-image 一致，非整批原子）
 - `git_status` 依赖本机 git 可用
 
 ## 参考
 
 - `src/IsaacAgent.Tools/Implementations/`
 - `src/IsaacAgent.Rag/Tools/`
+- [Agent.md](Agent.md) Checkpoint 合同
+- [docs/research/checkpoint-tracked-write-hooks.md](../research/checkpoint-tracked-write-hooks.md)
