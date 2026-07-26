@@ -36,6 +36,14 @@ public sealed class Checkpoint
     /// </summary>
     public IReadOnlyDictionary<string, BeforeImage> BeforeImages => _beforeImages;
 
+    /// <summary>
+    /// Paths touched after this Checkpoint that have no usable Before-image
+    /// (binary / over-limit / unsafe skips). Restore lists these as
+    /// <c>missing-before-image</c>.
+    /// </summary>
+    internal IEnumerable<string> TouchedPathsWithoutBeforeImage =>
+        _touchedPaths.Where(p => !_beforeImages.ContainsKey(p));
+
     internal bool HasTouchedPath(string relativePath) =>
         _touchedPaths.Contains(relativePath) || _beforeImages.ContainsKey(relativePath);
 

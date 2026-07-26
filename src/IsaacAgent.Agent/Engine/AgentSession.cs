@@ -17,6 +17,8 @@ public sealed class AgentSession : IDisposable
     private string? _projectDir;
     private readonly List<ChatMessage> _history = [];
     private readonly List<Checkpoint> _checkpoints = [];
+    private readonly TrackedWriteTipStore _trackedWriteTips = new();
+    private readonly CheckpointRestorer _restorer;
     private readonly int _maxIterations = 10;
     private const int MaxHistoryMessages = 50;
     private const int DefaultMaxTokens = 4096;
@@ -48,10 +50,12 @@ public sealed class AgentSession : IDisposable
         _logger = logger;
 
         _tools.OnRetrievalResults += OnRetrievalResults;
+        _restorer = new CheckpointRestorer(_logger, _trackedWriteTips, () => _projectDir);
         _tools.BeforeImageCapturer = new BeforeImageCapturer(
             _logger,
             () => _checkpoints,
             () => _projectDir);
+        _tools.TrackedWriteTipRecorder = _restorer.RecordTipsAfterTrackedWriteAsync;
         _tools.ReconfigureForProject(projectDir);
         _history.Add(ChatMessage.System(SystemPrompts.BuildSystemPrompt(projectDir)));
     }
@@ -266,6 +270,7 @@ public sealed class AgentSession : IDisposable
     {
         _history.Clear();
         _checkpoints.Clear();
+        _trackedWriteTips.Clear();
         _history.Add(ChatMessage.System(SystemPrompts.BuildSystemPrompt(_projectDir)));
     }
 
@@ -275,6 +280,7 @@ public sealed class AgentSession : IDisposable
         _tools.Dispose();
         _history.Clear();
         _checkpoints.Clear();
+        _trackedWriteTips.Clear();
     }
 
     public async Task SaveHistoryAsync(string path, CancellationToken ct = default)
@@ -332,6 +338,7 @@ public sealed class AgentSession : IDisposable
             {
                 _history.Clear();
                 _checkpoints.Clear();
+                _trackedWriteTips.Clear();
                 _history.AddRange(loaded);
                 _logger.LogInformation("Loaded {Count} messages from history file", loaded.Count);
             }
@@ -491,6 +498,68 @@ public sealed class AgentSession : IDisposable
         _logger.LogInformation(
             "Checkpoint {CheckpointId} created for user message",
             checkpoint.Id);
+    }
+
+    /// <summary>
+    /// Restores the live session to a Checkpoint: truncates that user turn and
+    /// later conversation, and reverts Tracked-write paths via Before-images
+    /// under the given Hand-edit conflict mode.
+    /// </summary>
+    public async Task<RestoreResult> RestoreAsync(
+        Guid checkpointId,
+        HandEditConflictMode conflictMode = HandEditConflictMode.Force,
+        CancellationToken ct = default)
+    {
+        var index = _checkpoints.FindIndex(cp => cp.Id == checkpointId);
+        if (index < 0)
+            throw new InvalidOperationException($"Checkpoint {checkpointId} was not found.");
+
+        var checkpoint = _checkpoints[index];
+        var userPrompt = checkpoint.UserMessage.Content ?? "";
+
+        _logger.LogInformation(
+            "Restore started for Checkpoint {CheckpointId} with Hand-edit conflict mode {ConflictMode}",
+            checkpointId,
+            conflictMode);
+
+        // Conversation truncate first so a partial file failure still leaves
+        // history consistent with the Checkpoint cursor contract.
+        TruncateHistoryAtCheckpoint(checkpoint);
+        _checkpoints.RemoveRange(index, _checkpoints.Count - index);
+
+        var restored = new List<string>();
+        var skipped = new List<RestoreSkippedPath>();
+        await _restorer.ApplyAsync(checkpoint, conflictMode, restored, skipped, ct);
+
+        _logger.LogInformation(
+            "Restore completed for Checkpoint {CheckpointId}: restored {RestoredCount} path(s), skipped {SkippedCount} path(s)",
+            checkpointId,
+            restored.Count,
+            skipped.Count);
+        if (skipped.Count > 0)
+        {
+            _logger.LogInformation(
+                "Restore skip summary for Checkpoint {CheckpointId}: {SkipSummary}",
+                checkpointId,
+                string.Join("; ", skipped.Select(s => $"{s.RelativePath} ({s.Reason})")));
+        }
+
+        return new RestoreResult(checkpointId, userPrompt, restored, skipped);
+    }
+
+    private void TruncateHistoryAtCheckpoint(Checkpoint checkpoint)
+    {
+        var historyIndex = _history.IndexOf(checkpoint.UserMessage);
+        if (historyIndex < 0)
+            throw new InvalidOperationException(
+                $"Checkpoint {checkpoint.Id} cursor is no longer in history.");
+
+        // Skill pre-fetch injects system messages immediately before the user
+        // turn; drop those with the turn so Restore does not leave stale context.
+        while (historyIndex > 1 && _history[historyIndex - 1].Role == "system")
+            historyIndex--;
+
+        _history.RemoveRange(historyIndex, _history.Count - historyIndex);
     }
 
     /// <summary>

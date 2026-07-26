@@ -34,6 +34,11 @@ public sealed class ToolRegistry : IDisposable
     /// </summary>
     internal BeforeImageCapturer? BeforeImageCapturer { get; set; }
 
+    /// <summary>
+    /// Optional tip-hash recorder after a successful Tracked write (for Hand-edit detection).
+    /// </summary>
+    internal Func<string, string, string, CancellationToken, Task>? TrackedWriteTipRecorder { get; set; }
+
     public void Register(ITool tool)
     {
         if (!_tools.TryAdd(tool.Name, tool))
@@ -124,9 +129,13 @@ public sealed class ToolRegistry : IDisposable
         try
         {
             _logger.LogInformation("Executing tool: {ToolName} with args: {Args}", toolName, arguments);
-            if (BeforeImageCapturer is not null && BeforeImageCapturer.IsTrackedWrite(toolName))
-                await BeforeImageCapturer.MaybeCaptureAsync(toolName, arguments, ct);
+            var isTrackedWrite = BeforeImageCapturer is not null
+                && BeforeImageCapturer.IsTrackedWrite(toolName);
+            if (isTrackedWrite)
+                await BeforeImageCapturer!.MaybeCaptureAsync(toolName, arguments, ct);
             var result = await tool.ExecuteAsync(arguments, ct);
+            if (isTrackedWrite && TrackedWriteTipRecorder is not null)
+                await TrackedWriteTipRecorder(toolName, arguments, result, ct);
             _logger.LogInformation("Tool {ToolName} completed", toolName);
             return result;
         }
