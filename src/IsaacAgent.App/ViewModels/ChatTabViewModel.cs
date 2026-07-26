@@ -70,11 +70,11 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         _sessionFactory = services.GetRequiredService<IAgentSessionFactory>();
         _restoreConfirm = services.GetRequiredService<IRestoreConfirmDialog>();
         _getHandEditConflictMode = services.GetService<Func<HandEditConflictMode>>()
-            ?? static () =>
+            ?? (() =>
             {
                 try { return AppConfiguration.Load().HandEditConflictMode; }
                 catch { return HandEditConflictMode.Force; }
-            };
+            });
         _session = _sessionFactory.Create(projectDir);
         _currentProjectDir = projectDir;
         SubscribeSessionEvents(_session);
