@@ -209,9 +209,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         var assistantMsg = new ChatMessageViewModel { Role = "assistant", Content = "" };
         Messages.Add(assistantMsg);
 
-        var checkpointsBefore = _session.Checkpoints.Count;
-        var syncTask = WaitAndSyncCheckpointAffordancesAsync(checkpointsBefore + 1, _cts.Token);
-        _sendTask = RunSendAsync(userMsg, userVm, assistantMsg, syncTask, _cts.Token);
+        _sendTask = RunSendAsync(userMsg, userVm, assistantMsg, _cts.Token);
         await _sendTask;
     }
 
@@ -219,7 +217,6 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         string userMsg,
         ChatMessageViewModel userVm,
         ChatMessageViewModel assistantMsg,
-        Task syncTask,
         CancellationToken ct)
     {
         try
@@ -250,9 +247,6 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            try { await syncTask; }
-            catch (OperationCanceledException) { }
-
             SyncCheckpointAffordances();
             IsGenerating = false;
             _cts?.Dispose();
@@ -326,21 +320,6 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         finally
         {
             _isRestoring = false;
-        }
-    }
-
-    private async Task WaitAndSyncCheckpointAffordancesAsync(int minCount, CancellationToken ct)
-    {
-        try
-        {
-            while (_session.Checkpoints.Count < minCount)
-                await Task.Delay(15, ct).ConfigureAwait(false);
-
-            Avalonia.Threading.Dispatcher.UIThread.Post(SyncCheckpointAffordances);
-        }
-        catch (OperationCanceledException)
-        {
-            // Send cancelled before Checkpoint became visible — ignore.
         }
     }
 
