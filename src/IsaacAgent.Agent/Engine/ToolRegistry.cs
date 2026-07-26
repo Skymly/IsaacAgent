@@ -28,6 +28,12 @@ public sealed class ToolRegistry : IDisposable
 
     public string? CurrentProjectDir { get; private set; }
 
+    /// <summary>
+    /// Optional lazy Before-image capture hook. Invoked for Tracked write tools
+    /// immediately before <see cref="ITool.ExecuteAsync"/>.
+    /// </summary>
+    internal BeforeImageCapturer? BeforeImageCapturer { get; set; }
+
     public void Register(ITool tool)
     {
         if (!_tools.TryAdd(tool.Name, tool))
@@ -118,6 +124,8 @@ public sealed class ToolRegistry : IDisposable
         try
         {
             _logger.LogInformation("Executing tool: {ToolName} with args: {Args}", toolName, arguments);
+            if (BeforeImageCapturer is not null && BeforeImageCapturer.IsTrackedWrite(toolName))
+                await BeforeImageCapturer.MaybeCaptureAsync(toolName, arguments, ct);
             var result = await tool.ExecuteAsync(arguments, ct);
             _logger.LogInformation("Tool {ToolName} completed", toolName);
             return result;

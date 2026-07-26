@@ -7,6 +7,12 @@ namespace IsaacAgent.Agent.Engine;
 /// </summary>
 public sealed class Checkpoint
 {
+    private readonly Dictionary<string, BeforeImage> _beforeImages =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    private readonly HashSet<string> _touchedPaths =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public Checkpoint(Guid id, ChatMessage userMessage)
     {
         Id = id;
@@ -21,4 +27,35 @@ public sealed class Checkpoint
     /// remains in the session history.
     /// </summary>
     public ChatMessage UserMessage { get; }
+
+    /// <summary>
+    /// Lazily captured Before-images for paths first touched by a Tracked write
+    /// after this Checkpoint. Skipped paths (binary / over-limit / unsafe) are
+    /// not present; they are marked touched so a later write does not invent a
+    /// late capture.
+    /// </summary>
+    public IReadOnlyDictionary<string, BeforeImage> BeforeImages => _beforeImages;
+
+    internal bool HasTouchedPath(string relativePath) =>
+        _touchedPaths.Contains(relativePath) || _beforeImages.ContainsKey(relativePath);
+
+    /// <summary>
+    /// Records a successful Before-image on first touch. Returns false if the
+    /// path was already touched (capture or skip).
+    /// </summary>
+    internal bool TryRecordBeforeImage(BeforeImage image)
+    {
+        ArgumentNullException.ThrowIfNull(image);
+        if (!_touchedPaths.Add(image.RelativePath))
+            return false;
+
+        _beforeImages[image.RelativePath] = image;
+        return true;
+    }
+
+    /// <summary>
+    /// Marks a path as touched without storing a usable Before-image (skip).
+    /// </summary>
+    internal bool TryMarkPathTouched(string relativePath) =>
+        _touchedPaths.Add(relativePath);
 }
