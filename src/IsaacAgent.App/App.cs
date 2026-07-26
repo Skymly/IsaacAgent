@@ -111,6 +111,7 @@ public sealed class App : Application
         services.AddSingleton<ThemeService>();
         services.AddSingleton<ChatHistoryService>();
         services.AddSingleton<LuaSnippetService>();
+        services.AddSingleton<IRestoreConfirmDialog, AvaloniaRestoreConfirmDialog>();
 
         return services.BuildServiceProvider();
     }

@@ -54,6 +54,14 @@
     <sys:String x:Key="ChatCopy">コピー</sys:String>
     <sys:String x:Key="ChatEdit">編集</sys:String>
     <sys:String x:Key="ChatResend">再送信</sys:String>
+    <sys:String x:Key="ChatRestore">復元</sys:String>
+    <sys:String x:Key="ChatRestoreTitle">復元（Checkpoint）</sys:String>
+    <sys:String x:Key="ChatRestoreConfirm">復元</sys:String>
+    <sys:String x:Key="ChatRestoreFactTruncate">このユーザー発言以降の会話を切り詰めます。</sys:String>
+    <sys:String x:Key="ChatRestoreFactBeforeImage">Tracked write は現行の Hand-edit conflict mode に従い Before-image で戻します。</sys:String>
+    <sys:String x:Key="ChatRestoreFactCancelInFlight">生成中の場合はキャンセルします。</sys:String>
+    <sys:String x:Key="ChatRestoreFactRefillInput">このユーザープロンプトを入力欄に戻します。</sys:String>
+    <sys:String x:Key="ChatRestoreFactUntracked">run_command および未追跡の副作用は元に戻しません。</sys:String>
     <sys:String x:Key="ChatInsertSnippet">Lua スニペットを挿入...</sys:String>
 
     <!-- Log Monitor -->

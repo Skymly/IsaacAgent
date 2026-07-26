@@ -334,6 +334,14 @@
                                                             FontSize="10" Padding="6,2"
                                                             Opacity="0.4"
                                                             IsVisible="{Binding IsUser}" />
+                                                    <!-- Restore (Checkpoint) — live Checkpoint only -->
+                                                    <Button Content="{DynamicResource ChatRestore}"
+                                                            Command="{Binding $parent[ListBox].DataContext.Chat.ActiveTab.RestoreCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Classes="ghost"
+                                                            FontSize="10" Padding="6,2"
+                                                            Opacity="0.4"
+                                                            IsVisible="{Binding CanRestore}" />
                                                 </StackPanel>
 
                                                 <!-- Edit mode (user messages) -->

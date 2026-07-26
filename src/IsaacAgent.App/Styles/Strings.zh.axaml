@@ -54,6 +54,14 @@
     <sys:String x:Key="ChatCopy">复制</sys:String>
     <sys:String x:Key="ChatEdit">编辑</sys:String>
     <sys:String x:Key="ChatResend">重发</sys:String>
+    <sys:String x:Key="ChatRestore">恢复</sys:String>
+    <sys:String x:Key="ChatRestoreTitle">恢复（Checkpoint）</sys:String>
+    <sys:String x:Key="ChatRestoreConfirm">恢复</sys:String>
+    <sys:String x:Key="ChatRestoreFactTruncate">将从该用户回合起截断对话。</sys:String>
+    <sys:String x:Key="ChatRestoreFactBeforeImage">将按 Before-image 回滚 Tracked write（适用当前 Hand-edit conflict mode）。</sys:String>
+    <sys:String x:Key="ChatRestoreFactCancelInFlight">若有进行中的生成，将取消该生成。</sys:String>
+    <sys:String x:Key="ChatRestoreFactRefillInput">该条用户提示词将回填到输入框。</sys:String>
+    <sys:String x:Key="ChatRestoreFactUntracked">run_command 及其他未跟踪副作用不会被撤销。</sys:String>
     <sys:String x:Key="ChatInsertSnippet">插入 Lua 代码片段...</sys:String>
 
     <!-- Log Monitor -->

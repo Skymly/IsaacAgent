@@ -2,6 +2,7 @@ using Avalonia.Headless.XUnit;
 using System.Runtime.CompilerServices;
 using IsaacAgent.Agent;
 using IsaacAgent.Agent.Engine;
+using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
@@ -51,6 +52,7 @@ public class ChatViewModelTests
         services.AddSingleton(factoryMock.Object);
         services.AddSingleton(Mock.Of<ILogger<ChatTabViewModel>>());
         services.AddSingleton(Mock.Of<ILogger<ChatViewModel>>());
+        services.AddSingleton(Mock.Of<IRestoreConfirmDialog>());
         var sp = services.BuildServiceProvider();
 
         return new ChatViewModel(sp, sp.GetRequiredService<ILogger<ChatViewModel>>());

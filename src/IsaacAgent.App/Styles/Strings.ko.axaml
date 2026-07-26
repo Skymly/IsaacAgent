@@ -54,6 +54,14 @@
     <sys:String x:Key="ChatCopy">복사</sys:String>
     <sys:String x:Key="ChatEdit">편집</sys:String>
     <sys:String x:Key="ChatResend">재전송</sys:String>
+    <sys:String x:Key="ChatRestore">복원</sys:String>
+    <sys:String x:Key="ChatRestoreTitle">복원 (Checkpoint)</sys:String>
+    <sys:String x:Key="ChatRestoreConfirm">복원</sys:String>
+    <sys:String x:Key="ChatRestoreFactTruncate">해당 사용자 턴부터 대화를 자릅니다.</sys:String>
+    <sys:String x:Key="ChatRestoreFactBeforeImage">Tracked write는 현재 Hand-edit conflict mode에 따라 Before-image로 되돌립니다.</sys:String>
+    <sys:String x:Key="ChatRestoreFactCancelInFlight">생성 중이면 취소됩니다.</sys:String>
+    <sys:String x:Key="ChatRestoreFactRefillInput">해당 사용자 프롬프트가 입력란에 다시 채워집니다.</sys:String>
+    <sys:String x:Key="ChatRestoreFactUntracked">run_command 및 추적되지 않은 부작용은 되돌리지 않습니다.</sys:String>
     <sys:String x:Key="ChatInsertSnippet">Lua 스니펫 삽입...</sys:String>
 
     <!-- Log Monitor -->
