@@ -68,26 +68,33 @@ internal sealed class CheckpointRestorer
         List<RestoreSkippedPath> skipped,
         CancellationToken ct)
     {
-        var projectDir = _getProjectDir();
-        if (string.IsNullOrEmpty(projectDir))
+        try
         {
+            var projectDir = _getProjectDir();
+            if (string.IsNullOrEmpty(projectDir))
+            {
+                foreach (var path in checkpoint.TouchedPathsWithoutBeforeImage)
+                    skipped.Add(new RestoreSkippedPath(path, ReasonMissingBeforeImage));
+                foreach (var path in checkpoint.BeforeImages.Keys)
+                    skipped.Add(new RestoreSkippedPath(path, ReasonMissingBeforeImage));
+                return;
+            }
+
             foreach (var path in checkpoint.TouchedPathsWithoutBeforeImage)
                 skipped.Add(new RestoreSkippedPath(path, ReasonMissingBeforeImage));
-            foreach (var path in checkpoint.BeforeImages.Keys)
-                skipped.Add(new RestoreSkippedPath(path, ReasonMissingBeforeImage));
-            return;
+
+            foreach (var (relativePath, image) in checkpoint.BeforeImages)
+            {
+                ct.ThrowIfCancellationRequested();
+                await ApplyOneAsync(projectDir, relativePath, image, conflictMode, restored, skipped, ct);
+            }
         }
-
-        foreach (var path in checkpoint.TouchedPathsWithoutBeforeImage)
-            skipped.Add(new RestoreSkippedPath(path, ReasonMissingBeforeImage));
-
-        foreach (var (relativePath, image) in checkpoint.BeforeImages)
+        finally
         {
-            ct.ThrowIfCancellationRequested();
-            await ApplyOneAsync(projectDir, relativePath, image, conflictMode, restored, skipped, ct);
+            // Restore leaves the session "before" later Tracked writes; tip hashes
+            // from those writes must not survive even if apply exits early.
+            _tips.Clear();
         }
-
-        _tips.Clear();
     }
 
     private async Task ApplyOneAsync(
@@ -157,8 +164,9 @@ internal sealed class CheckpointRestorer
         if (!File.Exists(fullPath))
             return HandEditDecision.HandEdit;
 
+        // Without a tip we cannot compare; skip mode must not overwrite blindly.
         if (!_tips.TryGetTip(relativePath, out var tipHash) || tipHash is null)
-            return HandEditDecision.NoConflict;
+            return HandEditDecision.Unreadable;
 
         try
         {

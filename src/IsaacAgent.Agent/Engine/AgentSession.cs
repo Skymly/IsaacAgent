@@ -554,6 +554,11 @@ public sealed class AgentSession : IDisposable
             throw new InvalidOperationException(
                 $"Checkpoint {checkpoint.Id} cursor is no longer in history.");
 
+        // Skill pre-fetch injects system messages immediately before the user
+        // turn; drop those with the turn so Restore does not leave stale context.
+        while (historyIndex > 1 && _history[historyIndex - 1].Role == "system")
+            historyIndex--;
+
         _history.RemoveRange(historyIndex, _history.Count - historyIndex);
     }
 

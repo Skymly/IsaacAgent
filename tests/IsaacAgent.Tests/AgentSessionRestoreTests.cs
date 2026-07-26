@@ -384,4 +384,94 @@ public class AgentSessionRestoreTests
                 Directory.Delete(projectDir, true);
         }
     }
+
+    [Fact]
+    public async Task Restore_RemovesSkillPreFetchContextWithUserTurn()
+    {
+        var projectDir = CreateTempProject();
+        try
+        {
+            var skill = new PrefetchSkill(
+                ChatMessage.System("PRE_FETCHED_CONTEXT"));
+            var skills = new SkillRegistry();
+            skills.Register(skill);
+
+            var chat = TextOnly("done");
+            var session = new AgentSession(
+                chat,
+                new ToolRegistry(Mock.Of<ILogger<ToolRegistry>>()),
+                projectDir,
+                Mock.Of<ILogger<AgentSession>>(),
+                skills);
+
+            await DrainAsync(session.SendMessageAsync("/prefetch restore me"));
+            Assert.Contains(session.History, h =>
+                h.Role == "system" && h.Content == "PRE_FETCHED_CONTEXT");
+
+            var checkpoint = Assert.Single(session.Checkpoints);
+            await session.RestoreAsync(checkpoint.Id);
+
+            Assert.DoesNotContain(session.History, h =>
+                h.Role == "system" && h.Content == "PRE_FETCHED_CONTEXT");
+            Assert.DoesNotContain(session.History, m => m.Role == "user");
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+                Directory.Delete(projectDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task Restore_HandEdit_Skip_MissingTip_SkipsAsUnreadable()
+    {
+        var projectDir = CreateTempProject();
+        try
+        {
+            await File.WriteAllTextAsync(Path.Combine(projectDir, "main.lua"), "-- original");
+
+            // Failed diff_apply captures Before-image but does not record a tip.
+            var patch = "@@ -1,1 +1,1 @@\n-nope\n+changed\n";
+            var args = System.Text.Json.JsonSerializer.Serialize(new { path = "main.lua", patch });
+            var chat = ToolThenDone("diff_apply", args);
+            var session = CreateSession(chat, projectDir);
+            await DrainAsync(session.SendMessageAsync("bad patch"));
+
+            var checkpoint = Assert.Single(session.Checkpoints);
+            Assert.True(checkpoint.BeforeImages.ContainsKey("main.lua"));
+
+            await File.WriteAllTextAsync(Path.Combine(projectDir, "main.lua"), "-- hand edit");
+
+            var result = await session.RestoreAsync(checkpoint.Id, HandEditConflictMode.Skip);
+
+            Assert.Equal("-- hand edit", await File.ReadAllTextAsync(Path.Combine(projectDir, "main.lua")));
+            var skipped = Assert.Single(result.SkippedPaths);
+            Assert.Equal("main.lua", skipped.RelativePath);
+            Assert.Equal("unreadable", skipped.Reason);
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+                Directory.Delete(projectDir, true);
+        }
+    }
+
+    private sealed class PrefetchSkill : ISkill
+    {
+        private readonly IReadOnlyList<ChatMessage> _preFetch;
+
+        public PrefetchSkill(params ChatMessage[] preFetch) => _preFetch = preFetch;
+
+        public string Name => "prefetch-skill";
+        public string DisplayName => "Prefetch";
+        public string Description => "test";
+        public string? SlashCommand => "/prefetch";
+
+        public bool ShouldActivate(string userMessage, string? projectDir) => false;
+        public string? GetPromptAugmentation() => null;
+
+        public Task<IReadOnlyList<ChatMessage>> PreFetchContextAsync(
+            string userMessage, IRetriever? retriever, CancellationToken ct = default)
+            => Task.FromResult(_preFetch);
+    }
 }
