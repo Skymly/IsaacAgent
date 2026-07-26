@@ -59,7 +59,7 @@
 | **入口** | 对应用户消息气泡旁的 **Restore** 控件（该消息自动 Checkpoint 仍存活时显示）；无独立时间线要求 |
 | **确认框必述** | ① 从该用户回合起截断对话；② 按 Before-image 回滚 Tracked write（适用当前 Hand-edit conflict mode）；③ 若有进行中生成则取消；④ 该条提示词回填输入框；⑤ **`run_command` / 未跟踪副作用不撤销**。确认 / 取消。具体文案与多语言为实现细节 |
 | **完成后** | 取消进行中回合（如有）；对话与文件侧按 Agent 语义完成；提示词回填当前 Tab 输入框 |
-| **Hand-edit conflict mode** | Settings 新增薄 **Agent** 分区：一项 `force`（默认）/ `skip`，经 `AppConfiguration` 持久化；Save 走既有设置持久化路径（非 LLM/embedding Settings apply） |
+| **Hand-edit conflict mode** | Settings 薄 **Agent** 分区：一项 `force`（默认）/ `skip`，经 `AppConfiguration.HandEditConflictMode` 持久化；Save 走既有设置持久化路径（非 LLM/embedding Settings apply）。聊天 Restore 入口消费该设置见后续票（#39） |
 | **命名** | UI 使用 **Restore**（Checkpoint）。勿与 `ChatHistoryService.RestoreSession`（会话反序列化）混称 |
 
 不在 App 合同内：Redo、Edit-previous、跨重启 Checkpoint UI、Git 级 rewind。

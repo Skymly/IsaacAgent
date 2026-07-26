@@ -1,4 +1,5 @@
 using System.Text.Json;
+using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
 using IsaacAgent.Rag.Embedding;
 using Xunit;
@@ -6,9 +7,9 @@ using Xunit;
 namespace IsaacAgent.Tests;
 
 /// <summary>
-///   Unit tests for AppConfiguration window state persistence.
-///   Tests JSON serialization round-trip for window size, position,
-///   and maximized state without touching the real config file on disk.
+///   Unit tests for AppConfiguration — defaults, JSON serialization
+///   round-trip, and Save/Load persistence (the latter touches the real
+///   AppData config path with backup/restore).
 /// </summary>
 public class AppConfigurationTests
 {
@@ -146,5 +147,55 @@ public class AppConfigurationTests
         var restored = JsonSerializer.Deserialize<AppConfiguration>(json)!;
         Assert.Null(restored.ApiKey);
         Assert.Equal("ciphertext-base64", restored.EncryptedApiKey);
+    }
+
+    [Fact]
+    public void HandEditConflictMode_Defaults_ToForce()
+    {
+        Assert.Equal(HandEditConflictMode.Force, new AppConfiguration().HandEditConflictMode);
+    }
+
+    [Theory]
+    [InlineData(HandEditConflictMode.Force)]
+    [InlineData(HandEditConflictMode.Skip)]
+    public void HandEditConflictMode_RoundTrips_ThroughJsonSerialization(HandEditConflictMode mode)
+    {
+        var original = new AppConfiguration { HandEditConflictMode = mode };
+
+        var json = JsonSerializer.Serialize(original);
+        var restored = JsonSerializer.Deserialize<AppConfiguration>(json)!;
+
+        Assert.Equal(mode, restored.HandEditConflictMode);
+    }
+
+    [Fact]
+    public void HandEditConflictMode_Persists_ThroughSaveAndLoad()
+    {
+        var configPath = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "IsaacAgent",
+            "config.json");
+        string? backup = File.Exists(configPath) ? File.ReadAllText(configPath) : null;
+
+        try
+        {
+            var config = new AppConfiguration
+            {
+                HandEditConflictMode = HandEditConflictMode.Skip,
+                Endpoint = "https://test.example/v1",
+                Model = "test-model",
+            };
+            config.Save();
+
+            var loaded = AppConfiguration.Load();
+            Assert.Equal(HandEditConflictMode.Skip, loaded.HandEditConflictMode);
+        }
+        finally
+        {
+            if (backup is not null)
+                File.WriteAllText(configPath, backup);
+            else if (File.Exists(configPath))
+                File.Delete(configPath);
+        }
     }
 }

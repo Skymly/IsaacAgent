@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using IsaacAgent.Agent.Engine;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
 
@@ -67,6 +68,12 @@ public sealed class AppConfiguration
     ///   "Warning", "Error", or "Fatal". Default "Information".
     /// </summary>
     public string LogLevel { get; set; } = "Information";
+
+    /// <summary>
+    ///   Restore policy when a Hand-edit (or unreadable tip comparison) is present.
+    ///   Default <see cref="HandEditConflictMode.Force"/>.
+    /// </summary>
+    public HandEditConflictMode HandEditConflictMode { get; set; } = HandEditConflictMode.Force;
 
     public EmbeddingConfig ToEmbeddingConfig() => new()
     {
@@ -144,6 +151,7 @@ public sealed class AppConfiguration
             AccentColor = AccentColor,
             FontSize = FontSize,
             LogLevel = LogLevel,
+            HandEditConflictMode = HandEditConflictMode,
         };
 
         if (!string.IsNullOrEmpty(ApiKey))
