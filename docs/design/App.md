@@ -50,7 +50,7 @@
 - **拖放**：文件夹打开为项目；文件注入聊天上下文，单文件上限 256 KB（与 Before-image 单文件上限对齐，见 [Agent.md](Agent.md) Checkpoint 合同）
 - **发布校验**：`IsaacAgent.exe --verify-onnx` 无 UI 校验捆绑 ONNX 可加载（供 Nuke `PublishVerify`）
 
-### Checkpoint / Restore UX（合同；实现待做）
+### Checkpoint / Restore UX
 
 术语见 `CONTEXT.md`。核心语义与文件回滚在 [Agent.md](Agent.md)；App 负责发现入口、确认、设置与输入框回填。
 
@@ -59,10 +59,12 @@
 | **入口** | 对应用户消息气泡旁的 **Restore** 控件（该消息自动 Checkpoint 仍存活时显示）；无独立时间线要求 |
 | **确认框必述** | ① 从该用户回合起截断对话；② 按 Before-image 回滚 Tracked write（适用当前 Hand-edit conflict mode）；③ 若有进行中生成则取消；④ 该条提示词回填输入框；⑤ **`run_command` / 未跟踪副作用不撤销**。确认 / 取消。具体文案与多语言为实现细节 |
 | **完成后** | 取消进行中回合（如有）；对话与文件侧按 Agent 语义完成；提示词回填当前 Tab 输入框 |
-| **Hand-edit conflict mode** | Settings 薄 **Agent** 分区：一项 `force`（默认）/ `skip`，经 `AppConfiguration.HandEditConflictMode` 持久化；Save 走既有设置持久化路径（非 LLM/embedding Settings apply）。聊天 Restore 入口消费该设置见后续票（#39） |
+| **Hand-edit conflict mode** | Settings 薄 **Agent** 分区：一项 `force`（默认）/ `skip`，经 `AppConfiguration.HandEditConflictMode` 持久化；Save 走既有设置持久化路径（非 LLM/embedding Settings apply）。聊天 Restore 在确认后读取该配置传入 `AgentSession.RestoreAsync` |
 | **命名** | UI 使用 **Restore**（Checkpoint）。勿与 `ChatHistoryService.RestoreSession`（会话反序列化）混称 |
 
 不在 App 合同内：Redo、Edit-previous、跨重启 Checkpoint UI、Git 级 rewind。
+
+**实现要点（chat Restore）**：`ChatTabViewModel.RestoreCommand` → `IRestoreConfirmDialog` → 必要时取消 in-flight → `AgentSession.RestoreAsync(..., AppConfiguration.HandEditConflictMode)` → 截断 UI 消息 → `InputText` 回填。`ChatMessageViewModel.CanRestore` / `CheckpointId` 与 live `AgentSession.Checkpoints` 对齐。
 
 ### 测试策略（ADR-005）
 
@@ -70,6 +72,7 @@
 - Avalonia 测试用 `[AvaloniaFact]`，非 `[Fact]`
 - `AvaloniaTestHelper.FlushDispatcher()` 委托 `HeadlessUnitTestSession`
 - Settings apply 缝：`SettingsApplyTests`（fake Embedding apply / chat 工厂）；Save 路径：`SettingsViewModelTests`（fake `ISettingsApply`）
+- Checkpoint Restore UX 缝：`ChatTabViewModelTests`（fake `IRestoreConfirmDialog` + Scripted/Gate chat）
 
 ## 设计权衡
 
@@ -83,7 +86,7 @@
 - 无 macOS / Linux 官方构建或库层跨平台 CI（严格 Windows-only；见 ADR-003）
 - Toast 自动消失依赖 `TestDismissScheduler` 测试 hook
 - 启动预热失败仍可能经 `App.Services` 更新 Settings 状态（非 Save 路径）
-- Checkpoint UI 尚未实现；本节为已锁合同
+- Hand-edit conflict mode：Settings Agent 区已落地；聊天 Restore 经 `AppConfiguration.HandEditConflictMode` 消费（默认可注入 `Func<HandEditConflictMode>` 便于测试）
 
 ## 参考
 

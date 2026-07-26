@@ -9,9 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Checkpoint chat Restore UX**: Restore control on user messages with a live
+  Checkpoint; confirm dialog states the five required facts; confirm cancels
+  in-flight generation if needed, runs `AgentSession.RestoreAsync` under the
+  configured Hand-edit conflict mode, truncates the UI conversation, and
+  refills the input (issue #39).
 - **Settings Agent section** for Hand-edit conflict mode (`force` default /
   `skip`), persisted on `AppConfiguration` across restart (issue #40).
-  Chat Restore consumption of the setting remains a follow-up (#39).
 - **Checkpoint Restore** on `AgentSession`: truncate the Checkpoint user turn
   and later conversation; revert Tracked-write paths via Before-images
   (tombstones delete created files); missing/unusable Before-images are

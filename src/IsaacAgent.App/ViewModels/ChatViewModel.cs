@@ -155,6 +155,15 @@ public sealed partial class ChatMessageViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _editText = "";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanRestore))]
+    private Guid? _checkpointId;
+
+    /// <summary>
+    /// True when this user message still has a live Checkpoint (Restore affordance).
+    /// </summary>
+    public bool CanRestore => CheckpointId.HasValue;
+
     private const int RenderDebounceMs = 150;
 
     private string _debouncedMarkdown = "";

@@ -54,6 +54,14 @@
     <sys:String x:Key="ChatCopy">Copy</sys:String>
     <sys:String x:Key="ChatEdit">Edit</sys:String>
     <sys:String x:Key="ChatResend">Resend</sys:String>
+    <sys:String x:Key="ChatRestore">Restore</sys:String>
+    <sys:String x:Key="ChatRestoreTitle">Restore (Checkpoint)</sys:String>
+    <sys:String x:Key="ChatRestoreConfirm">Restore</sys:String>
+    <sys:String x:Key="ChatRestoreFactTruncate">The conversation will be truncated from this user turn onward.</sys:String>
+    <sys:String x:Key="ChatRestoreFactBeforeImage">Tracked writes will be reverted via Before-images under the current Hand-edit conflict mode.</sys:String>
+    <sys:String x:Key="ChatRestoreFactCancelInFlight">If a generation is in progress, it will be cancelled.</sys:String>
+    <sys:String x:Key="ChatRestoreFactRefillInput">This user prompt will be put back into the input box.</sys:String>
+    <sys:String x:Key="ChatRestoreFactUntracked">run_command and other untracked side effects will not be reverted.</sys:String>
     <sys:String x:Key="ChatInsertSnippet">Insert Lua snippet...</sys:String>
 
     <!-- Log Monitor -->
