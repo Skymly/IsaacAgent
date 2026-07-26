@@ -9,17 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Checkpoint Restore** on `AgentSession`: truncate the Checkpoint user turn
+  and later conversation; revert Tracked-write paths via Before-images
+  (tombstones delete created files); missing/unusable Before-images are
+  skipped and listed without aborting truncate; Hand-edit conflict mode
+  `force` (default) vs `skip` uses tip hashes from the last successful
+  Tracked write; `run_command` side effects are not reverted; tip / Before-image
+  state stays per-session (overlapping Restores are last-writer-wins) with
+  structured Restore start/complete/skip logs (issue #38).
 - **Lazy Before-image capture** on Tracked writes (`write_file`, `diff_apply`,
   `batch_edit`, `scaffold_mod`): after a Checkpoint, the first touch of a path
   records content or a create tombstone on `Checkpoint.BeforeImages` via the
   `ToolRegistry.ExecuteAsync` seam; repeat touches keep the first image;
   binary / over-limit (&gt;256KB) / unsafe paths skip with structured logs;
-  `run_command` is never captured (issue #37). Restore still pending.
+  `run_command` is never captured (issue #37).
 - **Checkpoint auto-create and trim drop** on `AgentSession`: a conversation
   Checkpoint is created before each user message is processed; `TrimHistory`
   drops Checkpoints whose cursors left retained history; Checkpoints stay
   scoped to the live session with structured create/drop logs (issue #36).
-  No Restore yet.
 - **Settings apply** (`ISettingsApply` / `SettingsApply`): Save injects provider
   intent — chat provider swaps immediately; embedding field changes kick off
   Embedding apply in the background with progress driving Settings status/toasts;
