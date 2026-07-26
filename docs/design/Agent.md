@@ -100,7 +100,8 @@
 
 | 类 | 职责 |
 |----|------|
-| `AgentSession` | 主循环：`StreamAsync` → tool call 累加 → `ExecuteAsync` → 继续对话；Checkpoint 生命周期宿主（设计） |
+| `AgentSession` | 主循环：`StreamAsync` → tool call 累加 → `ExecuteAsync` → 继续对话；Checkpoint 生命周期宿主（自动创建 + trim 丢弃已实现；Before-image / Restore 待做） |
+| `Checkpoint` | 会话内对话锚点（`Id` + `UserMessage` 引用游标）；暴露于 `AgentSession.Checkpoints` |
 | `ToolRegistry` | 注册 16 个 `ITool`；`Reconfigure(projectDir)` 更新项目上下文；懒 Before-image 首选缝（设计） |
 | `SkillRegistry` | 注册 10 个 `ISkill`；`ResolveActiveSkills(userMessage)` |
 | `SystemPrompts` | 基础 prompt + 工具列表 + Guidelines |
@@ -109,9 +110,9 @@
 
 ```
 用户消息
-  → （设计）创建 Checkpoint
   → SkillRegistry 解析激活 Skill
   → Skill.PreFetchContextAsync（可选 RAG）
+  → 创建 Checkpoint（锚到即将入史的 user ChatMessage）+ 结构化日志
   → 组装 messages + tools schema
   → LLM StreamAsync
   → 累加 tool_calls（按 index 分桶）
@@ -121,9 +122,11 @@
   → 循环或结束
 ```
 
+Checkpoint 游标是 `ChatMessage` **引用**（非易变下标）。`ClearHistory` / `LoadHistory` / `Dispose` 清空 Checkpoint 列表（不跨重启持久化）。
+
 ### 历史裁剪
 
-`TrimHistory` 先按条数后按字符；删除 assistant+tool 组时保持 tool_call_id 配对完整；并丢弃游标失效的 Checkpoint。
+`TrimHistory` 先按条数后按字符；删除 assistant+tool 组时保持 tool_call_id 配对完整；裁剪后丢弃 `UserMessage` 不再位于保留历史中的 Checkpoint，保留游标仍有效的 Checkpoint。
 
 ## 设计权衡
 
@@ -149,7 +152,7 @@
 - 单 chunk 多 tool call 依赖 provider 正确 yield
 - 无多 Agent 协作或子 Agent 委派
 - 多 Tab 同目录重叠 Restore 无协调（last-writer-wins）
-- Checkpoint 功能代码尚未落地；本节为已锁合同
+- Checkpoint **自动创建 + trim 丢弃**已落地（对话锚点 only）；Before-image 捕获与 Restore 尚未实现
 
 ## 参考
 

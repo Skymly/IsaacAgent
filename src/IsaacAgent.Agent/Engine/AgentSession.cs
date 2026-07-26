@@ -16,6 +16,7 @@ public sealed class AgentSession : IDisposable
     private readonly ILogger<AgentSession> _logger;
     private string? _projectDir;
     private readonly List<ChatMessage> _history = [];
+    private readonly List<Checkpoint> _checkpoints = [];
     private readonly int _maxIterations = 10;
     private const int MaxHistoryMessages = 50;
     private const int DefaultMaxTokens = 4096;
@@ -52,6 +53,12 @@ public sealed class AgentSession : IDisposable
     }
 
     public List<ChatMessage> History => _history;
+
+    /// <summary>
+    /// Live Checkpoints for this session (conversation anchors). Ephemeral —
+    /// not shared across sessions and not persisted across restart.
+    /// </summary>
+    public IReadOnlyList<Checkpoint> Checkpoints => _checkpoints;
 
     public void SetProjectDirectory(string? projectDir)
     {
@@ -134,7 +141,12 @@ public sealed class AgentSession : IDisposable
             _history.Add(ctxMsg);
         }
 
-        _history.Add(ChatMessage.User(userMessage));
+        // Checkpoint anchors the user turn before LLM processing. Same
+        // ChatMessage instance is added to history so TrimHistory can drop
+        // Checkpoints by reference when the cursor leaves retained history.
+        var userChatMessage = ChatMessage.User(userMessage);
+        CreateCheckpoint(userChatMessage);
+        _history.Add(userChatMessage);
 
         // If skills are active, inject the augmentation as a system message
         if (skillPromptAugment.Length > 0)
@@ -249,6 +261,7 @@ public sealed class AgentSession : IDisposable
     public void ClearHistory()
     {
         _history.Clear();
+        _checkpoints.Clear();
         _history.Add(ChatMessage.System(SystemPrompts.BuildSystemPrompt(_projectDir)));
     }
 
@@ -257,6 +270,7 @@ public sealed class AgentSession : IDisposable
         _tools.OnRetrievalResults -= OnRetrievalResults;
         _tools.Dispose();
         _history.Clear();
+        _checkpoints.Clear();
     }
 
     public async Task SaveHistoryAsync(string path, CancellationToken ct = default)
@@ -313,6 +327,7 @@ public sealed class AgentSession : IDisposable
             if (loaded is { Count: > 0 })
             {
                 _history.Clear();
+                _checkpoints.Clear();
                 _history.AddRange(loaded);
                 _logger.LogInformation("Loaded {Count} messages from history file", loaded.Count);
             }
@@ -432,6 +447,8 @@ public sealed class AgentSession : IDisposable
         _logger.LogInformation("Trimmed {Count} old messages from history ({Chars}→{Remaining} chars est.)",
             toRemove, charCount, EstimateHistoryChars());
 
+        DropCheckpointsOutsideHistory();
+
         // If a single message still exceeds the budget, truncate it
         var remaining = EstimateHistoryChars();
         if (remaining > MaxContextChars && _history.Count == 2)
@@ -443,6 +460,33 @@ public sealed class AgentSession : IDisposable
                 msg.Content = msg.Content[..Math.Max(0, maxChars)] + "\n[... truncated ...]";
             }
         }
+    }
+
+    /// <summary>
+    /// Drops Checkpoints whose <see cref="Checkpoint.UserMessage"/> cursor
+    /// is no longer present in retained history after trim.
+    /// </summary>
+    private void DropCheckpointsOutsideHistory()
+    {
+        if (_checkpoints.Count == 0) return;
+
+        var retained = new HashSet<ChatMessage>(_history);
+        var removed = _checkpoints.RemoveAll(cp => !retained.Contains(cp.UserMessage));
+        if (removed > 0)
+        {
+            _logger.LogInformation(
+                "Dropped {Count} Checkpoint(s) whose cursors left retained history",
+                removed);
+        }
+    }
+
+    private void CreateCheckpoint(ChatMessage userMessage)
+    {
+        var checkpoint = new Checkpoint(Guid.NewGuid(), userMessage);
+        _checkpoints.Add(checkpoint);
+        _logger.LogInformation(
+            "Checkpoint {CheckpointId} created for user message",
+            checkpoint.Id);
     }
 
     /// <summary>
