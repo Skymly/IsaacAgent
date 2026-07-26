@@ -1,4 +1,5 @@
 using Avalonia.Headless.XUnit;
+using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.LLM;
@@ -257,6 +258,41 @@ public class SettingsViewModelTests
         Assert.Equal("https://new.api/v1", applied!.Chat.Endpoint);
         Assert.Equal("new-model", applied.Chat.Model);
         Assert.Equal(EmbeddingSourceType.Onnx, applied.Embedding.Source);
+    }
+
+    [AvaloniaFact]
+    public void Constructor_LoadsHandEditConflictModeFromConfig()
+    {
+        var config = new AppConfiguration { HandEditConflictMode = HandEditConflictMode.Skip };
+        var vm = new SettingsViewModel(config);
+        Assert.Equal(HandEditConflictMode.Skip, vm.SelectedHandEditConflictMode);
+    }
+
+    [AvaloniaFact]
+    public void Constructor_DefaultHandEditConflictMode_IsForce()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal(HandEditConflictMode.Force, vm.SelectedHandEditConflictMode);
+    }
+
+    [AvaloniaFact]
+    public void HandEditConflictModes_ContainsForceAndSkip()
+    {
+        var vm = CreateViewModel();
+        Assert.Equal(2, vm.HandEditConflictModes.Count);
+        Assert.Contains(HandEditConflictMode.Force, vm.HandEditConflictModes);
+        Assert.Contains(HandEditConflictMode.Skip, vm.HandEditConflictModes);
+    }
+
+    [AvaloniaFact]
+    public void Save_PersistsHandEditConflictMode_OntoConfig()
+    {
+        var config = new AppConfiguration { HandEditConflictMode = HandEditConflictMode.Force };
+        var vm = CreateViewModel(config, new RecordingSettingsApply(_ => { }));
+        vm.SelectedHandEditConflictMode = HandEditConflictMode.Skip;
+        vm.Save();
+
+        Assert.Equal(HandEditConflictMode.Skip, config.HandEditConflictMode);
     }
 
     private sealed class RecordingSettingsApply : ISettingsApply

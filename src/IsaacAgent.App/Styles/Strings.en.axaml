@@ -82,6 +82,9 @@
     <sys:String x:Key="SettingsTheme">Theme</sys:String>
     <sys:String x:Key="SettingsThemeDark">Dark</sys:String>
     <sys:String x:Key="SettingsThemeLight">Light</sys:String>
+    <sys:String x:Key="SettingsAgent">Agent</sys:String>
+    <sys:String x:Key="SettingsHandEditConflictMode">Hand-edit conflict mode</sys:String>
+    <sys:String x:Key="SettingsHandEditConflictModeNote">Force (default) applies Before-images even when files were edited outside the agent. Skip leaves those paths unchanged and lists them after Restore.</sys:String>
     <sys:String x:Key="SettingsSave">Save</sys:String>
     <sys:String x:Key="SettingsCancel">Cancel</sys:String>
 
