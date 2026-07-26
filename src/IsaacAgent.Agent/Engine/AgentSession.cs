@@ -48,6 +48,10 @@ public sealed class AgentSession : IDisposable
         _logger = logger;
 
         _tools.OnRetrievalResults += OnRetrievalResults;
+        _tools.BeforeImageCapturer = new BeforeImageCapturer(
+            _logger,
+            () => _checkpoints,
+            () => _projectDir);
         _tools.ReconfigureForProject(projectDir);
         _history.Add(ChatMessage.System(SystemPrompts.BuildSystemPrompt(projectDir)));
     }

@@ -100,9 +100,10 @@
 
 | 类 | 职责 |
 |----|------|
-| `AgentSession` | 主循环：`StreamAsync` → tool call 累加 → `ExecuteAsync` → 继续对话；Checkpoint 生命周期宿主（自动创建 + trim 丢弃已实现；Before-image / Restore 待做） |
-| `Checkpoint` | 会话内对话锚点（`Id` + `UserMessage` 引用游标）；暴露于 `AgentSession.Checkpoints` |
-| `ToolRegistry` | 注册 16 个 `ITool`；`Reconfigure(projectDir)` 更新项目上下文；懒 Before-image 首选缝（设计） |
+| `AgentSession` | 主循环：`StreamAsync` → tool call 累加 → `ExecuteAsync` → 继续对话；Checkpoint 生命周期宿主（自动创建 + trim 丢弃 + 懒 Before-image 捕获已实现；Restore 待做） |
+| `Checkpoint` | 会话内对话锚点（`Id` + `UserMessage` 引用游标 + `BeforeImages`）；暴露于 `AgentSession.Checkpoints` |
+| `BeforeImage` | 路径首次 Tracked write 前的内容或 create tombstone |
+| `ToolRegistry` | 注册 16 个 `ITool`；`Reconfigure(projectDir)` 更新项目上下文；Tracked write 前调用 `BeforeImageCapturer` |
 | `SkillRegistry` | 注册 10 个 `ISkill`；`ResolveActiveSkills(userMessage)` |
 | `SystemPrompts` | 基础 prompt + 工具列表 + Guidelines |
 
@@ -117,12 +118,12 @@
   → LLM StreamAsync
   → 累加 tool_calls（按 index 分桶）
   → ToolRegistry.ExecuteAsync
-       （设计）Tracked write → 懒 Before-image → tool.ExecuteAsync
+       Tracked write → 懒 Before-image（`BeforeImageCapturer`）→ tool.ExecuteAsync
   → SanitizeToolResult → 追加 tool 消息
   → 循环或结束
 ```
 
-Checkpoint 游标是 `ChatMessage` **引用**（非易变下标）。`ClearHistory` / `LoadHistory` / `Dispose` 清空 Checkpoint 列表（不跨重启持久化）。
+Checkpoint 游标是 `ChatMessage` **引用**（非易变下标）。`ClearHistory` / `LoadHistory` / `Dispose` 清空 Checkpoint 列表（不跨重启持久化）。懒 Before-image：某路径在 Checkpoint 之后**首次**被 Tracked write 触碰时捕获；同路径再次写入不替换；二进制 / &gt;256KB / 越界跳过并打日志；`run_command` 不捕获。
 
 ### 历史裁剪
 
@@ -152,7 +153,7 @@ Checkpoint 游标是 `ChatMessage` **引用**（非易变下标）。`ClearHisto
 - 单 chunk 多 tool call 依赖 provider 正确 yield
 - 无多 Agent 协作或子 Agent 委派
 - 多 Tab 同目录重叠 Restore 无协调（last-writer-wins）
-- Checkpoint **自动创建 + trim 丢弃**已落地（对话锚点 only）；Before-image 捕获与 Restore 尚未实现
+- Checkpoint **自动创建 + trim 丢弃**已落地；**懒 Before-image 捕获**已落地（`ToolRegistry.ExecuteAsync` 缝；`Checkpoint.BeforeImages`）；Restore 尚未实现
 
 ## 参考
 
