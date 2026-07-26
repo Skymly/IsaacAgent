@@ -49,6 +49,120 @@ public class AgentSessionTests
     }
 
     [Fact]
+    public async Task SendMessageAsync_CreatesCheckpoint_AnchoredToUserMessage()
+    {
+        var chat = new StubChatService(
+            new ChatChunk("ok", false, -1, null, null, null));
+
+        var session = CreateSession(chat);
+        await foreach (var _ in session.SendMessageAsync("hello checkpoint")) { }
+
+        Assert.Single(session.Checkpoints);
+        var checkpoint = session.Checkpoints[0];
+        Assert.NotEqual(Guid.Empty, checkpoint.Id);
+
+        var userMsg = session.History.Single(m => m.Role == "user");
+        Assert.Same(userMsg, checkpoint.UserMessage);
+        Assert.Equal("hello checkpoint", checkpoint.UserMessage.Content);
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_CreatesCheckpoint_PerUserMessage()
+    {
+        var chat = new StubChatService(
+            new ChatChunk("ok", false, -1, null, null, null));
+
+        var session = CreateSession(chat);
+        await foreach (var _ in session.SendMessageAsync("first")) { }
+        await foreach (var _ in session.SendMessageAsync("second")) { }
+
+        Assert.Equal(2, session.Checkpoints.Count);
+        Assert.Equal("first", session.Checkpoints[0].UserMessage.Content);
+        Assert.Equal("second", session.Checkpoints[1].UserMessage.Content);
+        Assert.All(session.Checkpoints, cp =>
+            Assert.Contains(cp.UserMessage, session.History));
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_LogsCheckpointCreated()
+    {
+        var chat = new StubChatService(
+            new ChatChunk("ok", false, -1, null, null, null));
+        var logger = new Mock<ILogger<AgentSession>>();
+        var toolLogger = Mock.Of<ILogger<ToolRegistry>>();
+        var session = new AgentSession(chat, new ToolRegistry(toolLogger), null, logger.Object);
+
+        await foreach (var _ in session.SendMessageAsync("log me")) { }
+
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((state, _) =>
+                    state.ToString()!.Contains("Checkpoint", StringComparison.Ordinal)
+                    && state.ToString()!.Contains("created", StringComparison.OrdinalIgnoreCase)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task Checkpoints_AreIsolatedPerSession()
+    {
+        var chat = new StubChatService(
+            new ChatChunk("ok", false, -1, null, null, null));
+
+        var sessionA = CreateSession(chat);
+        var sessionB = CreateSession(chat);
+
+        await foreach (var _ in sessionA.SendMessageAsync("only-a")) { }
+        await foreach (var _ in sessionB.SendMessageAsync("only-b")) { }
+
+        Assert.Single(sessionA.Checkpoints);
+        Assert.Single(sessionB.Checkpoints);
+        Assert.Equal("only-a", sessionA.Checkpoints[0].UserMessage.Content);
+        Assert.Equal("only-b", sessionB.Checkpoints[0].UserMessage.Content);
+        Assert.NotSame(sessionA.Checkpoints[0], sessionB.Checkpoints[0]);
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_TrimsHistory_DropsCheckpointsOutsideRetainedHistory()
+    {
+        var chat = new StubChatService(
+            new ChatChunk("ok", false, -1, null, null, null));
+
+        var session = CreateSession(chat);
+
+        // Exceed MaxHistoryMessages (50): each turn adds user + assistant.
+        for (var i = 0; i < 30; i++)
+        {
+            await foreach (var _ in session.SendMessageAsync($"msg {i}")) { }
+        }
+
+        Assert.NotEmpty(session.Checkpoints);
+        Assert.All(session.Checkpoints, cp =>
+            Assert.Contains(cp.UserMessage, session.History));
+
+        // Early turns were trimmed; their Checkpoints must be gone.
+        Assert.DoesNotContain(session.Checkpoints, cp => cp.UserMessage.Content == "msg 0");
+        Assert.Contains(session.Checkpoints, cp =>
+            cp.UserMessage.Content == session.History.Last(m => m.Role == "user").Content);
+    }
+
+    [Fact]
+    public async Task ClearHistory_AfterSend_ClearsCheckpoints()
+    {
+        var chat = new StubChatService(
+            new ChatChunk("ok", false, -1, null, null, null));
+        var session = CreateSession(chat);
+        await foreach (var _ in session.SendMessageAsync("bye")) { }
+
+        Assert.NotEmpty(session.Checkpoints);
+        session.ClearHistory();
+        Assert.Empty(session.Checkpoints);
+    }
+
+    [Fact]
     public async Task SendMessageAsync_HistoryContainsUserAndAssistant()
     {
         var chat = new StubChatService(

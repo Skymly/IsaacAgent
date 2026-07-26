@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Checkpoint auto-create and trim drop** on `AgentSession`: a conversation
+  Checkpoint is created before each user message is processed; `TrimHistory`
+  drops Checkpoints whose cursors left retained history; Checkpoints stay
+  scoped to the live session with structured create/drop logs (issue #36).
+  No file Before-image or Restore yet.
 - **Settings apply** (`ISettingsApply` / `SettingsApply`): Save injects provider
   intent — chat provider swaps immediately; embedding field changes kick off
   Embedding apply in the background with progress driving Settings status/toasts;
