@@ -24,6 +24,8 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     private AgentSession _session;
     private CancellationTokenSource? _cts;
     private Task? _sendTask;
+    private int _historyEpoch;
+    private bool _isRestoring;
     private string? _currentProjectDir;
 
     private Action<string, string>? _onToolCall;
@@ -193,7 +195,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task SendAsync()
     {
-        if (string.IsNullOrWhiteSpace(InputText) || IsGenerating) return;
+        if (string.IsNullOrWhiteSpace(InputText) || IsGenerating || _isRestoring) return;
 
         var userMsg = InputText.Trim();
         InputText = "";
@@ -256,18 +258,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             _cts?.Dispose();
             _cts = null;
             _sendTask = null;
-            var historyPath = GetHistoryPath(_currentProjectDir);
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _session.SaveHistoryAsync(historyPath, CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to save chat history");
-                }
-            }, CancellationToken.None);
+            ScheduleHistorySave();
             TrimMessages();
         }
     }
@@ -280,7 +271,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RestoreAsync(ChatMessageViewModel? msg)
     {
-        if (msg is null || !msg.IsUser) return;
+        if (msg is null || !msg.IsUser || _isRestoring) return;
 
         SyncCheckpointAffordances();
         if (msg.CheckpointId is not Guid checkpointId) return;
@@ -289,18 +280,19 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         if (!await _restoreConfirm.ConfirmRestoreAsync(copy))
             return;
 
-        if (IsGenerating)
-        {
-            _cts?.Cancel();
-            if (_sendTask is not null)
-            {
-                try { await _sendTask; }
-                catch (OperationCanceledException) { }
-            }
-        }
-
+        _isRestoring = true;
         try
         {
+            if (IsGenerating)
+            {
+                _cts?.Cancel();
+                if (_sendTask is not null)
+                {
+                    try { await _sendTask; }
+                    catch (OperationCanceledException) { }
+                }
+            }
+
             var result = await _session.RestoreAsync(
                 checkpointId,
                 HandEditConflictMode.Force);
@@ -318,6 +310,9 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
             InputText = result.UserPrompt;
             SyncCheckpointAffordances();
+            // Invalidate any in-flight history save from the cancelled send, then persist.
+            _historyEpoch++;
+            ScheduleHistorySave();
         }
         catch (Exception ex)
         {
@@ -328,6 +323,10 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
                 Content = $"Error: {ex.Message}"
             });
         }
+        finally
+        {
+            _isRestoring = false;
+        }
     }
 
     private async Task WaitAndSyncCheckpointAffordancesAsync(int minCount, CancellationToken ct)
@@ -337,12 +336,31 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             while (_session.Checkpoints.Count < minCount)
                 await Task.Delay(15, ct).ConfigureAwait(false);
 
-            SyncCheckpointAffordances();
+            Avalonia.Threading.Dispatcher.UIThread.Post(SyncCheckpointAffordances);
         }
         catch (OperationCanceledException)
         {
             // Send cancelled before Checkpoint became visible — ignore.
         }
+    }
+
+    private void ScheduleHistorySave()
+    {
+        var epoch = _historyEpoch;
+        var historyPath = GetHistoryPath(_currentProjectDir);
+        _ = Task.Run(async () =>
+        {
+            if (epoch != _historyEpoch)
+                return;
+            try
+            {
+                await _session.SaveHistoryAsync(historyPath, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to save chat history");
+            }
+        }, CancellationToken.None);
     }
 
     /// <summary>
@@ -392,7 +410,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task ResendAsync(ChatMessageViewModel? msg)
     {
-        if (msg is null || !msg.IsUser || IsGenerating) return;
+        if (msg is null || !msg.IsUser || IsGenerating || _isRestoring) return;
         var newText = msg.EditText.Trim();
         if (string.IsNullOrEmpty(newText)) return;
 
@@ -466,18 +484,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             _cts?.Dispose();
             _cts = null;
             _sendTask = null;
-            var historyPath = GetHistoryPath(_currentProjectDir);
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _session.SaveHistoryAsync(historyPath, CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to save chat history");
-                }
-            }, CancellationToken.None);
+            ScheduleHistorySave();
             TrimMessages();
         }
     }
