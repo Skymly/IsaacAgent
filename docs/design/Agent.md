@@ -126,11 +126,11 @@
 
 Restore（`AgentSession.RestoreAsync`）：
   → 结构化日志 Restore started
-  → 截断 Checkpoint 用户回合及之后历史；丢弃该 Checkpoint 及之后的 Checkpoint
+  → 截断 Checkpoint 用户回合及之后历史（含该回合前紧邻的 Skill pre-fetch system 消息）；丢弃该 Checkpoint 及之后的 Checkpoint
   → 对缺图路径列入 `missing-before-image`；对有 Before-image 的路径：
-       `skip` 模式：tip 哈希与盘上比较；删除 / 分歧 → `hand-edit`；不可读 → `unreadable`
+       `skip` 模式：tip 哈希与盘上比较；删除 / 分歧 → `hand-edit`；不可读或缺 tip → `unreadable`
        `force`（默认）：始终应用 Before-image（tombstone → 删除；内容 → 写回）
-  → 清空 tip 存储；日志 Restore completed + skip 摘要
+  → 清空 tip 存储（含提前退出路径）；日志 Restore completed + skip 摘要
   → 返回 `RestoreResult`（含 `UserPrompt` 供 App 回填）
 ```
 
