@@ -161,7 +161,10 @@ public class ChatTabViewModelTests
     }
 
     private static (ChatTabViewModel tab, TChat chat, FakeRestoreConfirmDialog confirm)
-        CreateTabWith<TChat>(AgentSession session, TChat chat)
+        CreateTabWith<TChat>(
+            AgentSession session,
+            TChat chat,
+            Func<HandEditConflictMode>? handEditMode = null)
         where TChat : IChatService
     {
         var confirm = new FakeRestoreConfirmDialog();
@@ -172,6 +175,8 @@ public class ChatTabViewModelTests
         services.AddSingleton(factoryMock.Object);
         services.AddSingleton(Mock.Of<ILogger<ChatTabViewModel>>());
         services.AddSingleton<IRestoreConfirmDialog>(confirm);
+        services.AddSingleton<Func<HandEditConflictMode>>(
+            handEditMode ?? (() => HandEditConflictMode.Force));
         var sp = services.BuildServiceProvider();
 
         var tab = new ChatTabViewModel(sp, sp.GetRequiredService<ILogger<ChatTabViewModel>>(), null);
@@ -616,6 +621,34 @@ public class ChatTabViewModelTests
         Assert.Equal("in flight", tab.InputText);
         Assert.DoesNotContain(tab.Messages, m => m.IsUser && m.Content == "in flight");
         Assert.Empty(session.Checkpoints);
+    }
+
+    [AvaloniaFact]
+    public async Task Restore_UsesInjectedHandEditConflictMode()
+    {
+        HandEditConflictMode? observed = null;
+        var chat = new ScriptedChatService([new List<ChatChunk> { TextChunk("ok") }]);
+        var session = CreateSession(chat);
+        var (tab, _, confirm) = CreateTabWith(
+            session,
+            chat,
+            () =>
+            {
+                observed = HandEditConflictMode.Skip;
+                return HandEditConflictMode.Skip;
+            });
+
+        tab.InputText = "prompt";
+        await tab.SendCommand.ExecuteAsync(null);
+        FlushDispatcher();
+
+        confirm.ConfirmResult = true;
+        var user = Assert.Single(tab.Messages, m => m.IsUser);
+        await tab.RestoreCommand.ExecuteAsync(user);
+        FlushDispatcher();
+
+        Assert.Equal(HandEditConflictMode.Skip, observed);
+        Assert.Equal("prompt", tab.InputText);
     }
 
     // ── Message trimming (memory optimization) ────────────────

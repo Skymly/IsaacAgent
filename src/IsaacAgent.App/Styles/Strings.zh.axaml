@@ -90,6 +90,9 @@
     <sys:String x:Key="SettingsTheme">主题</sys:String>
     <sys:String x:Key="SettingsThemeDark">深色</sys:String>
     <sys:String x:Key="SettingsThemeLight">浅色</sys:String>
+    <sys:String x:Key="SettingsAgent">Agent</sys:String>
+    <sys:String x:Key="SettingsHandEditConflictMode">Hand-edit 冲突模式</sys:String>
+    <sys:String x:Key="SettingsHandEditConflictModeNote">Force（默认）即使文件被外部编辑也会应用 Before-image。Skip 保留这些路径不变，并在 Restore 后列出。</sys:String>
     <sys:String x:Key="SettingsSave">保存</sys:String>
     <sys:String x:Key="SettingsCancel">取消</sys:String>
 

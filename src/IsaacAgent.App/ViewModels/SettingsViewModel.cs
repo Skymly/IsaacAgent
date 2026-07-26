@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
@@ -74,6 +75,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     public ObservableCollection<string> AvailableLogLevels { get; } =
         ["Verbose", "Debug", "Information", "Warning", "Error", "Fatal"];
 
+    // Agent settings
+    [ObservableProperty]
+    private HandEditConflictMode _selectedHandEditConflictMode = HandEditConflictMode.Force;
+
+    public ObservableCollection<HandEditConflictMode> HandEditConflictModes { get; } =
+        [HandEditConflictMode.Force, HandEditConflictMode.Skip];
+
     private readonly AppConfiguration _config;
     private readonly ISettingsApply _settingsApply;
     private readonly ToastService? _toasts;
@@ -100,6 +108,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _accentColor = config.AccentColor;
         _selectedFontSize = string.IsNullOrEmpty(config.FontSize) ? "medium" : config.FontSize;
         _selectedLogLevel = string.IsNullOrEmpty(config.LogLevel) ? "Information" : config.LogLevel;
+        _selectedHandEditConflictMode = config.HandEditConflictMode;
     }
 
     public void Save()
@@ -125,6 +134,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _config.AccentColor = AccentColor;
         _config.FontSize = SelectedFontSize;
         _config.LogLevel = SelectedLogLevel;
+        _config.HandEditConflictMode = SelectedHandEditConflictMode;
 
         _config.Save();
 

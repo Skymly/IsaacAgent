@@ -20,6 +20,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     private readonly ILogger<ChatTabViewModel> _logger;
     private readonly IAgentSessionFactory _sessionFactory;
     private readonly IRestoreConfirmDialog _restoreConfirm;
+    private readonly Func<HandEditConflictMode> _getHandEditConflictMode;
     private readonly string _tabId = Guid.NewGuid().ToString("N")[..8];
     private AgentSession _session;
     private CancellationTokenSource? _cts;
@@ -68,6 +69,12 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         _logger = logger;
         _sessionFactory = services.GetRequiredService<IAgentSessionFactory>();
         _restoreConfirm = services.GetRequiredService<IRestoreConfirmDialog>();
+        _getHandEditConflictMode = services.GetService<Func<HandEditConflictMode>>()
+            ?? static () =>
+            {
+                try { return AppConfiguration.Load().HandEditConflictMode; }
+                catch { return HandEditConflictMode.Force; }
+            };
         _session = _sessionFactory.Create(projectDir);
         _currentProjectDir = projectDir;
         SubscribeSessionEvents(_session);
@@ -259,8 +266,9 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Restore to the Checkpoint on a user message after confirm: cancel
-    /// in-flight generation if needed, invoke session Restore (Hand-edit force),
-    /// truncate UI, and refill the input with the restored prompt.
+    /// in-flight generation if needed, invoke session Restore under the
+    /// configured Hand-edit conflict mode, truncate UI, and refill the input
+    /// with the restored prompt.
     /// </summary>
     [RelayCommand]
     private async Task RestoreAsync(ChatMessageViewModel? msg)
@@ -289,7 +297,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
             var result = await _session.RestoreAsync(
                 checkpointId,
-                HandEditConflictMode.Force);
+                _getHandEditConflictMode());
 
             var idx = Messages.IndexOf(msg);
             if (idx >= 0)

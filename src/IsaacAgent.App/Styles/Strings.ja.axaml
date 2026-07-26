@@ -90,6 +90,9 @@
     <sys:String x:Key="SettingsTheme">テーマ</sys:String>
     <sys:String x:Key="SettingsThemeDark">ダーク</sys:String>
     <sys:String x:Key="SettingsThemeLight">ライト</sys:String>
+    <sys:String x:Key="SettingsAgent">Agent</sys:String>
+    <sys:String x:Key="SettingsHandEditConflictMode">Hand-edit 競合モード</sys:String>
+    <sys:String x:Key="SettingsHandEditConflictModeNote">Force（既定）はエージェント外で編集されたファイルにも Before-image を適用します。Skip はそれらのパスをそのまま残し、Restore 後に一覧表示します。</sys:String>
     <sys:String x:Key="SettingsSave">保存</sys:String>
     <sys:String x:Key="SettingsCancel">キャンセル</sys:String>
 

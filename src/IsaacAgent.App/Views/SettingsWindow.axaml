@@ -92,6 +92,19 @@
                                    Classes="caption" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
+
+                <!-- Agent Section -->
+                <Border Classes="card" Padding="16,12">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="{DynamicResource SettingsAgent}" Classes="header" FontSize="14" />
+                        <Separator Classes="isaac" Margin="0,2" />
+                        <TextBlock Text="{DynamicResource SettingsHandEditConflictMode}" FontWeight="SemiBold" />
+                        <ComboBox SelectedItem="{Binding SelectedHandEditConflictMode}"
+                                  ItemsSource="{Binding HandEditConflictModes}" />
+                        <TextBlock Text="{DynamicResource SettingsHandEditConflictModeNote}"
+                                   Classes="caption" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
 
