@@ -45,7 +45,11 @@ public sealed partial class ProjectViewModel : ObservableObject
 
     public Func<Task<IStorageFolder?>>? PickFolderAsync { get; set; }
 
-    public event Action<string?>? ProjectLoaded;
+    /// <summary>
+    /// Raised after a project directory is opened. Handlers may be async
+    /// (e.g. Chat session store save/load). Invoked handlers are awaited.
+    /// </summary>
+    public event Func<string?, Task>? ProjectLoaded;
 
     public ProjectViewModel(ILogger<ProjectViewModel> logger, AppConfiguration config)
     {
@@ -362,7 +366,17 @@ public sealed partial class ProjectViewModel : ObservableObject
         FilePreviewContent = "";
         FilePreviewName = "";
         await RefreshFilesAsync();
-        ProjectLoaded?.Invoke(path);
+        await RaiseProjectLoadedAsync(path);
+    }
+
+    private async Task RaiseProjectLoadedAsync(string? path)
+    {
+        var handlers = ProjectLoaded;
+        if (handlers is null)
+            return;
+
+        foreach (var handler in handlers.GetInvocationList().Cast<Func<string?, Task>>())
+            await handler(path);
     }
 
     private async Task RefreshFilesAsync()

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Chat session store project switch**: opening or switching projects saves the
+  outgoing project via `IChatSessionStore`, then restores tabs (stable GUID,
+  title, order) and hydrates each tab's live `AgentSession` from the full Agent
+  history envelope; the UI bubble list shows user and assistant only (issue #49).
 - **Chat session store legacy migration**: on first load with no `sessions/`
   manifest, migrate once from legacy Agent `history/` (message content) and
   `chat-history/` (titles/order when available); leave legacy files untouched;

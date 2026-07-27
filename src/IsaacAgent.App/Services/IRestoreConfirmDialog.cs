@@ -1,8 +1,8 @@
 namespace IsaacAgent.App.Services;
 
 /// <summary>
-/// Confirm dialog for Checkpoint Restore. Distinct from session-deserialization
-/// restore (<c>ChatHistoryService.RestoreSession</c>).
+/// Confirm dialog for Checkpoint Restore. Distinct from loading a saved chat
+/// session from the Chat session store (project reopen / hydrate).
 /// </summary>
 public interface IRestoreConfirmDialog
 {
