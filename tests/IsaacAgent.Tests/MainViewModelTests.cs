@@ -442,4 +442,44 @@ public class MainViewModelTests
                 Directory.Delete(projectDir, true);
         }
     }
+
+    [AvaloniaFact]
+    public async Task ProjectSwitch_EnvelopeWithoutSystem_RetainsSessionSystemPrompt()
+    {
+        var projectDir = CreateTempProjectDir();
+        try
+        {
+            var store = new MemoryChatSessionStore();
+            store.Seed(projectDir, new ProjectSessionManifest
+            {
+                ProjectDir = projectDir,
+                Tabs =
+                [
+                    new SessionTabRecord
+                    {
+                        Id = Guid.NewGuid(),
+                        Title = "Legacy UI",
+                        Messages =
+                        [
+                            ChatMessage.User("hello"),
+                            ChatMessage.Assistant("hi")
+                        ]
+                    }
+                ]
+            });
+
+            var (vm, _, _) = CreateMainViewModel(store);
+            await vm.Project.LoadProjectAsync(projectDir);
+
+            var history = Assert.Single(vm.Chat.Tabs).AgentHistory;
+            Assert.Equal("system", history[0].Role);
+            Assert.Contains(history, m => m.Content == "hello");
+            Assert.Equal(2, Assert.Single(vm.Chat.Tabs).Messages.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+                Directory.Delete(projectDir, true);
+        }
+    }
 }

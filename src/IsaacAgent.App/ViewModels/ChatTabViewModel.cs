@@ -186,6 +186,8 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Hydrates the live <see cref="AgentSession"/> with the full Agent envelope,
     /// then projects user/assistant rows into the UI bubble list.
+    /// When the envelope omits a system prompt (e.g. legacy UI-only migration),
+    /// keeps the session's existing project system message.
     /// </summary>
     public void HydrateFromEnvelope(IReadOnlyList<ChatMessage> messages)
     {
@@ -195,7 +197,17 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
         if (messages.Count > 0)
         {
+            ChatMessage? retainedSystem = null;
+            if (!messages.Any(m => m.Role == "system")
+                && _session.History.Count > 0
+                && _session.History[0].Role == "system")
+            {
+                retainedSystem = _session.History[0];
+            }
+
             _session.History.Clear();
+            if (retainedSystem is not null)
+                _session.History.Add(retainedSystem);
             _session.History.AddRange(messages);
         }
 

@@ -11,6 +11,8 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IServiceProvider _services;
     private readonly ILogger<MainViewModel> _logger;
     private readonly IChatSessionStore _chatSessionStore;
+    private readonly SemaphoreSlim _projectLoadGate = new(1, 1);
+    private int _projectLoadVersion;
     private string? _previousProjectDir;
 
     public ChatViewModel Chat { get; }
@@ -52,30 +54,52 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>
     /// Saves the outgoing project via the Chat session store, then hydrates the
     /// incoming project's tabs and AgentSession envelopes from the store.
+    /// Serialized with a generation token so overlapping opens cannot apply a
+    /// stale manifest after a newer project path is already shown.
     /// </summary>
     private async Task OnProjectLoadedAsync(string? path)
     {
-        if (!string.IsNullOrEmpty(_previousProjectDir))
+        var version = Interlocked.Increment(ref _projectLoadVersion);
+
+        await _projectLoadGate.WaitAsync();
+        try
         {
-            var outgoing = Chat.BuildSessionManifest(_previousProjectDir);
-            await _chatSessionStore.SaveAsync(_previousProjectDir, outgoing);
-        }
+            if (version != Volatile.Read(ref _projectLoadVersion))
+                return;
 
-        if (string.IsNullOrEmpty(path))
+            if (!string.IsNullOrEmpty(_previousProjectDir))
+            {
+                var outgoing = Chat.BuildSessionManifest(_previousProjectDir);
+                await _chatSessionStore.SaveAsync(_previousProjectDir, outgoing);
+            }
+
+            if (version != Volatile.Read(ref _projectLoadVersion))
+                return;
+
+            if (string.IsNullOrEmpty(path))
+            {
+                // No project open: do not use the store as a write target for orphan sessions.
+                Chat.ApplySessionManifest(null, new ProjectSessionManifest());
+                _previousProjectDir = null;
+                StatusText = GetString("StatusNoProject");
+                return;
+            }
+
+            var incoming = await _chatSessionStore.LoadAsync(path);
+
+            if (version != Volatile.Read(ref _projectLoadVersion))
+                return;
+
+            Chat.ApplySessionManifest(path, incoming);
+            _previousProjectDir = path;
+
+            StatusText = $"Project: {Project.ProjectName}";
+            Toasts.ShowSuccess($"{GetString("ToastProjectLoaded")}: {Project.ProjectName}");
+        }
+        finally
         {
-            // No project open: do not use the store as a write target for orphan sessions.
-            Chat.ApplySessionManifest(null, new ProjectSessionManifest());
-            _previousProjectDir = null;
-            StatusText = GetString("StatusNoProject");
-            return;
+            _projectLoadGate.Release();
         }
-
-        var incoming = await _chatSessionStore.LoadAsync(path);
-        Chat.ApplySessionManifest(path, incoming);
-        _previousProjectDir = path;
-
-        StatusText = $"Project: {Project.ProjectName}";
-        Toasts.ShowSuccess($"{GetString("ToastProjectLoaded")}: {Project.ProjectName}");
     }
 
     /// <summary>
