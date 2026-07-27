@@ -117,9 +117,9 @@ public class ChatSessionStoreTests
                 ]
             };
 
-            await store.SaveAsync(null, manifest);
-            await store.SaveAsync("", manifest);
-            await store.SaveAsync("   ", manifest);
+            Assert.False(await store.SaveAsync(null, manifest));
+            Assert.False(await store.SaveAsync("", manifest));
+            Assert.False(await store.SaveAsync("   ", manifest));
 
             Assert.Empty(Directory.GetFiles(roots.Sessions, "*.json", SearchOption.AllDirectories));
 
@@ -493,6 +493,50 @@ public class ChatSessionStoreTests
             Assert.Equal("u1", loaded.Tabs[0].Messages[0].Content);
             Assert.Equal("a1", loaded.Tabs[0].Messages[1].Content);
             Assert.Equal("u2", loaded.Tabs[1].Messages[0].Content);
+        }
+        finally
+        {
+            Cleanup(roots);
+        }
+    }
+
+    [Fact]
+    public async Task Load_ConcurrentFirstOpen_SharesSingleMigratedAuthority()
+    {
+        var roots = CreateTempRoots();
+        try
+        {
+            var projectDir = @"C:\Mods\ConcurrentMigrateMod";
+            var hash = FileChatSessionStore.ComputeProjectHash(projectDir);
+            await WriteLegacyHistoryAsync(
+                roots.History,
+                hash,
+                "abcd1234",
+                [ChatMessage.User("shared content")]);
+            await WriteLegacyChatHistoryAsync(
+                roots.ChatHistory,
+                projectDir,
+                [("Shared", [new ChatMessageRecord { Role = "user", Content = "ui" }])]);
+
+            var store = CreateStore(roots);
+            var tasks = Enumerable.Range(0, 8)
+                .Select(_ => store.LoadAsync(projectDir))
+                .ToArray();
+            var results = await Task.WhenAll(tasks);
+
+            Assert.All(results, r =>
+            {
+                Assert.Single(r.Tabs);
+                Assert.Equal("Shared", r.Tabs[0].Title);
+                Assert.Equal("shared content", r.Tabs[0].Messages[0].Content);
+            });
+
+            var ids = results.Select(r => r.Tabs[0].Id).Distinct().ToArray();
+            Assert.Single(ids);
+
+            var storePath = store.GetStorePath(projectDir)!;
+            Assert.True(File.Exists(storePath));
+            Assert.Single(Directory.GetFiles(roots.Sessions, "*.json"));
         }
         finally
         {

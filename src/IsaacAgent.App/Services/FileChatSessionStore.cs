@@ -25,6 +25,7 @@ public sealed class FileChatSessionStore : IChatSessionStore
     private readonly string _historyRootDirectory;
     private readonly string _chatHistoryRootDirectory;
     private readonly ILogger<FileChatSessionStore>? _logger;
+    private readonly SemaphoreSlim _migrateGate = new(1, 1);
 
     public FileChatSessionStore(
         string rootDirectory,
@@ -41,12 +42,12 @@ public sealed class FileChatSessionStore : IChatSessionStore
         _logger = logger;
     }
 
-    public async Task SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default)
+    public async Task<bool> SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         var path = GetStorePath(projectDir);
         if (path is null)
-            return;
+            return false;
 
         try
         {
@@ -60,6 +61,7 @@ public sealed class FileChatSessionStore : IChatSessionStore
             };
             var json = JsonSerializer.Serialize(toWrite, JsonOptions);
             await File.WriteAllTextAsync(path, json, ct).ConfigureAwait(false);
+            return true;
         }
         catch (OperationCanceledException)
         {
@@ -68,6 +70,7 @@ public sealed class FileChatSessionStore : IChatSessionStore
         catch (Exception ex)
         {
             _logger?.LogError(ex, "Failed to save chat session store to {Path}", path);
+            return false;
         }
     }
 
@@ -80,38 +83,44 @@ public sealed class FileChatSessionStore : IChatSessionStore
         try
         {
             if (File.Exists(path))
+                return await ReadExistingAsync(path, ct).ConfigureAwait(false);
+
+            // Serialize first-open migrate+write so concurrent loads share one authority file.
+            await _migrateGate.WaitAsync(ct).ConfigureAwait(false);
+            try
             {
-                var json = await File.ReadAllTextAsync(path, ct).ConfigureAwait(false);
-                var loaded = JsonSerializer.Deserialize<ProjectSessionManifest>(json, JsonOptions);
-                if (loaded is null)
+                if (File.Exists(path))
+                    return await ReadExistingAsync(path, ct).ConfigureAwait(false);
+
+                // First open with no sessions file: migrate from legacy (if any), then write
+                // sessions/ so subsequent loads treat it as sole authority (including empty).
+                var migrated = await BuildMigratedManifestAsync(projectDir!, ct).ConfigureAwait(false);
+                migrated.ProjectDir = projectDir!;
+                migrated.SavedAt = DateTimeOffset.UtcNow;
+                if (!await SaveAsync(projectDir, migrated, ct).ConfigureAwait(false) || !File.Exists(path))
                 {
-                    _logger?.LogWarning("Chat session store at {Path} deserialized to null; using empty session", path);
+                    _logger?.LogError(
+                        "Failed to persist migrated chat session for {ProjectDir} to {Path}; using empty session",
+                        projectDir,
+                        path);
                     return EmptyManifest();
                 }
 
-                loaded.Tabs ??= [];
-                foreach (var tab in loaded.Tabs)
-                    tab.Messages ??= [];
+                if (migrated.Tabs.Count > 0)
+                {
+                    _logger?.LogInformation(
+                        "Migrated chat session for project {ProjectDir} into {Path} ({TabCount} tabs)",
+                        projectDir,
+                        path,
+                        migrated.Tabs.Count);
+                }
 
-                return loaded;
+                return migrated;
             }
-
-            // First open with no sessions file: migrate from legacy (if any), then write
-            // sessions/ so subsequent loads treat it as sole authority (including empty).
-            var migrated = await BuildMigratedManifestAsync(projectDir!, ct).ConfigureAwait(false);
-            migrated.ProjectDir = projectDir!;
-            migrated.SavedAt = DateTimeOffset.UtcNow;
-            await SaveAsync(projectDir, migrated, ct).ConfigureAwait(false);
-            if (migrated.Tabs.Count > 0)
+            finally
             {
-                _logger?.LogInformation(
-                    "Migrated chat session for project {ProjectDir} into {Path} ({TabCount} tabs)",
-                    projectDir,
-                    path,
-                    migrated.Tabs.Count);
+                _migrateGate.Release();
             }
-
-            return migrated;
         }
         catch (OperationCanceledException)
         {
@@ -122,6 +131,23 @@ public sealed class FileChatSessionStore : IChatSessionStore
             _logger?.LogWarning(ex, "Failed to load chat session store from {Path}; using empty session", path);
             return EmptyManifest();
         }
+    }
+
+    private async Task<ProjectSessionManifest> ReadExistingAsync(string path, CancellationToken ct)
+    {
+        var json = await File.ReadAllTextAsync(path, ct).ConfigureAwait(false);
+        var loaded = JsonSerializer.Deserialize<ProjectSessionManifest>(json, JsonOptions);
+        if (loaded is null)
+        {
+            _logger?.LogWarning("Chat session store at {Path} deserialized to null; using empty session", path);
+            return EmptyManifest();
+        }
+
+        loaded.Tabs ??= [];
+        foreach (var tab in loaded.Tabs)
+            tab.Messages ??= [];
+
+        return loaded;
     }
 
     /// <summary>

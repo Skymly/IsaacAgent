@@ -9,9 +9,9 @@ public interface IChatSessionStore
 {
     /// <summary>
     /// Saves the project manifest. No-op when <paramref name="projectDir"/> is null or empty
-    /// (no read, no write).
+    /// (no read, no write). Returns <c>true</c> when the file was written successfully.
     /// </summary>
-    Task SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default);
+    Task<bool> SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default);
 
     /// <summary>
     /// Loads the project manifest. No-op empty result when no project is open.
