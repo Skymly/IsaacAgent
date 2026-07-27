@@ -61,8 +61,10 @@
 | **无项目** | `projectDir` 空 / 空白 → 不读不写 |
 | **软失败** | 缺失或损坏文件 → 打日志 + 空 manifest，不抛给调用方 |
 | **不持久化** | Checkpoint、Before-image、tip hash（保持会话内短暂） |
+| **一次性迁移** | `sessions/` 缺失时，从 legacy `history/`（消息内容优先；多文件按 LastWriteTime 与 `chat-history/` 顺序按索引对齐）与 `chat-history/`（title/顺序，若有）构建 manifest，并**始终**写入 `sessions/`（含空 manifest），确立权威；legacy 文件保留不动；之后不再以 legacy 为权威 |
+| **可注入根** | 生产默认 `%APPDATA%/IsaacAgent/{sessions,history,chat-history}`；测试可注入三根目录 |
 
-ViewModel 接线、legacy `chat-history/` + `history/` 迁移、以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役不在本缝落地范围内（后续 ticket）。
+ViewModel 接线以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役不在本缝落地范围内（后续 ticket）。
 
 ### Checkpoint / Restore UX
 

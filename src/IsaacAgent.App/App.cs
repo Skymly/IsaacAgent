@@ -111,11 +111,16 @@ public sealed class App : Application
         services.AddSingleton<ThemeService>();
         services.AddSingleton<ChatHistoryService>();
         services.AddSingleton<IChatSessionStore>(sp =>
-            new FileChatSessionStore(
-                Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "IsaacAgent", "sessions"),
-                sp.GetRequiredService<ILogger<FileChatSessionStore>>()));
+        {
+            var appData = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "IsaacAgent");
+            return new FileChatSessionStore(
+                Path.Combine(appData, "sessions"),
+                Path.Combine(appData, "history"),
+                Path.Combine(appData, "chat-history"),
+                sp.GetRequiredService<ILogger<FileChatSessionStore>>());
+        });
         services.AddSingleton<LuaSnippetService>();
         services.AddSingleton<IRestoreConfirmDialog, AvaloniaRestoreConfirmDialog>();
 
