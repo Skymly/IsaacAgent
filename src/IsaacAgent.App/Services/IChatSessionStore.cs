@@ -9,13 +9,16 @@ public interface IChatSessionStore
 {
     /// <summary>
     /// Saves the project manifest. No-op when <paramref name="projectDir"/> is null or empty
-    /// (no read, no write).
+    /// (no read, no write). Returns <c>true</c> when the file was written successfully.
     /// </summary>
-    Task SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default);
+    Task<bool> SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default);
 
     /// <summary>
     /// Loads the project manifest. No-op empty result when no project is open.
-    /// Missing or corrupt files fail soft (empty manifest).
+    /// When the sessions file is missing, migrates once from legacy history/ and
+    /// chat-history/ (if present), always writes the new store (including empty),
+    /// and leaves legacy files untouched. An existing sessions file is authoritative.
+    /// Corrupt sessions files fail soft (empty manifest without rewriting).
     /// </summary>
     Task<ProjectSessionManifest> LoadAsync(string? projectDir, CancellationToken ct = default);
 }

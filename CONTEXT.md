@@ -41,7 +41,7 @@ _Avoid_: Function, action (when you mean Tool)
 ### Chat persistence
 
 **Chat session store**:
-The App module that owns project-scoped chat persistence: one manifest file per project under `sessions/` whose authoritative payload is each tab's Agent history envelope; UI bubbles are a projection (user + assistant only). Uses stable tab GUIDs; does not persist when no project is open; Checkpoints remain ephemeral and are not stored. Supersedes the legacy dual paths (`chat-history/`, `history/`); one-time migrate-then-`sessions/`-only write lands with the migration follow-on, not the core store seam alone.
+The App module that owns project-scoped chat persistence: one manifest file per project under `sessions/` whose authoritative payload is each tab's Agent history envelope; UI bubbles are a projection (user + assistant only). Uses stable tab GUIDs; does not persist when no project is open; Checkpoints remain ephemeral and are not stored. Supersedes the legacy dual paths (`chat-history/`, `history/`); on first load with no `sessions/` file, migrates once from those legacy roots then writes only under `sessions/`.
 _Avoid_: ChatHistoryService.SaveSession / RestoreSession (legacy dual path), session deserialization restore (when you mean Checkpoint Restore)
 
 ### Checkpoints

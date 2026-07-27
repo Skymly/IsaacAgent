@@ -58,11 +58,14 @@
 |----|------|
 | **布局** | `%APPDATA%/IsaacAgent/sessions/{projectHash}.json`（可注入 root 便于测试）；`projectHash` = `SHA256(UTF8(path.ToLowerInvariant()))` 前 12 hex（与旧 `history/` 一致） |
 | **载荷** | 有序 tabs：稳定 `Guid`、title、Agent 形 envelope（`HistoryVersion` + `List<ChatMessage>`）；UI 气泡为投影，不在本缝内 |
+| **Save 结果** | `SaveAsync` 返回 `bool`：写出成功为 `true`；无项目 / 写失败为 `false`（打日志，不抛） |
 | **无项目** | `projectDir` 空 / 空白 → 不读不写 |
 | **软失败** | 缺失或损坏文件 → 打日志 + 空 manifest，不抛给调用方 |
 | **不持久化** | Checkpoint、Before-image、tip hash（保持会话内短暂） |
+| **一次性迁移** | `sessions/` 缺失时，在进程内闸门下从 legacy `history/`（消息内容优先；多文件按 LastWriteTime 与 `chat-history/` 顺序按索引对齐）与 `chat-history/`（title/顺序，若有）构建 manifest，并**始终**写入 `sessions/`（含空 manifest）；写失败则软失败为空会话（不返回未落盘迁移结果）；legacy 文件保留不动；之后不再以 legacy 为权威 |
+| **可注入根** | 生产默认 `%APPDATA%/IsaacAgent/{sessions,history,chat-history}`；测试可注入三根目录 |
 
-ViewModel 接线、legacy `chat-history/` + `history/` 迁移、以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役不在本缝落地范围内（后续 ticket）。
+ViewModel 接线以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役不在本缝落地范围内（后续 ticket）。
 
 ### Checkpoint / Restore UX
 

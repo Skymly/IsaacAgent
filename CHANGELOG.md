@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Chat session store legacy migration**: on first load with no `sessions/`
+  manifest, migrate once from legacy Agent `history/` (message content) and
+  `chat-history/` (titles/order when available); leave legacy files untouched;
+  subsequent loads treat `sessions/` as sole authority (issue #48).
 - **Checkpoint chat Restore UX**: Restore control on user messages with a live
   Checkpoint; confirm dialog states the five required facts; confirm cancels
   in-flight generation if needed, runs `AgentSession.RestoreAsync` under the
