@@ -39,31 +39,63 @@ public class ChatViewModelTests
         }
     }
 
+    /// <summary>Recording Chat session store for CloseTab / Persist tests (#50).</summary>
+    private sealed class RecordingChatSessionStore : IChatSessionStore
+    {
+        public List<(string? ProjectDir, ProjectSessionManifest Manifest)> Saves { get; } = [];
+
+        public Task<bool> SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default)
+        {
+            Saves.Add((projectDir, Clone(manifest)));
+            return Task.FromResult(!string.IsNullOrWhiteSpace(projectDir));
+        }
+
+        public Task<ProjectSessionManifest> LoadAsync(string? projectDir, CancellationToken ct = default)
+            => Task.FromResult(new ProjectSessionManifest { ProjectDir = projectDir ?? "" });
+
+        private static ProjectSessionManifest Clone(ProjectSessionManifest source) => new()
+        {
+            Version = source.Version,
+            ProjectDir = source.ProjectDir,
+            SavedAt = source.SavedAt,
+            Tabs = source.Tabs.Select(t => new SessionTabRecord
+            {
+                Id = t.Id,
+                Title = t.Title,
+                HistoryVersion = t.HistoryVersion,
+                Messages = t.Messages.ToList()
+            }).ToList()
+        };
+    }
+
     // ── Helpers ───────────────────────────────────────────────
 
-    private static ChatViewModel CreateChatViewModel()
+    private static ChatViewModel CreateChatViewModel(RecordingChatSessionStore? store = null)
     {
+        store ??= new RecordingChatSessionStore();
         var chat = new StubChatService();
-        var session = CreateSession(chat);
         var factoryMock = new Mock<IAgentSessionFactory>();
-        factoryMock.Setup(f => f.Create(It.IsAny<string?>())).Returns(session);
+        factoryMock
+            .Setup(f => f.Create(It.IsAny<string?>()))
+            .Returns((string? dir) => CreateSession(chat, dir));
 
         var services = new ServiceCollection();
         services.AddSingleton(factoryMock.Object);
         services.AddSingleton(Mock.Of<ILogger<ChatTabViewModel>>());
         services.AddSingleton(Mock.Of<ILogger<ChatViewModel>>());
         services.AddSingleton(Mock.Of<IRestoreConfirmDialog>());
+        services.AddSingleton<IChatSessionStore>(store);
         var sp = services.BuildServiceProvider();
 
         return new ChatViewModel(sp, sp.GetRequiredService<ILogger<ChatViewModel>>());
     }
 
-    private static AgentSession CreateSession(IChatService chat)
+    private static AgentSession CreateSession(IChatService chat, string? projectDir = null)
     {
         var logger = Mock.Of<ILogger<AgentSession>>();
         var toolLogger = Mock.Of<ILogger<ToolRegistry>>();
         var registry = new ToolRegistry(toolLogger);
-        return new AgentSession(chat, registry, null, logger, null);
+        return new AgentSession(chat, registry, projectDir, logger, null);
     }
 
     // ── Initialization ────────────────────────────────────────
@@ -177,6 +209,59 @@ public class ChatViewModelTests
 
         vm.CloseTabCommand.Execute(vm.Tabs[1]);
         Assert.False(vm.CanCloseTabs);
+    }
+
+    [AvaloniaFact]
+    public async Task CloseTab_WithProject_PersistsManifestWithoutClosedTab()
+    {
+        var store = new RecordingChatSessionStore();
+        var vm = CreateChatViewModel(store);
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_close_{Guid.NewGuid():N}");
+        vm.OnProjectChanged(projectDir);
+
+        vm.AddTabCommand.Execute(null);
+        vm.Tabs[0].Title = "Keep";
+        vm.Tabs[1].Title = "Close me";
+        var closedId = vm.Tabs[1].Id;
+
+        store.Saves.Clear();
+        await vm.CloseTabCommand.ExecuteAsync(vm.Tabs[1]);
+
+        var save = Assert.Single(store.Saves);
+        Assert.Equal(projectDir, save.ProjectDir);
+        Assert.Single(save.Manifest.Tabs);
+        Assert.Equal("Keep", save.Manifest.Tabs[0].Title);
+        Assert.DoesNotContain(save.Manifest.Tabs, t => t.Id == closedId);
+    }
+
+    [AvaloniaFact]
+    public async Task CloseTab_WithoutProject_DoesNotPersist()
+    {
+        var store = new RecordingChatSessionStore();
+        var vm = CreateChatViewModel(store);
+        vm.AddTabCommand.Execute(null);
+
+        await vm.CloseTabCommand.ExecuteAsync(vm.Tabs[1]);
+
+        Assert.Empty(store.Saves);
+    }
+
+    [AvaloniaFact]
+    public async Task PersistSession_AfterAddTab_IncludesNewTab()
+    {
+        var store = new RecordingChatSessionStore();
+        var vm = CreateChatViewModel(store);
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_addtab_{Guid.NewGuid():N}");
+        vm.OnProjectChanged(projectDir);
+
+        vm.AddTabCommand.Execute(null);
+        vm.Tabs[1].Title = "New thread";
+
+        await vm.PersistSessionAsync();
+
+        var save = Assert.Single(store.Saves);
+        Assert.Equal(2, save.Manifest.Tabs.Count);
+        Assert.Contains(save.Manifest.Tabs, t => t.Title == "New thread");
     }
 
     // ── SelectTab ─────────────────────────────────────────────

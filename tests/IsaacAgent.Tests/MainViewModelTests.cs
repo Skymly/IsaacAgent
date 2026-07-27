@@ -482,4 +482,49 @@ public class MainViewModelTests
                 Directory.Delete(projectDir, true);
         }
     }
+
+    [AvaloniaFact]
+    public async Task FlushCurrentSession_WithProject_PersistsViaStore()
+    {
+        var projectDir = CreateTempProjectDir();
+        try
+        {
+            var store = new MemoryChatSessionStore();
+            var (vm, _, _) = CreateMainViewModel(store);
+            await vm.Project.LoadProjectAsync(projectDir);
+
+            var tab = Assert.Single(vm.Chat.Tabs);
+            tab.Title = "Flush me";
+            tab.Session.History.Add(ChatMessage.User("before quit"));
+            tab.Session.History.Add(ChatMessage.Assistant("ok"));
+
+            store.Calls.Clear();
+            await vm.FlushCurrentSessionAsync();
+
+            Assert.Equal([("save", projectDir)], store.Calls);
+
+            var loaded = await store.LoadAsync(projectDir);
+            var savedTab = Assert.Single(loaded.Tabs);
+            Assert.Equal("Flush me", savedTab.Title);
+            Assert.Contains(savedTab.Messages, m => m.Content == "before quit");
+            Assert.Contains(savedTab.Messages, m => m.Content == "ok");
+        }
+        finally
+        {
+            if (Directory.Exists(projectDir))
+                Directory.Delete(projectDir, true);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task FlushCurrentSession_WithoutProject_DoesNotWrite()
+    {
+        var store = new MemoryChatSessionStore();
+        var (vm, _, _) = CreateMainViewModel(store);
+
+        store.Calls.Clear();
+        await vm.FlushCurrentSessionAsync();
+
+        Assert.Empty(store.Calls);
+    }
 }

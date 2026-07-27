@@ -103,6 +103,13 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Flushes the current project’s Chat session store (app close / shutdown).
+    /// No-op when no project is open.
+    /// </summary>
+    public Task FlushCurrentSessionAsync(CancellationToken ct = default) =>
+        Chat.PersistSessionAsync(ct);
+
+    /// <summary>
     ///   Look up a localized string from application resources.
     ///   Falls back to the key if not found.
     /// </summary>

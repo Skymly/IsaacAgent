@@ -152,6 +152,35 @@ public class ChatTabViewModelTests
         }
     }
 
+    /// <summary>Recording Chat session store for persist-trigger tests (#50).</summary>
+    private sealed class RecordingChatSessionStore : IChatSessionStore
+    {
+        public List<(string? ProjectDir, ProjectSessionManifest Manifest)> Saves { get; } = [];
+
+        public Task<bool> SaveAsync(string? projectDir, ProjectSessionManifest manifest, CancellationToken ct = default)
+        {
+            Saves.Add((projectDir, Clone(manifest)));
+            return Task.FromResult(!string.IsNullOrWhiteSpace(projectDir));
+        }
+
+        public Task<ProjectSessionManifest> LoadAsync(string? projectDir, CancellationToken ct = default)
+            => Task.FromResult(new ProjectSessionManifest { ProjectDir = projectDir ?? "" });
+
+        private static ProjectSessionManifest Clone(ProjectSessionManifest source) => new()
+        {
+            Version = source.Version,
+            ProjectDir = source.ProjectDir,
+            SavedAt = source.SavedAt,
+            Tabs = source.Tabs.Select(t => new SessionTabRecord
+            {
+                Id = t.Id,
+                Title = t.Title,
+                HistoryVersion = t.HistoryVersion,
+                Messages = t.Messages.ToList()
+            }).ToList()
+        };
+    }
+
     private static (ChatTabViewModel tab, ScriptedChatService chat, FakeRestoreConfirmDialog confirm)
         CreateTab(params List<ChatChunk>[] turns)
     {
@@ -164,7 +193,9 @@ public class ChatTabViewModelTests
         CreateTabWith<TChat>(
             AgentSession session,
             TChat chat,
-            Func<HandEditConflictMode>? handEditMode = null)
+            Func<HandEditConflictMode>? handEditMode = null,
+            string? projectDir = null,
+            Func<CancellationToken, Task>? persistSession = null)
         where TChat : IChatService
     {
         var confirm = new FakeRestoreConfirmDialog();
@@ -179,8 +210,45 @@ public class ChatTabViewModelTests
             handEditMode ?? (() => HandEditConflictMode.Force));
         var sp = services.BuildServiceProvider();
 
-        var tab = new ChatTabViewModel(sp, sp.GetRequiredService<ILogger<ChatTabViewModel>>(), null);
+        var tab = new ChatTabViewModel(
+            sp,
+            sp.GetRequiredService<ILogger<ChatTabViewModel>>(),
+            projectDir,
+            persistSession: persistSession);
         return (tab, chat, confirm);
+    }
+
+    private static (ChatTabViewModel tab, RecordingChatSessionStore store, FakeRestoreConfirmDialog confirm)
+        CreateTabWithRecordingStore(
+            string? projectDir,
+            params List<ChatChunk>[] turns)
+    {
+        var chat = new ScriptedChatService(turns);
+        var session = CreateSession(chat);
+        var store = new RecordingChatSessionStore();
+        ChatTabViewModel? tabRef = null;
+        Func<CancellationToken, Task> persist = async ct =>
+        {
+            if (string.IsNullOrWhiteSpace(projectDir) || tabRef is null)
+                return;
+            await store.SaveAsync(projectDir, new ProjectSessionManifest
+            {
+                ProjectDir = projectDir,
+                Tabs =
+                [
+                    new SessionTabRecord
+                    {
+                        Id = tabRef.Id,
+                        Title = tabRef.Title,
+                        HistoryVersion = 1,
+                        Messages = tabRef.AgentHistory.ToList()
+                    }
+                ]
+            }, ct);
+        };
+        var (tab, _, confirm) = CreateTabWith(session, chat, projectDir: projectDir, persistSession: persist);
+        tabRef = tab;
+        return (tab, store, confirm);
     }
 
     private static AgentSession CreateSession(IChatService chat)
@@ -484,6 +552,106 @@ public class ChatTabViewModelTests
         msg.CancelEditCommand.Execute(null);
         Assert.False(msg.IsEditing);
         Assert.Equal("", msg.EditText);
+    }
+
+    // ── Chat session store persist triggers (issue #50) ───────
+
+    [AvaloniaFact]
+    public async Task Send_WithProject_PersistsSessionViaStore()
+    {
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_persist_{Guid.NewGuid():N}");
+        var (tab, store, _) = CreateTabWithRecordingStore(
+            projectDir,
+            [new List<ChatChunk> { TextChunk("Hello!") }]);
+
+        tab.InputText = "What is Isaac?";
+        await tab.SendCommand.ExecuteAsync(null);
+        FlushDispatcher();
+
+        var save = Assert.Single(store.Saves);
+        Assert.Equal(projectDir, save.ProjectDir);
+        Assert.Contains(save.Manifest.Tabs[0].Messages, m => m.Role == "user" && m.Content == "What is Isaac?");
+        Assert.Contains(save.Manifest.Tabs[0].Messages, m => m.Role == "assistant" && m.Content.Contains("Hello!"));
+    }
+
+    [AvaloniaFact]
+    public async Task Send_WithoutProject_DoesNotPersistToStore()
+    {
+        var (tab, store, _) = CreateTabWithRecordingStore(
+            projectDir: null,
+            [new List<ChatChunk> { TextChunk("Hello!") }]);
+
+        tab.InputText = "orphan turn";
+        await tab.SendCommand.ExecuteAsync(null);
+        FlushDispatcher();
+
+        Assert.Empty(store.Saves);
+    }
+
+    [AvaloniaFact]
+    public async Task Send_OnError_DoesNotPersistToStore()
+    {
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_persist_{Guid.NewGuid():N}");
+        var chat = new ThrowingChatService();
+        var session = CreateSession(chat);
+        var store = new RecordingChatSessionStore();
+        ChatTabViewModel? tabRef = null;
+        Func<CancellationToken, Task> persist = async ct =>
+        {
+            if (tabRef is null) return;
+            await store.SaveAsync(projectDir, new ProjectSessionManifest
+            {
+                ProjectDir = projectDir,
+                Tabs =
+                [
+                    new SessionTabRecord
+                    {
+                        Id = tabRef.Id,
+                        Title = tabRef.Title,
+                        Messages = tabRef.AgentHistory.ToList()
+                    }
+                ]
+            }, ct);
+        };
+        var (tab, _, _) = CreateTabWith(session, chat, projectDir: projectDir, persistSession: persist);
+        tabRef = tab;
+
+        tab.InputText = "trigger error";
+        await tab.SendCommand.ExecuteAsync(null);
+        FlushDispatcher();
+
+        Assert.Empty(store.Saves);
+    }
+
+    [AvaloniaFact]
+    public async Task Restore_Confirm_PersistsTruncatedSessionViaStore()
+    {
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_persist_{Guid.NewGuid():N}");
+        var (tab, store, confirm) = CreateTabWithRecordingStore(
+            projectDir,
+            [
+                new List<ChatChunk> { TextChunk("keep-reply") },
+                new List<ChatChunk> { TextChunk("drop-reply") }
+            ]);
+
+        tab.InputText = "keep";
+        await tab.SendCommand.ExecuteAsync(null);
+        tab.InputText = "restore here";
+        await tab.SendCommand.ExecuteAsync(null);
+        FlushDispatcher();
+
+        store.Saves.Clear();
+        confirm.ConfirmResult = true;
+        var target = tab.Messages.First(m => m.IsUser && m.Content == "restore here");
+        await tab.RestoreCommand.ExecuteAsync(target);
+        FlushDispatcher();
+
+        var save = Assert.Single(store.Saves);
+        Assert.Equal(projectDir, save.ProjectDir);
+        Assert.DoesNotContain(save.Manifest.Tabs[0].Messages, m => m.Content == "restore here");
+        Assert.DoesNotContain(save.Manifest.Tabs[0].Messages, m => m.Content == "drop-reply");
+        Assert.Contains(save.Manifest.Tabs[0].Messages, m => m.Role == "user" && m.Content == "keep");
+        Assert.Contains(save.Manifest.Tabs[0].Messages, m => m.Role == "assistant" && m.Content.Contains("keep-reply"));
     }
 
     // ── Checkpoint Restore (issue #39) ────────────────────────

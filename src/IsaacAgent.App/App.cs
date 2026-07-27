@@ -55,6 +55,16 @@ public sealed class App : Application
 
     private static void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e)
     {
+        try
+        {
+            var main = Services.GetService<MainViewModel>();
+            main?.FlushCurrentSessionAsync().GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to flush Chat session store on shutdown");
+        }
+
         _shutdownCts.Cancel();
         _shutdownCts.Dispose();
         // Flush Serilog buffers on shutdown
