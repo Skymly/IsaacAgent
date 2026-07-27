@@ -21,13 +21,21 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     private readonly IAgentSessionFactory _sessionFactory;
     private readonly IRestoreConfirmDialog _restoreConfirm;
     private readonly Func<HandEditConflictMode> _getHandEditConflictMode;
-    private readonly string _tabId = Guid.NewGuid().ToString("N")[..8];
     private AgentSession _session;
     private CancellationTokenSource? _cts;
     private Task? _sendTask;
     private int _historyEpoch;
     private bool _isRestoring;
     private string? _currentProjectDir;
+
+    /// <summary>Stable tab identity for Chat session store round-trips.</summary>
+    public Guid Id { get; }
+
+    /// <summary>Live Agent history envelope (authoritative for persistence / hydrate).</summary>
+    public IReadOnlyList<ChatMessage> AgentHistory => _session.History;
+
+    /// <summary>Live session for headless wiring tests (Checkpoints stay ephemeral).</summary>
+    internal AgentSession Session => _session;
 
     private Action<string, string>? _onToolCall;
     private Action<string, string, TimeSpan>? _onToolResult;
@@ -63,10 +71,15 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<ChatMessageViewModel> Messages { get; } = [];
 
-    public ChatTabViewModel(IServiceProvider services, ILogger<ChatTabViewModel> logger, string? projectDir = null)
+    public ChatTabViewModel(
+        IServiceProvider services,
+        ILogger<ChatTabViewModel> logger,
+        string? projectDir = null,
+        Guid? id = null)
     {
         _services = services;
         _logger = logger;
+        Id = id ?? Guid.NewGuid();
         _sessionFactory = services.GetRequiredService<IAgentSessionFactory>();
         _restoreConfirm = services.GetRequiredService<IRestoreConfirmDialog>();
         _getHandEditConflictMode = services.GetService<Func<HandEditConflictMode>>()
@@ -165,38 +178,67 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         _session.Dispose();
         _session = _sessionFactory.Create(projectDir);
         SubscribeSessionEvents(_session);
-        Messages.Clear();
-        TotalInputTokens = 0;
-        TotalOutputTokens = 0;
-        _session.LoadHistory(GetHistoryPath(projectDir));
-        RestoreMessagesFromHistory();
+        ClearUiMessages();
+        // Chat session store is the authoritative hydrate path (#49);
+        // do not load legacy per-tab history/ here.
     }
 
-    private string GetHistoryPath(string? projectDir)
+    /// <summary>
+    /// Hydrates the live <see cref="AgentSession"/> with the full Agent envelope,
+    /// then projects user/assistant rows into the UI bubble list.
+    /// </summary>
+    public void HydrateFromEnvelope(IReadOnlyList<ChatMessage> messages)
     {
-        var baseDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "IsaacAgent", "history");
-        if (string.IsNullOrEmpty(projectDir))
-            return Path.Combine(baseDir, $"default_{_tabId}.json");
+        ArgumentNullException.ThrowIfNull(messages);
 
-        var hashBytes = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(projectDir.ToLowerInvariant()));
-        var hash = Convert.ToHexString(hashBytes)[..12];
-        return Path.Combine(baseDir, $"project_{hash}_{_tabId}.json");
+        ClearUiMessages();
+
+        if (messages.Count > 0)
+        {
+            _session.History.Clear();
+            _session.History.AddRange(messages);
+        }
+
+        ProjectUiBubblesFromHistory();
     }
 
-    private void RestoreMessagesFromHistory()
+    private void ProjectUiBubblesFromHistory()
     {
         foreach (var msg in _session.History)
         {
-            if (msg.Role is "system" or "tool" or "tool_result") continue;
+            if (msg.Role is not ("user" or "assistant"))
+                continue;
             Messages.Add(new ChatMessageViewModel
             {
                 Role = msg.Role,
                 Content = msg.Content
             });
         }
+    }
+
+    private void ClearUiMessages()
+    {
+        foreach (var msg in Messages)
+            msg.Dispose();
+        Messages.Clear();
+        TotalInputTokens = 0;
+        TotalOutputTokens = 0;
+    }
+
+    private string GetHistoryPath(string? projectDir)
+    {
+        // Legacy per-tab path kept for ScheduleHistorySave until #50 retires it.
+        var shortId = Id.ToString("N")[..8];
+        var baseDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "IsaacAgent", "history");
+        if (string.IsNullOrEmpty(projectDir))
+            return Path.Combine(baseDir, $"default_{shortId}.json");
+
+        var hashBytes = System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(projectDir.ToLowerInvariant()));
+        var hash = Convert.ToHexString(hashBytes)[..12];
+        return Path.Combine(baseDir, $"project_{hash}_{shortId}.json");
     }
 
     [RelayCommand]
@@ -501,12 +543,8 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
     public void ClearMessages()
     {
-        foreach (var msg in Messages)
-            msg.Dispose();
-        Messages.Clear();
+        ClearUiMessages();
         _session.ClearHistory();
-        TotalInputTokens = 0;
-        TotalOutputTokens = 0;
     }
 
     /// <summary>

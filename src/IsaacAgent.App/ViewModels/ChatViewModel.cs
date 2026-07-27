@@ -4,10 +4,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IsaacAgent.Agent;
-using IsaacAgent.Agent.Engine;
+using IsaacAgent.App.Services;
 using IsaacAgent.Core.Models;
-using IsaacAgent.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -38,10 +36,7 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void AddTab()
     {
-        var tab = new ChatTabViewModel(_services,
-            _services.GetRequiredService<ILogger<ChatTabViewModel>>(),
-            _currentProjectDir);
-        tab.Title = $"Chat {Tabs.Count + 1}";
+        var tab = CreateTab(id: null, title: $"Chat {Tabs.Count + 1}");
         Tabs.Add(tab);
         SetActiveTab(tab);
     }
@@ -92,6 +87,65 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
         _currentProjectDir = projectDir;
         foreach (var tab in Tabs)
             tab.OnProjectChanged(projectDir);
+    }
+
+    /// <summary>
+    /// Builds a Chat session store manifest from live tab Agent envelopes.
+    /// </summary>
+    public ProjectSessionManifest BuildSessionManifest(string projectDir) => new()
+    {
+        ProjectDir = projectDir,
+        SavedAt = DateTimeOffset.UtcNow,
+        Tabs = Tabs.Select(t => new SessionTabRecord
+        {
+            Id = t.Id,
+            Title = t.Title,
+            HistoryVersion = 1,
+            Messages = t.AgentHistory.ToList()
+        }).ToList()
+    };
+
+    /// <summary>
+    /// Replaces open tabs from a Chat session store manifest and hydrates each
+    /// tab's AgentSession with the full envelope (UI shows user/assistant only).
+    /// </summary>
+    public void ApplySessionManifest(string? projectDir, ProjectSessionManifest manifest)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        _currentProjectDir = projectDir;
+
+        while (Tabs.Count > 0)
+        {
+            var existing = Tabs[0];
+            existing.Dispose();
+            Tabs.RemoveAt(0);
+        }
+
+        if (manifest.Tabs.Count == 0)
+        {
+            AddTab();
+            return;
+        }
+
+        foreach (var record in manifest.Tabs)
+        {
+            var tab = CreateTab(record.Id, string.IsNullOrWhiteSpace(record.Title) ? "Chat" : record.Title);
+            tab.HydrateFromEnvelope(record.Messages);
+            Tabs.Add(tab);
+        }
+
+        SetActiveTab(Tabs[0]);
+    }
+
+    private ChatTabViewModel CreateTab(Guid? id, string title)
+    {
+        var tab = new ChatTabViewModel(
+            _services,
+            _services.GetRequiredService<ILogger<ChatTabViewModel>>(),
+            _currentProjectDir,
+            id);
+        tab.Title = title;
+        return tab;
     }
 
     public void ClearMessages()

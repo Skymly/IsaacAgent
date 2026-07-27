@@ -64,8 +64,9 @@
 | **不持久化** | Checkpoint、Before-image、tip hash（保持会话内短暂） |
 | **一次性迁移** | `sessions/` 缺失时，在进程内闸门下从 legacy `history/`（消息内容优先；多文件按 LastWriteTime 与 `chat-history/` 顺序按索引对齐）与 `chat-history/`（title/顺序，若有）构建 manifest，并**始终**写入 `sessions/`（含空 manifest）；写失败则软失败为空会话（不返回未落盘迁移结果）；legacy 文件保留不动；之后不再以 legacy 为权威 |
 | **可注入根** | 生产默认 `%APPDATA%/IsaacAgent/{sessions,history,chat-history}`；测试可注入三根目录 |
+| **项目切换** | `MainViewModel`：先 `SaveAsync` 写出项目（`ChatViewModel.BuildSessionManifest`），再 `LoadAsync` + `ApplySessionManifest` 水合各 tab 的 `AgentSession` 全 envelope；UI 气泡投影仅 user/assistant；稳定 `Guid` / title / order；无项目时不把 store 当 orphan 写目标。`ChatHistoryService.RestoreSession` 不再是项目切换权威路径 |
 
-ViewModel 接线以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役不在本缝落地范围内（后续 ticket）。
+`ChatHistoryService.SaveSession`/`RestoreSession` 全面退役、以及 send / Checkpoint Restore / tab close / app close 的持久化触发，见后续 ticket（#50 / #51）。
 
 ### Checkpoint / Restore UX
 
@@ -77,7 +78,7 @@ ViewModel 接线以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役�
 | **确认框必述** | ① 从该用户回合起截断对话；② 按 Before-image 回滚 Tracked write（适用当前 Hand-edit conflict mode）；③ 若有进行中生成则取消；④ 该条提示词回填输入框；⑤ **`run_command` / 未跟踪副作用不撤销**。确认 / 取消。具体文案与多语言为实现细节 |
 | **完成后** | 取消进行中回合（如有）；对话与文件侧按 Agent 语义完成；提示词回填当前 Tab 输入框 |
 | **Hand-edit conflict mode** | Settings 薄 **Agent** 分区：一项 `force`（默认）/ `skip`，经 `AppConfiguration.HandEditConflictMode` 持久化；Save 走既有设置持久化路径（非 LLM/embedding Settings apply）。聊天 Restore 在确认后读取该配置传入 `AgentSession.RestoreAsync` |
-| **命名** | UI 使用 **Restore**（Checkpoint）。勿与 `ChatHistoryService.RestoreSession`（会话反序列化）混称 |
+| **命名** | UI 使用 **Restore**（Checkpoint）。勿与从 Chat session store 加载已保存会话混称 |
 
 不在 App 合同内：Redo、Edit-previous、跨重启 Checkpoint UI、Git 级 rewind。
 
@@ -90,6 +91,7 @@ ViewModel 接线以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役�
 - `AvaloniaTestHelper.FlushDispatcher()` 委托 `HeadlessUnitTestSession`
 - Settings apply 缝：`SettingsApplyTests`（fake Embedding apply / chat 工厂）；Save 路径：`SettingsViewModelTests`（fake `ISettingsApply`）
 - Checkpoint Restore UX 缝：`ChatTabViewModelTests`（fake `IRestoreConfirmDialog` + Scripted/Gate chat）
+- Chat session store 项目切换水合缝：`MainViewModelTests`（fake/memory `IChatSessionStore`；store 有消息 ⇒ `AgentSession` history 非空）
 
 ## 设计权衡
 

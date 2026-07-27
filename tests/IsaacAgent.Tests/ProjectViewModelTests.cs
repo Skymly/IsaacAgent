@@ -44,7 +44,11 @@ public class ProjectViewModelTests
 
             var vm = CreateViewModel();
             string? loadedPath = null;
-            vm.ProjectLoaded += path => loadedPath = path;
+            vm.ProjectLoaded += path =>
+            {
+                loadedPath = path;
+                return Task.CompletedTask;
+            };
 
             await vm.LoadProjectAsync(tempDir);
 

@@ -1,9 +1,6 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
-using IsaacAgent.Core.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +10,7 @@ public sealed partial class MainViewModel : ObservableObject
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<MainViewModel> _logger;
+    private readonly IChatSessionStore _chatSessionStore;
     private string? _previousProjectDir;
 
     public ChatViewModel Chat { get; }
@@ -44,30 +42,40 @@ public sealed partial class MainViewModel : ObservableObject
         LogMonitor = services.GetRequiredService<LogMonitorService>();
         Toasts = services.GetRequiredService<ToastService>();
         ChatHistory = services.GetRequiredService<ChatHistoryService>();
+        _chatSessionStore = services.GetRequiredService<IChatSessionStore>();
 
         StatusText = GetString("StatusReady");
 
-        Project.ProjectLoaded += path =>
+        Project.ProjectLoaded += OnProjectLoadedAsync;
+    }
+
+    /// <summary>
+    /// Saves the outgoing project via the Chat session store, then hydrates the
+    /// incoming project's tabs and AgentSession envelopes from the store.
+    /// </summary>
+    private async Task OnProjectLoadedAsync(string? path)
+    {
+        if (!string.IsNullOrEmpty(_previousProjectDir))
         {
-            // Save history for the previous project before switching.
-            if (!string.IsNullOrEmpty(_previousProjectDir))
-                ChatHistory.SaveSession(_previousProjectDir, Chat);
+            var outgoing = Chat.BuildSessionManifest(_previousProjectDir);
+            await _chatSessionStore.SaveAsync(_previousProjectDir, outgoing);
+        }
 
-            Chat.OnProjectChanged(path);
-            _previousProjectDir = path;
+        if (string.IsNullOrEmpty(path))
+        {
+            // No project open: do not use the store as a write target for orphan sessions.
+            Chat.ApplySessionManifest(null, new ProjectSessionManifest());
+            _previousProjectDir = null;
+            StatusText = GetString("StatusNoProject");
+            return;
+        }
 
-            // Restore history for the new project.
-            if (!string.IsNullOrEmpty(path))
-            {
-                ChatHistory.RestoreSession(path, Chat);
-            }
+        var incoming = await _chatSessionStore.LoadAsync(path);
+        Chat.ApplySessionManifest(path, incoming);
+        _previousProjectDir = path;
 
-            StatusText = string.IsNullOrEmpty(path)
-                ? GetString("StatusNoProject")
-                : $"Project: {Project.ProjectName}";
-            if (!string.IsNullOrEmpty(path))
-                Toasts.ShowSuccess($"{GetString("ToastProjectLoaded")}: {Project.ProjectName}");
-        };
+        StatusText = $"Project: {Project.ProjectName}";
+        Toasts.ShowSuccess($"{GetString("ToastProjectLoaded")}: {Project.ProjectName}");
     }
 
     /// <summary>
