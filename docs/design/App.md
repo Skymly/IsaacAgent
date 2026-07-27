@@ -50,6 +50,20 @@
 - **拖放**：文件夹打开为项目；文件注入聊天上下文，单文件上限 256 KB（与 Before-image 单文件上限对齐，见 [Agent.md](Agent.md) Checkpoint 合同）
 - **发布校验**：`IsaacAgent.exe --verify-onnx` 无 UI 校验捆绑 ONNX 可加载（供 Nuke `PublishVerify`）
 
+### Chat session store
+
+术语见 `CONTEXT.md`。App 拥有项目级聊天持久化缝 `IChatSessionStore` / `FileChatSessionStore`：
+
+| 面 | 合同 |
+|----|------|
+| **布局** | `%APPDATA%/IsaacAgent/sessions/{projectHash}.json`（可注入 root 便于测试）；`projectHash` = `SHA256(UTF8(path.ToLowerInvariant()))` 前 12 hex（与旧 `history/` 一致） |
+| **载荷** | 有序 tabs：稳定 `Guid`、title、Agent 形 envelope（`HistoryVersion` + `List<ChatMessage>`）；UI 气泡为投影，不在本缝内 |
+| **无项目** | `projectDir` 空 / 空白 → 不读不写 |
+| **软失败** | 缺失或损坏文件 → 打日志 + 空 manifest，不抛给调用方 |
+| **不持久化** | Checkpoint、Before-image、tip hash（保持会话内短暂） |
+
+ViewModel 接线、legacy `chat-history/` + `history/` 迁移、以及 `ChatHistoryService.SaveSession`/`RestoreSession` 退役不在本缝落地范围内（后续 ticket）。
+
 ### Checkpoint / Restore UX
 
 术语见 `CONTEXT.md`。核心语义与文件回滚在 [Agent.md](Agent.md)；App 负责发现入口、确认、设置与输入框回填。
