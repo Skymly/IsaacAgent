@@ -110,6 +110,12 @@ public sealed class App : Application
         services.AddSingleton<LocalizationService>();
         services.AddSingleton<ThemeService>();
         services.AddSingleton<ChatHistoryService>();
+        services.AddSingleton<IChatSessionStore>(sp =>
+            new FileChatSessionStore(
+                Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "IsaacAgent", "sessions"),
+                sp.GetRequiredService<ILogger<FileChatSessionStore>>()));
         services.AddSingleton<LuaSnippetService>();
         services.AddSingleton<IRestoreConfirmDialog, AvaloniaRestoreConfirmDialog>();
 

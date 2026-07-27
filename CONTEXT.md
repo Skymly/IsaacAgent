@@ -38,6 +38,12 @@ _Avoid_: Workflow macro, agent mode (when you mean Skill)
 An atomic, schema-described capability the agent may invoke (file ops, scaffold, search, …).
 _Avoid_: Function, action (when you mean Tool)
 
+### Chat persistence
+
+**Chat session store**:
+The App module that owns project-scoped chat persistence: one manifest file per project under `sessions/` whose authoritative payload is each tab's Agent history envelope; UI bubbles are a projection (user + assistant only). Uses stable tab GUIDs; does not persist when no project is open; Checkpoints remain ephemeral and are not stored. Supersedes the legacy dual paths (`chat-history/`, `history/`); one-time migrate-then-`sessions/`-only write lands with the migration follow-on, not the core store seam alone.
+_Avoid_: ChatHistoryService.SaveSession / RestoreSession (legacy dual path), session deserialization restore (when you mean Checkpoint Restore)
+
 ### Checkpoints
 
 **Checkpoint**:
