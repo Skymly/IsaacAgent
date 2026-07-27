@@ -19,6 +19,8 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
 {
     private readonly IServiceProvider _services;
     private readonly ILogger<ChatViewModel> _logger;
+    private readonly IChatSessionStore _chatSessionStore;
+    private readonly SemaphoreSlim _persistGate = new(1, 1);
     private string? _currentProjectDir;
 
     public ObservableCollection<ChatTabViewModel> Tabs { get; } = [];
@@ -30,6 +32,7 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
     {
         _services = services;
         _logger = logger;
+        _chatSessionStore = services.GetRequiredService<IChatSessionStore>();
         AddTab();
     }
 
@@ -42,13 +45,15 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void CloseTab(ChatTabViewModel? tab)
+    private async Task CloseTabAsync(ChatTabViewModel? tab)
     {
         if (tab is null || Tabs.Count <= 1) return; // Keep at least one tab
 
         var idx = Tabs.IndexOf(tab);
         if (idx < 0) return;
-        tab.Dispose();
+
+        // Remove before Dispose so an overlapping PersistSessionAsync cannot
+        // snapshot a tab whose AgentHistory was already cleared.
         Tabs.Remove(tab);
 
         if (ActiveTab == tab)
@@ -56,6 +61,9 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
             var newIdx = Math.Min(idx, Tabs.Count - 1);
             SetActiveTab(Tabs[newIdx]);
         }
+
+        await PersistSessionAsync();
+        tab.Dispose();
     }
 
     [RelayCommand]
@@ -106,8 +114,32 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
     };
 
     /// <summary>
+    /// Persists the current project’s Chat session store. No-op when no project is open.
+    /// Serialized so overlapping send/Restore/close flushes cannot overwrite a newer snapshot.
+    /// </summary>
+    public async Task PersistSessionAsync(CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(_currentProjectDir))
+            return;
+
+        await _persistGate.WaitAsync(ct);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_currentProjectDir))
+                return;
+            // Build under the gate so the snapshot matches the save that wins.
+            var manifest = BuildSessionManifest(_currentProjectDir);
+            await _chatSessionStore.SaveAsync(_currentProjectDir, manifest, ct);
+        }
+        finally
+        {
+            _persistGate.Release();
+        }
+    }
+
+    /// <summary>
     /// Replaces open tabs from a Chat session store manifest and hydrates each
-    /// tab's AgentSession with the full envelope (UI shows user/assistant only).
+    /// tab's AgentSession with the full envelope (UI shows user and assistant only).
     /// </summary>
     public void ApplySessionManifest(string? projectDir, ProjectSessionManifest manifest)
     {
@@ -143,7 +175,8 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
             _services,
             _services.GetRequiredService<ILogger<ChatTabViewModel>>(),
             _currentProjectDir,
-            id);
+            id,
+            PersistSessionAsync);
         tab.Title = title;
         return tab;
     }
@@ -158,6 +191,7 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
         foreach (var tab in Tabs)
             tab.Dispose();
         Tabs.Clear();
+        _persistGate.Dispose();
     }
 }
 

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Chat session store persist triggers**: successful send completion, Checkpoint
+  Restore, tab close, and app shutdown flush the current project via
+  `IChatSessionStore` so disk matches the live multi-tab session; no write when
+  no project is open; legacy per-tab `history/` is no longer the authoritative
+  post-send / post-Restore writer (issue #50).
 - **Chat session store project switch**: opening or switching projects saves the
   outgoing project via `IChatSessionStore`, then restores tabs (stable GUID,
   title, order) and hydrates each tab's live `AgentSession` from the full Agent

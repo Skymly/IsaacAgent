@@ -21,12 +21,11 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
     private readonly IAgentSessionFactory _sessionFactory;
     private readonly IRestoreConfirmDialog _restoreConfirm;
     private readonly Func<HandEditConflictMode> _getHandEditConflictMode;
+    private readonly Func<CancellationToken, Task>? _persistSession;
     private AgentSession _session;
     private CancellationTokenSource? _cts;
     private Task? _sendTask;
-    private int _historyEpoch;
     private bool _isRestoring;
-    private string? _currentProjectDir;
 
     /// <summary>Stable tab identity for Chat session store round-trips.</summary>
     public Guid Id { get; }
@@ -75,11 +74,13 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         IServiceProvider services,
         ILogger<ChatTabViewModel> logger,
         string? projectDir = null,
-        Guid? id = null)
+        Guid? id = null,
+        Func<CancellationToken, Task>? persistSession = null)
     {
         _services = services;
         _logger = logger;
         Id = id ?? Guid.NewGuid();
+        _persistSession = persistSession;
         _sessionFactory = services.GetRequiredService<IAgentSessionFactory>();
         _restoreConfirm = services.GetRequiredService<IRestoreConfirmDialog>();
         _getHandEditConflictMode = services.GetService<Func<HandEditConflictMode>>()
@@ -89,7 +90,6 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
                 catch { return HandEditConflictMode.Force; }
             });
         _session = _sessionFactory.Create(projectDir);
-        _currentProjectDir = projectDir;
         SubscribeSessionEvents(_session);
     }
 
@@ -173,7 +173,6 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
     public void OnProjectChanged(string? projectDir)
     {
-        _currentProjectDir = projectDir;
         UnsubscribeSessionEvents(_session);
         _session.Dispose();
         _session = _sessionFactory.Create(projectDir);
@@ -237,20 +236,23 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         TotalOutputTokens = 0;
     }
 
-    private string GetHistoryPath(string? projectDir)
+    /// <summary>
+    /// Persists the project Chat session store via the injected flush callback.
+    /// No-op when no callback is wired (tests) or when the callback itself
+    /// refuses to write (no open project).
+    /// </summary>
+    private async Task PersistSessionIfNeededAsync()
     {
-        // Legacy per-tab path kept for ScheduleHistorySave until #50 retires it.
-        var shortId = Id.ToString("N")[..8];
-        var baseDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "IsaacAgent", "history");
-        if (string.IsNullOrEmpty(projectDir))
-            return Path.Combine(baseDir, $"default_{shortId}.json");
-
-        var hashBytes = System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(projectDir.ToLowerInvariant()));
-        var hash = Convert.ToHexString(hashBytes)[..12];
-        return Path.Combine(baseDir, $"project_{hash}_{shortId}.json");
+        if (_persistSession is null)
+            return;
+        try
+        {
+            await _persistSession(CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to persist chat session");
+        }
     }
 
     [RelayCommand]
@@ -280,6 +282,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         ChatMessageViewModel assistantMsg,
         CancellationToken ct)
     {
+        var succeeded = false;
         try
         {
             await foreach (var chunk in _session.SendMessageAsync(userMsg, ct))
@@ -288,6 +291,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
                     SyncCheckpointAffordances();
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => assistantMsg.Content += chunk);
             }
+            succeeded = true;
         }
         catch (OperationCanceledException)
         {
@@ -313,7 +317,8 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             _cts?.Dispose();
             _cts = null;
             _sendTask = null;
-            ScheduleHistorySave();
+            if (succeeded)
+                await PersistSessionIfNeededAsync();
             TrimMessages();
         }
     }
@@ -366,9 +371,7 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
 
             InputText = result.UserPrompt;
             SyncCheckpointAffordances();
-            // Invalidate any in-flight history save from the cancelled send, then persist.
-            _historyEpoch++;
-            ScheduleHistorySave();
+            await PersistSessionIfNeededAsync();
         }
         catch (Exception ex)
         {
@@ -383,25 +386,6 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         {
             _isRestoring = false;
         }
-    }
-
-    private void ScheduleHistorySave()
-    {
-        var epoch = _historyEpoch;
-        var historyPath = GetHistoryPath(_currentProjectDir);
-        _ = Task.Run(async () =>
-        {
-            if (epoch != _historyEpoch)
-                return;
-            try
-            {
-                await _session.SaveHistoryAsync(historyPath, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to save chat history");
-            }
-        }, CancellationToken.None);
     }
 
     /// <summary>
@@ -494,12 +478,14 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
         ChatMessageViewModel assistantMsg,
         CancellationToken ct)
     {
+        var succeeded = false;
         try
         {
             await foreach (var chunk in _session.SendMessageAsync(newText, ct))
             {
                 Avalonia.Threading.Dispatcher.UIThread.Post(() => assistantMsg.Content += chunk);
             }
+            succeeded = true;
         }
         catch (OperationCanceledException)
         {
@@ -525,7 +511,8 @@ public sealed partial class ChatTabViewModel : ObservableObject, IDisposable
             _cts?.Dispose();
             _cts = null;
             _sendTask = null;
-            ScheduleHistorySave();
+            if (succeeded)
+                await PersistSessionIfNeededAsync();
             TrimMessages();
         }
     }

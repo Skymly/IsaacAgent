@@ -65,8 +65,9 @@
 | **一次性迁移** | `sessions/` 缺失时，在进程内闸门下从 legacy `history/`（消息内容优先；多文件按 LastWriteTime 与 `chat-history/` 顺序按索引对齐）与 `chat-history/`（title/顺序，若有）构建 manifest，并**始终**写入 `sessions/`（含空 manifest）；写失败则软失败为空会话（不返回未落盘迁移结果）；legacy 文件保留不动；之后不再以 legacy 为权威 |
 | **可注入根** | 生产默认 `%APPDATA%/IsaacAgent/{sessions,history,chat-history}`；测试可注入三根目录 |
 | **项目切换** | `MainViewModel`：先 `SaveAsync` 写出项目（`ChatViewModel.BuildSessionManifest`），再 `LoadAsync` + `ApplySessionManifest` 水合各 tab 的 `AgentSession` 全 envelope；UI 气泡投影仅 user/assistant；稳定 `Guid` / title / order；无项目时不把 store 当 orphan 写目标。`ChatHistoryService.RestoreSession` 不再是项目切换权威路径 |
+| **关键时刻持久化** | send 完成、Checkpoint Restore 成功、关 tab、app 关闭：经 `ChatViewModel.PersistSessionAsync` → `IChatSessionStore.SaveAsync`（全项目 manifest）；`ChatTabViewModel` 注入 flush 回调；`MainViewModel.FlushCurrentSessionAsync` 供 shutdown；无项目时不写。Legacy `history/` 不再是 post-send / post-Restore 权威写路径 |
 
-`ChatHistoryService.SaveSession`/`RestoreSession` 全面退役、以及 send / Checkpoint Restore / tab close / app close 的持久化触发，见后续 ticket（#50 / #51）。
+`ChatHistoryService.SaveSession`/`RestoreSession` 全面退役见后续 ticket（#51）。
 
 ### Checkpoint / Restore UX
 
@@ -92,6 +93,7 @@
 - Settings apply 缝：`SettingsApplyTests`（fake Embedding apply / chat 工厂）；Save 路径：`SettingsViewModelTests`（fake `ISettingsApply`）
 - Checkpoint Restore UX 缝：`ChatTabViewModelTests`（fake `IRestoreConfirmDialog` + Scripted/Gate chat）
 - Chat session store 项目切换水合缝：`MainViewModelTests`（fake/memory `IChatSessionStore`；store 有消息 ⇒ `AgentSession` history 非空）
+- Chat session store 关键时刻持久化缝：`ChatTabViewModelTests`（recording store；send / Checkpoint Restore）；`ChatViewModelTests`（关 tab / AddTab 后 Persist）；`MainViewModelTests`（`FlushCurrentSessionAsync`）
 
 ## 设计权衡
 

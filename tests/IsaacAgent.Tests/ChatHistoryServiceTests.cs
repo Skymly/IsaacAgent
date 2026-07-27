@@ -52,6 +52,7 @@ public class ChatHistoryServiceTests
         services.AddSingleton(Mock.Of<ILogger<ChatTabViewModel>>());
         services.AddSingleton(Mock.Of<ILogger<ChatViewModel>>());
         services.AddSingleton(Mock.Of<IRestoreConfirmDialog>());
+        services.AddSingleton(Mock.Of<IChatSessionStore>());
         var sp = services.BuildServiceProvider();
 
         return new ChatViewModel(sp, sp.GetRequiredService<ILogger<ChatViewModel>>());
