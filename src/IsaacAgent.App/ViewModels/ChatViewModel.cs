@@ -20,6 +20,7 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
     private readonly IServiceProvider _services;
     private readonly ILogger<ChatViewModel> _logger;
     private readonly IChatSessionStore _chatSessionStore;
+    private readonly SemaphoreSlim _persistGate = new(1, 1);
     private string? _currentProjectDir;
 
     public ObservableCollection<ChatTabViewModel> Tabs { get; } = [];
@@ -50,7 +51,9 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
 
         var idx = Tabs.IndexOf(tab);
         if (idx < 0) return;
-        tab.Dispose();
+
+        // Remove before Dispose so an overlapping PersistSessionAsync cannot
+        // snapshot a tab whose AgentHistory was already cleared.
         Tabs.Remove(tab);
 
         if (ActiveTab == tab)
@@ -60,6 +63,7 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
         }
 
         await PersistSessionAsync();
+        tab.Dispose();
     }
 
     [RelayCommand]
@@ -111,13 +115,26 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Persists the current project’s Chat session store. No-op when no project is open.
+    /// Serialized so overlapping send/Restore/close flushes cannot overwrite a newer snapshot.
     /// </summary>
-    public Task PersistSessionAsync(CancellationToken ct = default)
+    public async Task PersistSessionAsync(CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(_currentProjectDir))
-            return Task.CompletedTask;
-        var manifest = BuildSessionManifest(_currentProjectDir);
-        return _chatSessionStore.SaveAsync(_currentProjectDir, manifest, ct);
+            return;
+
+        await _persistGate.WaitAsync(ct);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_currentProjectDir))
+                return;
+            // Build under the gate so the snapshot matches the save that wins.
+            var manifest = BuildSessionManifest(_currentProjectDir);
+            await _chatSessionStore.SaveAsync(_currentProjectDir, manifest, ct);
+        }
+        finally
+        {
+            _persistGate.Release();
+        }
     }
 
     /// <summary>
@@ -174,6 +191,7 @@ public sealed partial class ChatViewModel : ObservableObject, IDisposable
         foreach (var tab in Tabs)
             tab.Dispose();
         Tabs.Clear();
+        _persistGate.Dispose();
     }
 }
 
