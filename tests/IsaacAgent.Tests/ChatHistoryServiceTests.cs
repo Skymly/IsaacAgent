@@ -1,3 +1,4 @@
+using System.Reflection;
 using Avalonia.Headless.XUnit;
 using System.Runtime.CompilerServices;
 using IsaacAgent.Agent;
@@ -14,7 +15,8 @@ using Xunit;
 namespace IsaacAgent.Tests;
 
 /// <summary>
-///   Unit tests for ChatHistoryService — persistence, export, and search.
+///   Unit tests for ChatHistoryService — live-UI export and search only
+///   (Chat session store owns persistence).
 /// </summary>
 [Collection("Avalonia")]
 public class ChatHistoryServiceTests
@@ -66,104 +68,28 @@ public class ChatHistoryServiceTests
         return new AgentSession(chat, registry, null, logger, null);
     }
 
-    // ── GetHistoryPath ────────────────────────────────────────
+    // ── Dual-path regression ──────────────────────────────────
 
     [AvaloniaFact]
-    public void GetHistoryPath_NullProjectDir_ReturnsNull()
+    public void ChatHistoryService_HasNoDiskPersistenceApi()
     {
-        Assert.Null(ChatHistoryService.GetHistoryPath(null));
-    }
+        // Guards against reintroducing legacy chat-history/ as an authoritative path.
+        string[] forbidden =
+        [
+            "SaveSession",
+            "RestoreSession",
+            "LoadSession",
+            "DeleteSession",
+            "GetHistoryPath"
+        ];
 
-    [AvaloniaFact]
-    public void GetHistoryPath_EmptyProjectDir_ReturnsNull()
-    {
-        Assert.Null(ChatHistoryService.GetHistoryPath(""));
-    }
+        var names = typeof(ChatHistoryService)
+            .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .Select(m => m.Name)
+            .ToHashSet(StringComparer.Ordinal);
 
-    [AvaloniaFact]
-    public void GetHistoryPath_ValidProjectDir_ReturnsPath()
-    {
-        var path = ChatHistoryService.GetHistoryPath("C:/test/project");
-        Assert.NotNull(path);
-        Assert.EndsWith(".json", path);
-        Assert.Contains("chat-history", path);
-    }
-
-    [AvaloniaFact]
-    public void GetHistoryPath_SanitizesInvalidChars()
-    {
-        // Build a path containing chars that are invalid on the current platform
-        var invalidChar = Path.GetInvalidFileNameChars().FirstOrDefault(c => c != Path.DirectorySeparatorChar && c != Path.AltDirectorySeparatorChar);
-        if (invalidChar == '\0') return; // No invalid chars on this platform
-
-        var testPath = $"test{invalidChar}project";
-        var path = ChatHistoryService.GetHistoryPath(testPath);
-        Assert.NotNull(path);
-        var fileName = Path.GetFileName(path!);
-        // The invalid char should have been replaced with underscore
-        Assert.DoesNotContain(invalidChar.ToString(), fileName);
-    }
-
-    // ── Save / Load ───────────────────────────────────────────
-
-    [AvaloniaFact]
-    public void LoadSession_NonExistentProject_ReturnsNull()
-    {
-        var svc = new ChatHistoryService();
-        var result = svc.LoadSession("/nonexistent/path/that/does/not/exist");
-        Assert.Null(result);
-    }
-
-    [AvaloniaFact]
-    public void SaveAndLoadSession_RoundTrips()
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_history_test_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var svc = new ChatHistoryService();
-            var chat = CreateChatViewModel();
-            chat.ActiveTab!.Messages.Add(new ChatMessageViewModel { Role = "user", Content = "Hello" });
-            chat.ActiveTab!.Messages.Add(new ChatMessageViewModel { Role = "assistant", Content = "Hi there" });
-
-            svc.SaveSession(tempDir, chat);
-
-            var loaded = svc.LoadSession(tempDir);
-            Assert.NotNull(loaded);
-            Assert.Equal(tempDir, loaded!.ProjectDir);
-            Assert.Single(loaded.Tabs);
-            Assert.Equal(2, loaded.Tabs[0].Messages.Count);
-            Assert.Equal("Hello", loaded.Tabs[0].Messages[0].Content);
-            Assert.Equal("Hi there", loaded.Tabs[0].Messages[1].Content);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-        }
-    }
-
-    [AvaloniaFact]
-    public void DeleteSession_RemovesHistoryFile()
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_history_del_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var svc = new ChatHistoryService();
-            var chat = CreateChatViewModel();
-            svc.SaveSession(tempDir, chat);
-
-            var path = ChatHistoryService.GetHistoryPath(tempDir);
-            Assert.NotNull(path);
-            Assert.True(File.Exists(path));
-
-            svc.DeleteSession(tempDir);
-            Assert.False(File.Exists(path));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
-        }
+        foreach (var name in forbidden)
+            Assert.False(names.Contains(name), $"Legacy dual-path API '{name}' must not exist on ChatHistoryService");
     }
 
     // ── Export ────────────────────────────────────────────────

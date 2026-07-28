@@ -1,5 +1,3 @@
-using System.IO;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using IsaacAgent.App.ViewModels;
@@ -7,7 +5,8 @@ using IsaacAgent.App.ViewModels;
 namespace IsaacAgent.App.Services;
 
 /// <summary>
-///   Serializable representation of a chat message for persistence.
+///   Serializable representation of a chat message for export and legacy
+///   chat-history/ deserialization during Chat session store migration.
 /// </summary>
 public sealed class ChatMessageRecord
 {
@@ -20,7 +19,7 @@ public sealed class ChatMessageRecord
 }
 
 /// <summary>
-///   Serializable representation of a chat tab for persistence.
+///   Serializable representation of a chat tab for export and legacy migration.
 /// </summary>
 public sealed class ChatTabRecord
 {
@@ -29,7 +28,8 @@ public sealed class ChatTabRecord
 }
 
 /// <summary>
-///   Serializable representation of a chat session for persistence.
+///   Serializable representation of a legacy multi-tab chat-history/ session.
+///   Used only when migrating into the Chat session store; not an authoritative path.
 /// </summary>
 public sealed class ChatSessionRecord
 {
@@ -39,119 +39,17 @@ public sealed class ChatSessionRecord
 }
 
 /// <summary>
-///   Manages chat history persistence, export, and search.
-///   History is stored as JSON files per project directory.
+///   Export and in-memory search helpers over the live chat UI.
+///   Project persistence is owned by <see cref="IChatSessionStore"/>; this type
+///   does not read or write chat-history/ or history/ on disk.
 /// </summary>
-public sealed class ChatHistoryService
+public static class ChatHistoryService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
-
-    /// <summary>
-    ///   Get the history file path for a given project directory.
-    ///   Returns null if projectDir is null or empty.
-    /// </summary>
-    public static string? GetHistoryPath(string? projectDir)
-    {
-        if (string.IsNullOrEmpty(projectDir)) return null;
-        var dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "IsaacAgent", "chat-history");
-        var safeName = SanitizeFileName(projectDir);
-        return Path.Combine(dir, $"{safeName}.json");
-    }
-
-    /// <summary>
-    ///   Save the current chat session (all tabs and messages) for a project.
-    /// </summary>
-    public void SaveSession(string? projectDir, ChatViewModel chat)
-    {
-        var path = GetHistoryPath(projectDir);
-        if (path is null) return;
-
-        var session = new ChatSessionRecord
-        {
-            ProjectDir = projectDir ?? "",
-            SavedAt = DateTimeOffset.UtcNow,
-            Tabs = chat.Tabs.Select(t => new ChatTabRecord
-            {
-                Title = t.Title,
-                Messages = t.Messages.Select(m => new ChatMessageRecord
-                {
-                    Role = m.Role,
-                    Content = m.Content,
-                    ToolName = m.ToolName,
-                    IsToolCall = m.IsToolCall,
-                    IsToolResult = m.IsToolResult
-                }).ToList()
-            }).ToList()
-        };
-
-        var dir = Path.GetDirectoryName(path);
-        if (dir is not null) Directory.CreateDirectory(dir);
-        var json = JsonSerializer.Serialize(session, JsonOptions);
-        File.WriteAllText(path, json);
-    }
-
-    /// <summary>
-    ///   Load a saved chat session for a project. Returns null if no history exists.
-    /// </summary>
-    public ChatSessionRecord? LoadSession(string? projectDir)
-    {
-        var path = GetHistoryPath(projectDir);
-        if (path is null || !File.Exists(path)) return null;
-
-        try
-        {
-            var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<ChatSessionRecord>(json);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///   Restore chat tabs and messages from a saved session.
-    ///   Returns true if history was restored, false otherwise.
-    /// </summary>
-    public bool RestoreSession(string? projectDir, ChatViewModel chat)
-    {
-        var session = LoadSession(projectDir);
-        if (session is null || session.Tabs.Count == 0) return false;
-
-        // Clear existing tabs and restore from history.
-        while (chat.Tabs.Count > 0)
-        {
-            var tab = chat.Tabs[0];
-            tab.Dispose();
-            chat.Tabs.Remove(tab);
-        }
-
-        foreach (var tabRecord in session.Tabs)
-        {
-            chat.AddTabCommand.Execute(null);
-            var tab = chat.Tabs[^1];
-            tab.Title = tabRecord.Title;
-            foreach (var msg in tabRecord.Messages)
-            {
-                tab.Messages.Add(new ChatMessageViewModel
-                {
-                    Role = msg.Role,
-                    Content = msg.Content,
-                    ToolName = msg.ToolName,
-                    IsToolCall = msg.IsToolCall,
-                    IsToolResult = msg.IsToolResult
-                });
-            }
-        }
-
-        return true;
-    }
 
     /// <summary>
     ///   Export a chat tab's messages to a Markdown string.
@@ -207,8 +105,8 @@ public sealed class ChatHistoryService
     }
 
     /// <summary>
-    ///   Search messages across all tabs for a query string.
-    ///   Returns a list of (tab title, message) pairs that match.
+    ///   Search messages across all open tabs for a query string.
+    ///   Operates on the live UI only; does not read the on-disk store.
     /// </summary>
     public static List<(string TabTitle, ChatMessageViewModel Message)> SearchMessages(
         ChatViewModel chat, string query)
@@ -228,29 +126,5 @@ public sealed class ChatHistoryService
             }
         }
         return results;
-    }
-
-    /// <summary>
-    ///   Delete the history file for a project.
-    /// </summary>
-    public void DeleteSession(string? projectDir)
-    {
-        var path = GetHistoryPath(projectDir);
-        if (path is not null && File.Exists(path))
-            File.Delete(path);
-    }
-
-    private static string SanitizeFileName(string path)
-    {
-        // Replace invalid filename characters with underscores.
-        var invalid = Path.GetInvalidFileNameChars();
-        var result = new StringBuilder(path.Length);
-        foreach (var c in path)
-            result.Append(invalid.Contains(c) ? '_' : c);
-        // Also replace path separators and colons for cleaner cross-platform filenames.
-        return result.ToString()
-            .Replace(':', '_')
-            .Replace('\\', '_')
-            .Replace('/', '_');
     }
 }

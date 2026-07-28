@@ -119,7 +119,6 @@ public sealed class App : Application
         services.AddSingleton<ToastService>();
         services.AddSingleton<LocalizationService>();
         services.AddSingleton<ThemeService>();
-        services.AddSingleton<ChatHistoryService>();
         services.AddSingleton<IChatSessionStore>(sp =>
         {
             var appData = Path.Combine(
