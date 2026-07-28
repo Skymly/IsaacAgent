@@ -1,4 +1,5 @@
 using System.Text;
+using IsaacAgent.Core.PathSafety;
 using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.Agent.Engine;
@@ -51,7 +52,7 @@ internal sealed class CheckpointRestorer
             try
             {
                 var bytes = await File.ReadAllBytesAsync(fullPath, ct);
-                var canonical = ProjectPathSafety.ToRelativeKey(projectDir, fullPath);
+                var canonical = CheckpointRelativePaths.ToRelativeKey(projectDir, fullPath);
                 _tips.SetTip(canonical, TrackedWriteTipStore.HashBytes(bytes));
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
