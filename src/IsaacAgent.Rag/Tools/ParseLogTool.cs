@@ -42,10 +42,16 @@ public sealed class ParseLogTool : ITool
             return Task.FromResult(error);
         if (filePath is null || !File.Exists(filePath))
         {
+            if (filePath is not null)
+            {
+                return Task.FromResult(
+                    $"Could not find log.txt at '{filePath}'.\n" +
+                    $"Provide a 'file_path' argument pointing to your log.txt file.");
+            }
+
             return Task.FromResult(
                 $"Could not find log.txt. Searched:\n" +
-                $"  - Project-relative path\n" +
-                $"  - Default Isaac location: {GetExistingDefaultLogPath()}\n" +
+                $"  - Default Isaac location: {ProjectPathSafety.GetDefaultIsaacLogPath()}\n" +
                 $"Provide a 'file_path' argument pointing to your log.txt file.");
         }
 

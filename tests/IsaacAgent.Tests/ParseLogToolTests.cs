@@ -116,12 +116,38 @@ public class ParseLogToolTests
     [Fact]
     public async Task ParseLogTool_FileNotFound_ReturnsHelpfulMessage()
     {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_log_missing_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var tool = new ParseLogTool(tempDir);
+            var args = JsonSerializer.Serialize(new { file_path = "nonexistent_log.txt" });
+            var result = await tool.ExecuteAsync(args);
+            var expectedPath = Path.GetFullPath(Path.Combine(tempDir, "nonexistent_log.txt"));
+
+            Assert.Contains("Could not find", result, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(expectedPath, result);
+            Assert.Contains("file_path", result, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ParseLogTool_AllowedAbsoluteMissing_ReportsResolvedPath()
+    {
+        var defaultLog = Path.GetFullPath(ProjectPathSafety.GetDefaultIsaacLogPath());
+        if (File.Exists(defaultLog))
+            return;
+
         var tool = new ParseLogTool(Path.GetTempPath());
-        var args = JsonSerializer.Serialize(new { file_path = "nonexistent_log.txt" });
+        var args = JsonSerializer.Serialize(new { file_path = defaultLog });
         var result = await tool.ExecuteAsync(args);
 
-        Assert.Contains("Could not find", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("file_path", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains($"Could not find log.txt at '{defaultLog}'", result);
+        Assert.DoesNotContain("Default Isaac location:", result);
     }
 
     [Fact]
