@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using IsaacAgent.Core.Models;
+using IsaacAgent.Core.PathSafety;
 using IsaacAgent.Core.Services;
 
 namespace IsaacAgent.Tools.Implementations;
@@ -141,7 +142,7 @@ public sealed class DiffApplyTool : ITool
         var args = JsonDocument.Parse(arguments).RootElement;
         var relPath = args.GetProperty("path").GetString()!;
         var patch = args.GetProperty("patch").GetString()!;
-        var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
+        var (fullPath, isSafe) = ProjectPathSafety.Resolve(_projectDir, relPath);
 
         if (!isSafe)
             return Task.FromResult("Error: Path traversal detected.");
@@ -321,7 +322,7 @@ public sealed class BatchEditTool : ITool
             var find = edit.GetProperty("find").GetString()!;
             var replace = edit.GetProperty("replace").GetString()!;
             var replaceAll = edit.TryGetProperty("replace_all", out var ra) && ra.GetBoolean();
-            var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
+            var (fullPath, isSafe) = ProjectPathSafety.Resolve(_projectDir, relPath);
 
             if (string.IsNullOrEmpty(find))
             {
