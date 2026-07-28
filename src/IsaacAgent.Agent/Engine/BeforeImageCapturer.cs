@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using IsaacAgent.Core.PathSafety;
 using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.Agent.Engine;
@@ -76,7 +77,7 @@ internal sealed class BeforeImageCapturer
             return;
         }
 
-        var canonical = ProjectPathSafety.ToRelativeKey(projectDir, fullPath);
+        var canonical = CheckpointRelativePaths.ToRelativeKey(projectDir, fullPath);
         // Re-key needing against canonical (may differ in separators/casing form)
         needing = checkpoints.Where(cp => !cp.HasTouchedPath(canonical)).ToList();
         if (needing.Count == 0)

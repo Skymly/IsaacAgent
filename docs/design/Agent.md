@@ -71,7 +71,7 @@
 
 ### Before-image 限额
 
-- 路径须在项目沙箱内（与 Tracked write 相同的 `FileToolPathSafety` / 等价规则；scaffold 固定名在 `projectDir` 下）。
+- 路径须在项目沙箱内（与 Tracked write 相同的 Core [`ProjectPathSafety`](Core.md) / `Resolve`；scaffold 固定名在 `projectDir` 下）。Before-image 字典键由 Agent 内 `CheckpointRelativePaths.ToRelativeKey` 规范化为 `/` 相对路径（非 Core API）。
 - 仅 **UTF-8 文本**；单文件内容 ≤ **256 KB**（与 App 拖放注入聊天上限对齐）。
 - 二进制、超限、越界 → **不捕获**；Restore 时按「缺可用 Before-image」处理。
 
@@ -103,6 +103,8 @@
 | `AgentSession` | 主循环：`StreamAsync` → tool call 累加 → `ExecuteAsync` → 继续对话；Checkpoint 生命周期宿主（自动创建 + trim 丢弃 + 懒 Before-image + **Restore**） |
 | `Checkpoint` | 会话内对话锚点（`Id` + `UserMessage` 引用游标 + `BeforeImages`）；暴露于 `AgentSession.Checkpoints` |
 | `BeforeImage` | 路径首次 Tracked write 前的内容或 create tombstone |
+| `BeforeImageCapturer` | 懒捕获；路径沙箱检查走 Core `ProjectPathSafety.Resolve` |
+| `CheckpointRelativePaths` | Checkpoint 相对路径键规范化（`ToRelativeKey`）；沙箱策略不在此 |
 | `CheckpointRestorer` | Restore：按 Before-image 回滚；Hand-edit 用 tip 哈希比较；`force`/`skip` |
 | `TrackedWriteTipStore` | 会话内「上次成功 Tracked write」tip 哈希（仅哈希，不存正文） |
 | `ToolRegistry` | 注册 16 个 `ITool`；`Reconfigure(projectDir)` 更新项目上下文；Tracked write 前捕获 Before-image，成功后记录 tip |
@@ -134,7 +136,7 @@ Restore（`AgentSession.RestoreAsync`）：
   → 返回 `RestoreResult`（含 `UserPrompt` 供 App 回填）
 ```
 
-Checkpoint 游标是 `ChatMessage` **引用**（非易变下标）。`ClearHistory` / `LoadHistory` / `Dispose` 清空 Checkpoint 列表与 tip 存储（不跨重启持久化）。懒 Before-image：某路径在 Checkpoint 之后**首次**被 Tracked write 触碰时捕获；同路径再次写入不替换；二进制 / &gt;256KB / 越界跳过并打日志；`run_command` 不捕获。Restore 不回滚 `run_command` 副作用。
+Checkpoint 游标是 `ChatMessage` **引用**（非易变下标）。`ClearHistory` / `LoadHistory` / `Dispose` 清空 Checkpoint 列表与 tip 存储（不跨重启持久化）。懒 Before-image：某路径在 Checkpoint 之后**首次**被 Tracked write 触碰时捕获；同路径再次写入不替换；二进制 / &gt;256KB / 越界跳过并打日志；`run_command` 不捕获。Restore 不回滚 `run_command` 副作用。路径沙箱权威实现：Core [`ProjectPathSafety`](Core.md)；Agent 不再保留 `Resolve` / `IsWithinProject` 副本（`ToRelativeKey` 仍属 Checkpoint，见 `CheckpointRelativePaths`）。
 
 ### 历史裁剪
 
