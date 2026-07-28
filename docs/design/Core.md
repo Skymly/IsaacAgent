@@ -23,7 +23,7 @@
 | `Resolve(projectDir, relPath)` | 规范化相对路径（含 3+ 点折叠）后 `GetFullPath`，返回 `(FullPath, IsSafe)` |
 | `IsWithinProject(fullPath, projectDir)` | 根目录尾部分隔符，防 sibling-prefix 穿越 |
 | `GetDefaultIsaacLogPath()` | Documents/My Games/Binding of Isaac Repentance/log.txt（不检查存在） |
-| `IsAllowedAbsoluteLogPath(path)` | 绝对路径白名单：仅当等于默认 Isaac log（忽略大小写） |
+| `IsAllowedAbsoluteLogPath(path)` | 绝对路径白名单：须为 rooted，且等于默认 Isaac log（忽略大小写）；相对路径恒为 false |
 
 消费方切换（删除本地副本）见 follow-ups #60–#63；本模块 PR 只发布 API + 单测。
 

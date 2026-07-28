@@ -142,6 +142,13 @@ public class ProjectPathSafetyTests
     }
 
     [Fact]
+    public void IsAllowedAbsoluteLogPath_RelativePath_IsFalse()
+    {
+        Assert.False(ProjectPathSafety.IsAllowedAbsoluteLogPath("log.txt"));
+        Assert.False(ProjectPathSafety.IsAllowedAbsoluteLogPath(Path.Combine("My Games", "Binding of Isaac Repentance", "log.txt")));
+    }
+
+    [Fact]
     public void IsAllowedAbsoluteLogPath_DefaultLocationCaseInsensitive_IsTrue()
     {
         var defaultLog = ProjectPathSafety.GetDefaultIsaacLogPath();

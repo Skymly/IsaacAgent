@@ -68,7 +68,7 @@ public static class ProjectPathSafety
     /// </summary>
     public static bool IsAllowedAbsoluteLogPath(string absolutePath)
     {
-        if (string.IsNullOrEmpty(absolutePath))
+        if (string.IsNullOrEmpty(absolutePath) || !Path.IsPathRooted(absolutePath))
             return false;
         return string.Equals(
             Path.GetFullPath(absolutePath),
