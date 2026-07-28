@@ -7,6 +7,7 @@
 
 | Design Doc | 子系统 |
 |------------|--------|
+| [Core.md](Core.md) | `IsaacAgent.Core`（共享策略与契约家园） |
 | [Agent.md](Agent.md) | `IsaacAgent.Agent` |
 | [LLM.md](LLM.md) | `IsaacAgent.LLM` |
 | [Tools.md](Tools.md) | `IsaacAgent.Tools` + RAG 工具 |
