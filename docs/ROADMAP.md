@@ -3,7 +3,7 @@
 > 滚动维护的功能与技术 backlog。技术债明细见 [ISSUES.md](../ISSUES.md)。
 > 状态：`候选` → `排期` → `进行中` → `已完成（归档）` / `暂缓` / `明确不做`
 
-最后更新：2026-07-24
+最后更新：2026-07-28
 
 ---
 
@@ -52,6 +52,7 @@
 
 | ID | 项 | 完成版本 | 备注 |
 |----|-----|----------|------|
+| R-104 | 统一 Chat session store | — | Spec #46；tickets #47–#51；App `IChatSessionStore` / `sessions/`；见 [design/App.md](design/App.md)、`CONTEXT.md` |
 | R-010 | LLM Design Doc | — | [design/LLM.md](design/LLM.md) |
 | R-001 | 文档体系落地并精简 | — | 保留 ADR + Design Doc + Roadmap；RFC/Spec/Plan/Review 已移除 |
 | R-100 | Avalonia 测试稳定性 | v0.2.4 | [ADR-005](adr/ADR-005-headless-unit-test-session.md) |
