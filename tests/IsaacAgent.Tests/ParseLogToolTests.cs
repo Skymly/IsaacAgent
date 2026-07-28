@@ -1,3 +1,5 @@
+using System.Text.Json;
+using IsaacAgent.Core.PathSafety;
 using IsaacAgent.Rag.Tools;
 using Xunit;
 
@@ -115,7 +117,7 @@ public class ParseLogToolTests
     public async Task ParseLogTool_FileNotFound_ReturnsHelpfulMessage()
     {
         var tool = new ParseLogTool(Path.GetTempPath());
-        var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = "nonexistent_log.txt" });
+        var args = JsonSerializer.Serialize(new { file_path = "nonexistent_log.txt" });
         var result = await tool.ExecuteAsync(args);
 
         Assert.Contains("Could not find", result, StringComparison.OrdinalIgnoreCase);
@@ -133,7 +135,7 @@ public class ParseLogToolTests
         try
         {
             var tool = new ParseLogTool(tempDir);
-            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = "log.txt", filter = "errors" });
+            var args = JsonSerializer.Serialize(new { file_path = "log.txt", filter = "errors" });
             var result = await tool.ExecuteAsync(args);
 
             Assert.Contains("Lua Error", result, StringComparison.OrdinalIgnoreCase);
@@ -155,7 +157,7 @@ public class ParseLogToolTests
         {
             var tool = new ParseLogTool(tempDir);
             var absPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "some_abs_file.txt"));
-            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = absPath });
+            var args = JsonSerializer.Serialize(new { file_path = absPath });
             var result = await tool.ExecuteAsync(args);
 
             Assert.Contains("Absolute paths are not allowed", result);
@@ -164,6 +166,20 @@ public class ParseLogToolTests
         {
             Directory.Delete(tempDir, true);
         }
+    }
+
+    [Fact]
+    public void ResolveLogPath_DefaultAbsoluteIsaacLog_IsAllowed()
+    {
+        var tool = new ParseLogTool(Path.GetTempPath());
+        var defaultLog = ProjectPathSafety.GetDefaultIsaacLogPath();
+        using var doc = JsonDocument.Parse(JsonSerializer.Serialize(new { file_path = defaultLog }));
+
+        var (path, error) = tool.ResolveLogPath(doc.RootElement);
+
+        Assert.Null(error);
+        Assert.NotNull(path);
+        Assert.Equal(Path.GetFullPath(defaultLog), Path.GetFullPath(path));
     }
 
     [Fact]
@@ -179,7 +195,7 @@ public class ParseLogToolTests
             await File.WriteAllTextAsync(Path.Combine(evilDir, "log.txt"), "secret log content");
 
             var tool = new ParseLogTool(safeDir);
-            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = "../myproject_evil/log.txt" });
+            var args = JsonSerializer.Serialize(new { file_path = "../myproject_evil/log.txt" });
             var result = await tool.ExecuteAsync(args);
 
             Assert.Contains("Path traversal", result);
@@ -203,7 +219,27 @@ public class ParseLogToolTests
             await File.WriteAllTextAsync(Path.Combine(evilDir, "log.txt"), "secret");
 
             var tool = new ParseLogTool(safeDir);
-            var args = System.Text.Json.JsonSerializer.Serialize(new { file_path = "../myproject_evil/log.txt" });
+            var args = JsonSerializer.Serialize(new { file_path = "../myproject_evil/log.txt" });
+            var result = await tool.ExecuteAsync(args);
+
+            Assert.Contains("Path traversal", result);
+        }
+        finally
+        {
+            Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public async Task ParseLogTool_DoubleEncodedTraversal_ReturnsError()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_log_dots_{Guid.NewGuid():N}");
+        var safeDir = Path.Combine(baseDir, "myproject");
+        Directory.CreateDirectory(safeDir);
+        try
+        {
+            var tool = new ParseLogTool(safeDir);
+            var args = JsonSerializer.Serialize(new { file_path = "....//outside_log.txt" });
             var result = await tool.ExecuteAsync(args);
 
             Assert.Contains("Path traversal", result);

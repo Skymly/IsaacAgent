@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`parse_log` path policy**: relative paths and the Isaac default absolute
+  `log.txt` whitelist go through Core `ProjectPathSafety` (no local
+  `StartsWith` / whitelist copy); double-encoded traversal is rejected
+  (issue #62).
 - **Chat session store is the sole authoritative chat persistence path**:
   removed `ChatHistoryService` disk helpers (`SaveSession` / `RestoreSession` /
   `LoadSession` / `DeleteSession` / `GetHistoryPath`). Export to Markdown/JSON

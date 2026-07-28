@@ -50,8 +50,13 @@
 4. `search_knowledge` / `get_pattern` 依赖已构建索引；索引未就绪时返回明确错误。
 5. 嵌入资源文档为**产品知识**，与维护者 `docs/` 体系分离。
 6. 默认 ONNX 路径为空时必须解析到捆绑资产；不得要求用户手动下载模型才能首次使用。
+7. **`parse_log` 路径安全**：相对路径经 Core [`ProjectPathSafety`](Core.md) `Resolve`；绝对路径仅当 `IsAllowedAbsoluteLogPath`；默认路径来自 `GetDefaultIsaacLogPath`（存在性由工具判断）。不得再维护本地 `StartsWith` / 白名单副本。
 
 ## 实现概览
+
+### 路径安全（`ParseLogTool`）
+
+权威实现：Core [`ProjectPathSafety`](Core.md)。`ResolveLogPath` 只做参数分支与错误文案；省略 `file_path` 时若默认 log 不存在则返回 null，由 `ExecuteAsync` 给出找不到提示。
 
 ### 索引管线
 

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using IsaacAgent.Core.Models;
+using IsaacAgent.Core.PathSafety;
 using IsaacAgent.Core.Services;
 
 namespace IsaacAgent.Rag.Tools;
@@ -44,7 +45,7 @@ public sealed class ParseLogTool : ITool
             return Task.FromResult(
                 $"Could not find log.txt. Searched:\n" +
                 $"  - Project-relative path\n" +
-                $"  - Default Isaac location: {GetDefaultLogPath()}\n" +
+                $"  - Default Isaac location: {GetExistingDefaultLogPath()}\n" +
                 $"Provide a 'file_path' argument pointing to your log.txt file.");
         }
 
@@ -81,29 +82,23 @@ public sealed class ParseLogTool : ITool
             var path = fp.GetString()!;
             if (Path.IsPathRooted(path))
             {
-                // Absolute paths: only allow the default Isaac log location.
-                var defaultLog = GetDefaultLogPath();
-                if (defaultLog is not null && string.Equals(path, defaultLog, StringComparison.OrdinalIgnoreCase))
-                    return (path, null);
+                if (ProjectPathSafety.IsAllowedAbsoluteLogPath(path))
+                    return (Path.GetFullPath(path), null);
                 return (null, "Error: Absolute paths are not allowed. Use a relative path within the project, or omit 'file_path' to use the default Isaac log location.");
             }
 
-            // Relative path: resolve within project dir and check for traversal.
-            var fullPath = Path.GetFullPath(Path.Combine(_projectDir, path));
-            var projectRoot = _projectDir.EndsWith(Path.DirectorySeparatorChar)
-                ? _projectDir
-                : _projectDir + Path.DirectorySeparatorChar;
-            if (!fullPath.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
+            var (fullPath, isSafe) = ProjectPathSafety.Resolve(_projectDir, path);
+            if (!isSafe)
                 return (null, "Error: Path traversal detected.");
             return (fullPath, null);
         }
-        return (GetDefaultLogPath(), null);
+
+        return (GetExistingDefaultLogPath(), null);
     }
 
-    private static string? GetDefaultLogPath()
+    private static string? GetExistingDefaultLogPath()
     {
-        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        var path = Path.Combine(docs, "My Games", "Binding of Isaac Repentance", "log.txt");
+        var path = ProjectPathSafety.GetDefaultIsaacLogPath();
         return File.Exists(path) ? path : null;
     }
 
