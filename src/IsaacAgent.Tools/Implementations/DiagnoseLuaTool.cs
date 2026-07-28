@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using IsaacAgent.Core.Knowledge;
 using IsaacAgent.Core.Models;
+using IsaacAgent.Core.PathSafety;
 using IsaacAgent.Core.Services;
 
 namespace IsaacAgent.Tools.Implementations;
@@ -33,7 +34,7 @@ public sealed class DiagnoseLuaTool : ITool
     {
         var args = JsonDocument.Parse(arguments).RootElement;
         var relPath = args.GetProperty("path").GetString()!;
-        var (fullPath, isSafe) = FileToolPathSafety.Resolve(_projectDir, relPath);
+        var (fullPath, isSafe) = ProjectPathSafety.Resolve(_projectDir, relPath);
 
         if (!isSafe)
             return "Error: Path traversal detected.";
