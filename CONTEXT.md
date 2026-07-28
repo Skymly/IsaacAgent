@@ -41,8 +41,8 @@ _Avoid_: Function, action (when you mean Tool)
 ### Chat persistence
 
 **Chat session store**:
-The App module that owns project-scoped chat persistence: one manifest file per project under `sessions/` whose authoritative payload is each tab's Agent history envelope; UI bubbles are a projection (user + assistant only). Uses stable tab GUIDs; does not persist when no project is open; Checkpoints remain ephemeral and are not stored. Supersedes the legacy dual paths (`chat-history/`, `history/`); on first load with no `sessions/` file, migrates once from those legacy roots then writes only under `sessions/`.
-_Avoid_: ChatHistoryService.SaveSession / RestoreSession (legacy dual path), session deserialization restore (when you mean Checkpoint Restore)
+The App module that owns project-scoped chat persistence: one manifest file per project under `sessions/` whose authoritative payload is each tab's Agent history envelope; UI bubbles are a projection (user + assistant only). Uses stable tab GUIDs; does not persist when no project is open; Checkpoints remain ephemeral and are not stored. Supersedes the legacy dual paths (`chat-history/`, `history/`); on first load with no `sessions/` file, migrates once from those legacy roots then writes only under `sessions/`. Loading a saved chat session means hydrating tabs and AgentSession from this store — not Checkpoint Restore.
+_Avoid_: ChatHistoryService.SaveSession / RestoreSession (removed legacy dual path), session deserialization restore (when you mean Checkpoint Restore)
 
 ### Checkpoints
 
@@ -51,8 +51,8 @@ An in-session anchor created automatically before a user message is processed in
 _Avoid_: Restore point, Snapshot, Undo point (when you mean this anchor)
 
 **Restore**:
-The user act of returning a live session to a Checkpoint: truncate that turn and later conversation, and revert tracked tool writes per the Checkpoint contract.
-_Avoid_: Rewind, Rollback, Undo (when you mean this act)
+The user act of returning a live session to a Checkpoint: truncate that turn and later conversation, and revert tracked tool writes per the Checkpoint contract. Distinct from loading a project’s Chat session store after open or project switch.
+_Avoid_: Rewind, Rollback, Undo, load saved chat session (when you mean this act)
 
 **Before-image**:
 The captured prior file state (or tombstone for a create) recorded lazily before a tracked tool first mutates a path after a Checkpoint.

@@ -20,7 +20,6 @@ public sealed partial class MainViewModel : ObservableObject
     public QuickReferenceViewModel QuickReference { get; }
     public LogMonitorService LogMonitor { get; }
     public ToastService Toasts { get; }
-    public ChatHistoryService ChatHistory { get; }
 
     [ObservableProperty]
     private string _statusText = "";
@@ -43,7 +42,6 @@ public sealed partial class MainViewModel : ObservableObject
         QuickReference = services.GetRequiredService<QuickReferenceViewModel>();
         LogMonitor = services.GetRequiredService<LogMonitorService>();
         Toasts = services.GetRequiredService<ToastService>();
-        ChatHistory = services.GetRequiredService<ChatHistoryService>();
         _chatSessionStore = services.GetRequiredService<IChatSessionStore>();
 
         StatusText = GetString("StatusReady");

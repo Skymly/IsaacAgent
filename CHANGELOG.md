@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Chat session store is the sole authoritative chat persistence path**:
+  removed `ChatHistoryService` disk helpers (`SaveSession` / `RestoreSession` /
+  `LoadSession` / `DeleteSession` / `GetHistoryPath`). Export to Markdown/JSON
+  and in-memory search across open tabs still use the live UI only; legacy
+  `chat-history/` / `history/` remain migration inputs only (issue #51).
+
 ### Added
 
 - **Chat session store persist triggers**: successful send completion, Checkpoint
