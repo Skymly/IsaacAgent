@@ -1,4 +1,5 @@
 using IsaacAgent.App.Services;
+using IsaacAgent.Core.PathSafety;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
@@ -125,14 +126,36 @@ public class LogMonitorServiceTests
     }
 
     [Fact]
-    public void Start_NonExistentFile_ReturnsFalse()
+    public void Start_NonWhitelistedAbsolutePath_ReturnsFalseEvenIfFileExists()
     {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"isaac_log_reject_{Guid.NewGuid():N}.txt");
+        File.WriteAllText(tempFile, "Binding of Isaac: Repentance\n");
+        try
+        {
+            var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
+            var result = svc.Start(tempFile);
+
+            Assert.False(result);
+            Assert.False(svc.IsMonitoring);
+            Assert.Contains("not allowed", svc.StatusText, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Monitoring:", svc.StatusText);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void Start_NonExistentNonWhitelistedAbsolute_ReturnsFalseWithNotAllowed()
+    {
+        var absPath = Path.Combine(Path.GetTempPath(), $"missing_log_{Guid.NewGuid():N}.txt");
         var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
-        var result = svc.Start("/nonexistent/path/log.txt");
+        var result = svc.Start(absPath);
 
         Assert.False(result);
         Assert.False(svc.IsMonitoring);
-        Assert.Contains("not found", svc.StatusText);
+        Assert.Contains("not allowed", svc.StatusText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -146,12 +169,62 @@ public class LogMonitorServiceTests
         if (result)
         {
             Assert.True(svc.IsMonitoring);
+            Assert.Contains(ProjectPathSafety.GetDefaultIsaacLogPath(), svc.StatusText, StringComparison.OrdinalIgnoreCase);
             svc.Dispose();
         }
         else
         {
             Assert.False(svc.IsMonitoring);
+            Assert.Contains("not found", svc.StatusText, StringComparison.OrdinalIgnoreCase);
         }
+    }
+
+    [Fact]
+    public void GetDefaultLogPath_MatchesCoreDefaultWhenPresent()
+    {
+        var coreDefault = ProjectPathSafety.GetDefaultIsaacLogPath();
+        var fromService = LogMonitorService.GetDefaultLogPath();
+
+        if (File.Exists(coreDefault))
+            Assert.Equal(Path.GetFullPath(coreDefault), Path.GetFullPath(fromService!));
+        else
+            Assert.Null(fromService);
+    }
+
+    [Fact]
+    public void Start_RelativePathOutsideProject_ReturnsFalse()
+    {
+        var baseDir = Path.Combine(Path.GetTempPath(), $"isaac_mon_{Guid.NewGuid():N}");
+        var projectDir = Path.Combine(baseDir, "mod");
+        var evilDir = Path.Combine(baseDir, "evil");
+        Directory.CreateDirectory(projectDir);
+        Directory.CreateDirectory(evilDir);
+        var evilLog = Path.Combine(evilDir, "log.txt");
+        File.WriteAllText(evilLog, "Binding of Isaac: Repentance\n");
+        try
+        {
+            var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
+            var result = svc.Start("../evil/log.txt", projectDir);
+
+            Assert.False(result);
+            Assert.False(svc.IsMonitoring);
+            Assert.Contains("not allowed", svc.StatusText, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(baseDir, true);
+        }
+    }
+
+    [Fact]
+    public void Start_RelativePathWithoutProjectDir_ReturnsFalse()
+    {
+        var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
+        var result = svc.Start("log.txt");
+
+        Assert.False(result);
+        Assert.False(svc.IsMonitoring);
+        Assert.Contains("project", svc.StatusText, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -177,10 +250,12 @@ public class LogMonitorServiceTests
     }
 
     [Fact]
-    public void Start_ValidLogFile_ReadsExistingContent()
+    public void Start_ValidRelativeLogInProject_ReadsExistingContent()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"isaac_log_{Guid.NewGuid():N}.txt");
-        File.WriteAllText(tempFile, """
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_log_proj_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(projectDir);
+        var logPath = Path.Combine(projectDir, "log.txt");
+        File.WriteAllText(logPath, """
             Binding of Isaac: Repentance v1.7.9c
             main.lua:10: attempt to call nil value
             Warning: deprecated function
@@ -188,7 +263,7 @@ public class LogMonitorServiceTests
         try
         {
             var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
-            var result = svc.Start(tempFile);
+            var result = svc.Start("log.txt", projectDir);
 
             Assert.True(result);
             Assert.True(svc.IsMonitoring);
@@ -199,19 +274,46 @@ public class LogMonitorServiceTests
         }
         finally
         {
-            File.Delete(tempFile);
+            Directory.Delete(projectDir, true);
         }
+    }
+
+    [Fact]
+    public void ResolveMonitorPath_AllowedAbsoluteDefaultLog_IsAccepted()
+    {
+        var defaultLog = ProjectPathSafety.GetDefaultIsaacLogPath();
+        var (path, error) = LogMonitorService.ResolveMonitorPath(defaultLog, projectDir: null);
+
+        Assert.Null(error);
+        Assert.NotNull(path);
+        Assert.Equal(Path.GetFullPath(defaultLog), Path.GetFullPath(path!));
+    }
+
+    [Fact]
+    public void Start_AllowedAbsoluteDefaultLog_WhenPresent_StartsMonitoring()
+    {
+        var defaultLog = ProjectPathSafety.GetDefaultIsaacLogPath();
+        if (!File.Exists(defaultLog))
+            return; // Do not create under the real Documents Isaac path.
+
+        var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
+        var result = svc.Start(defaultLog);
+
+        Assert.True(result);
+        Assert.True(svc.IsMonitoring);
+        svc.Dispose();
     }
 
     [Fact]
     public void Dispose_AfterStart_StopsMonitoring()
     {
-        var tempFile = Path.Combine(Path.GetTempPath(), $"isaac_log_{Guid.NewGuid():N}.txt");
-        File.WriteAllText(tempFile, "Binding of Isaac: Repentance\n");
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_log_disp_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(projectDir);
+        File.WriteAllText(Path.Combine(projectDir, "log.txt"), "Binding of Isaac: Repentance\n");
         try
         {
             var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
-            svc.Start(tempFile);
+            svc.Start("log.txt", projectDir);
             Assert.True(svc.IsMonitoring);
 
             svc.Dispose();
@@ -220,7 +322,7 @@ public class LogMonitorServiceTests
         }
         finally
         {
-            File.Delete(tempFile);
+            Directory.Delete(projectDir, true);
         }
     }
 
