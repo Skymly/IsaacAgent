@@ -41,28 +41,31 @@ public sealed class IndexBuilder
         _logger.LogInformation("Loaded {Count} chunks from hardcoded API knowledge", chunks.Count);
 
         // 2. Embedded MkDocs documentation (vanilla + REPENTOGON)
-        var vanillaChunks = MkDocsChunker.ChunkFromEmbeddedResources(
-            _assembly, "IsaacAgent.Rag.Resources.docs.vanilla", "vanilla");
+        var vanillaChunks = MarkdownKnowledgeChunker.ChunkFromEmbeddedResources(
+            _assembly, "IsaacAgent.Rag.Resources.docs.vanilla", "vanilla",
+            MarkdownChunkOptions.ForMkDocsDocs);
         chunks.AddRange(vanillaChunks);
         _logger.LogInformation("Loaded {Count} chunks from embedded vanilla docs", vanillaChunks.Count);
 
-        var repentogonChunks = MkDocsChunker.ChunkFromEmbeddedResources(
-            _assembly, "IsaacAgent.Rag.Resources.docs.repentogon", "repentogon");
+        var repentogonChunks = MarkdownKnowledgeChunker.ChunkFromEmbeddedResources(
+            _assembly, "IsaacAgent.Rag.Resources.docs.repentogon", "repentogon",
+            MarkdownChunkOptions.ForMkDocsDocs);
         chunks.AddRange(repentogonChunks);
         _logger.LogInformation("Loaded {Count} chunks from embedded REPENTOGON docs", repentogonChunks.Count);
 
-        // 3. User-provided examples from filesystem (if any) — uses SmartMarkdownChunker
-        //    for code-block-safe splitting with overlap
+        // 3. User-provided examples from filesystem (if any) — fence-safe split + overlap
         if (Directory.Exists(_examplesDir))
         {
-            var exampleChunks = SmartMarkdownChunker.ChunkDirectory(_examplesDir, "example");
+            var exampleChunks = MarkdownKnowledgeChunker.ChunkDirectory(
+                _examplesDir, "example", MarkdownChunkOptions.ForPatternsOrExamples);
             chunks.AddRange(exampleChunks);
             _logger.LogInformation("Loaded {Count} example chunks from {Dir}", exampleChunks.Count, _examplesDir);
         }
 
         // 4. Built-in pattern examples (embedded resources)
-        var builtinChunks = SmartMarkdownChunker.ChunkFromEmbeddedResources(
-            _assembly, "IsaacAgent.Rag.Resources.patterns", "pattern");
+        var builtinChunks = MarkdownKnowledgeChunker.ChunkFromEmbeddedResources(
+            _assembly, "IsaacAgent.Rag.Resources.patterns", "pattern",
+            MarkdownChunkOptions.ForPatternsOrExamples);
         chunks.AddRange(builtinChunks);
         if (builtinChunks.Count > 0)
             _logger.LogInformation("Loaded {Count} built-in pattern chunks", builtinChunks.Count);

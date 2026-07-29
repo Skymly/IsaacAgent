@@ -4,8 +4,10 @@ using System.Reflection;
 
 namespace IsaacAgent.Tests;
 
-public class MkDocsChunkerTests
+public class MarkdownKnowledgeChunkerMkDocsTests
 {
+    private static readonly MarkdownChunkOptions Options = MarkdownChunkOptions.ForMkDocsDocs;
+
     [Fact]
     public void ChunkMarkdown_ParsesTagsFrontMatter()
     {
@@ -29,7 +31,7 @@ public class MkDocsChunkerTests
             Called after every render.
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "enums/ModCallbacks.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "enums/ModCallbacks.md", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         Assert.All(chunks, c => Assert.Equal("vanilla", c.Source));
@@ -55,7 +57,7 @@ public class MkDocsChunkerTests
             #### void AddBoneOrbital ( ) {: .copyable }
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "EntityPlayer.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "EntityPlayer.md", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         Assert.All(chunks, c => Assert.Equal("class", c.Category));
@@ -79,7 +81,7 @@ public class MkDocsChunkerTests
             | name | string |
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "xml/items.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "xml/items.md", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         Assert.All(chunks, c => Assert.Equal("xml", c.Category));
@@ -102,7 +104,7 @@ public class MkDocsChunkerTests
             Register the callback.
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "tutorials/custom-item.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "tutorials/custom-item.md", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         Assert.All(chunks, c => Assert.Equal("tutorial", c.Category));
@@ -123,8 +125,8 @@ public class MkDocsChunkerTests
             Returns charge added.
             """;
 
-        var vanillaChunks = MkDocsChunker.ChunkMarkdown(md, "EntityPlayer.md", "vanilla");
-        var repentogonChunks = MkDocsChunker.ChunkMarkdown(md, "EntityPlayer.md", "repentogon");
+        var vanillaChunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "EntityPlayer.md", "vanilla", Options);
+        var repentogonChunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "EntityPlayer.md", "repentogon", Options);
 
         Assert.All(vanillaChunks, c => Assert.Equal("vanilla", c.Source));
         Assert.All(repentogonChunks, c => Assert.Equal("repentogon", c.Source));
@@ -152,7 +154,7 @@ public class MkDocsChunkerTests
                 Be careful.
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "Test.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "Test.md", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         var content = string.Join('\n', chunks.Select(c => c.Content));
@@ -181,7 +183,7 @@ public class MkDocsChunkerTests
             Third callback description.
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "Callbacks.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "Callbacks.md", "vanilla", Options);
 
         var h3Chunks = chunks.Where(c => c.Title.Contains("MC_")).ToList();
         Assert.True(h3Chunks.Count >= 3);
@@ -204,7 +206,7 @@ public class MkDocsChunkerTests
             Returns the room.
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "Room.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "Room.md", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         Assert.All(chunks, c => Assert.Contains("Room", c.Title));
@@ -221,7 +223,7 @@ public class MkDocsChunkerTests
             # Enum "Empty"
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "Empty.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "Empty.md", "vanilla", Options);
 
         // A lone H1 heading still produces a chunk with the heading as content
         Assert.Single(chunks);
@@ -239,7 +241,7 @@ public class MkDocsChunkerTests
             Adding more text here to ensure it passes the length threshold.
             """;
 
-        var chunks = MkDocsChunker.ChunkMarkdown(md, "enums/Something.md", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "enums/Something.md", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         Assert.Equal("enum", chunks[0].Category);
@@ -248,13 +250,11 @@ public class MkDocsChunkerTests
     [Fact]
     public void ChunkFromEmbeddedResources_LoadsAllVanillaDocs()
     {
-        var asm = Assembly.GetExecutingAssembly();
-        // Test assembly references IsaacAgent.Rag, so load it
         var ragAsm = AppDomain.CurrentDomain.GetAssemblies()
             .First(a => a.GetName().Name == "IsaacAgent.Rag");
 
-        var chunks = MkDocsChunker.ChunkFromEmbeddedResources(
-            ragAsm, "IsaacAgent.Rag.Resources.docs.vanilla", "vanilla");
+        var chunks = MarkdownKnowledgeChunker.ChunkFromEmbeddedResources(
+            ragAsm, "IsaacAgent.Rag.Resources.docs.vanilla", "vanilla", Options);
 
         Assert.NotEmpty(chunks);
         Assert.True(chunks.Count > 100, $"Expected >100 vanilla chunks, got {chunks.Count}");
@@ -270,8 +270,8 @@ public class MkDocsChunkerTests
         var ragAsm = AppDomain.CurrentDomain.GetAssemblies()
             .First(a => a.GetName().Name == "IsaacAgent.Rag");
 
-        var chunks = MkDocsChunker.ChunkFromEmbeddedResources(
-            ragAsm, "IsaacAgent.Rag.Resources.docs.repentogon", "repentogon");
+        var chunks = MarkdownKnowledgeChunker.ChunkFromEmbeddedResources(
+            ragAsm, "IsaacAgent.Rag.Resources.docs.repentogon", "repentogon", Options);
 
         Assert.NotEmpty(chunks);
         Assert.True(chunks.Count > 100, $"Expected >100 repentogon chunks, got {chunks.Count}");

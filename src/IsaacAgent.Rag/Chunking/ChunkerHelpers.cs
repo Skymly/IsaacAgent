@@ -3,7 +3,7 @@ using System.Reflection;
 namespace IsaacAgent.Rag.Chunking;
 
 /// <summary>
-/// Shared helper methods used across multiple chunker implementations.
+/// Shared helpers for markdown knowledge chunking (front matter, embedded resources).
 /// </summary>
 internal static class ChunkerHelpers
 {

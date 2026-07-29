@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Rag markdown chunking**: `MarkdownChunker` / `SmartMarkdownChunker` /
+  `MkDocsChunker` merged into `MarkdownKnowledgeChunker` with
+  `MarkdownChunkOptions` presets (`ForMkDocsDocs`, `ForPatternsOrExamples`);
+  `IndexBuilder` calls the single entry (issue #66).
 - **App scaffolding façade**: ViewModels use injected `IScaffoldingService` /
   `ScaffoldingService` for basic mod skeletons and template-gallery writes;
   no App ViewModel constructs `ScaffoldModTool` directly. Command palette and

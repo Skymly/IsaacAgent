@@ -3,19 +3,21 @@ using Xunit;
 
 namespace IsaacAgent.Tests;
 
-public class SmartMarkdownChunkerTests
+public class MarkdownKnowledgeChunkerPatternsTests
 {
+    private static readonly MarkdownChunkOptions Options = MarkdownChunkOptions.ForPatternsOrExamples;
+
     [Fact]
     public void ChunkMarkdown_EmptyContent_ReturnsEmpty()
     {
-        var chunks = SmartMarkdownChunker.ChunkMarkdown("", "test.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown("", "test.md", "example", Options);
         Assert.Empty(chunks);
     }
 
     [Fact]
     public void ChunkMarkdown_WhitespaceOnly_ReturnsEmpty()
     {
-        var chunks = SmartMarkdownChunker.ChunkMarkdown("   \n\n   ", "test.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown("   \n\n   ", "test.md", "example", Options);
         Assert.Empty(chunks);
     }
 
@@ -29,7 +31,7 @@ public class SmartMarkdownChunkerTests
             It has multiple lines of content for testing.
             """;
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "test.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "test.md", "example", Options);
 
         Assert.NotEmpty(chunks);
         Assert.All(chunks, c => Assert.Equal("example", c.Source));
@@ -42,17 +44,19 @@ public class SmartMarkdownChunkerTests
             ---
             title: Custom Item Guide
             category: tutorial
+            tags: item, collectible
             ---
             # Custom Item Guide
 
             This is the content of the guide with enough text.
             """;
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "guide.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "guide.md", "example", Options);
 
         Assert.NotEmpty(chunks);
         Assert.Contains("Custom Item Guide", chunks[0].Title);
         Assert.Equal("tutorial", chunks[0].Category);
+        Assert.Equal("item, collectible", chunks[0].Metadata["tags"]);
     }
 
     [Fact]
@@ -65,7 +69,7 @@ public class SmartMarkdownChunkerTests
             Some content here that is long enough to be a valid chunk.
             """;
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "mypattern.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "mypattern.md", "example", Options);
 
         Assert.NotEmpty(chunks);
         Assert.Contains("mypattern", chunks[0].Title);
@@ -90,7 +94,7 @@ public class SmartMarkdownChunkerTests
             It also has multiple lines to ensure it meets the minimum size requirement.
             """;
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "multi.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "multi.md", "example", Options);
 
         Assert.True(chunks.Count >= 2);
         Assert.Contains(chunks, c => c.Title.Contains("Section One"));
@@ -112,7 +116,7 @@ public class SmartMarkdownChunkerTests
             ```
             """;
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "code.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "code.md", "example", Options);
 
         Assert.NotEmpty(chunks);
         // The code block should be in a single chunk, not split
@@ -138,7 +142,7 @@ public class SmartMarkdownChunkerTests
             Multiple lines to ensure minimum size is met.
             """;
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "test.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "test.md", "example", Options);
 
         // The "## Not A Real Heading" inside the code block should not create a new chunk
         Assert.DoesNotContain(chunks, c => c.Title.Contains("Not A Real Heading"));
@@ -151,7 +155,7 @@ public class SmartMarkdownChunkerTests
         var longLine = new string('A', 2500);
         var md = $"# Big Section\n\n{longLine}";
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "big.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "big.md", "example", Options);
 
         Assert.True(chunks.Count >= 2);
         // Check that chunks have part numbers in title
@@ -172,7 +176,7 @@ public class SmartMarkdownChunkerTests
             It has multiple lines to ensure it meets the minimum size requirement.
             """;
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "merge.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "merge.md", "example", Options);
 
         // The tiny section should be merged with a neighbor, not emitted alone
         Assert.DoesNotContain(chunks, c => c.Title.EndsWith("— Tiny"));
@@ -183,7 +187,7 @@ public class SmartMarkdownChunkerTests
     {
         var md = "Content with enough text to be a valid chunk for testing metadata.";
 
-        var chunks = SmartMarkdownChunker.ChunkMarkdown(md, "mytest.md", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkMarkdown(md, "mytest.md", "example", Options);
 
         Assert.NotEmpty(chunks);
         Assert.Equal("mytest.md", chunks[0].Metadata["file"]);
@@ -192,7 +196,7 @@ public class SmartMarkdownChunkerTests
     [Fact]
     public void ChunkDirectory_NonExistentDir_ReturnsEmpty()
     {
-        var chunks = SmartMarkdownChunker.ChunkDirectory("/nonexistent/path", "example");
+        var chunks = MarkdownKnowledgeChunker.ChunkDirectory("/nonexistent/path", "example", Options);
         Assert.Empty(chunks);
     }
 
@@ -206,7 +210,7 @@ public class SmartMarkdownChunkerTests
             File.WriteAllText(Path.Combine(tempDir, "doc1.md"), "# Doc 1\n\nContent for doc 1 with enough text.");
             File.WriteAllText(Path.Combine(tempDir, "doc2.md"), "# Doc 2\n\nContent for doc 2 with enough text.");
 
-            var chunks = SmartMarkdownChunker.ChunkDirectory(tempDir, "test");
+            var chunks = MarkdownKnowledgeChunker.ChunkDirectory(tempDir, "test", Options);
 
             Assert.NotEmpty(chunks);
             Assert.Contains(chunks, c => c.Content.Contains("Doc 1"));
