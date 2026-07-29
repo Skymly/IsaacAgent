@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.RegularExpressions;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using IsaacAgent.Core.PathSafety;
 using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.App.Services;
@@ -31,6 +32,8 @@ public sealed class LogEntry
 /// <summary>
 /// Monitors Isaac's log.txt file in real-time, parsing new lines for
 /// errors and warnings. Uses FileSystemWatcher with polling fallback.
+/// Absolute targets must pass Core <see cref="ProjectPathSafety"/> Isaac log
+/// whitelist; relative targets require a project directory and sandbox Resolve.
 /// </summary>
 public sealed partial class LogMonitorService : ObservableObject, IDisposable
 {
@@ -73,27 +76,39 @@ public sealed partial class LogMonitorService : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Get the default Isaac log.txt path.
+    /// Default Isaac <c>log.txt</c> when it exists (Core whitelist path).
     /// </summary>
     public static string? GetDefaultLogPath()
     {
-        var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-        var path = Path.Combine(docs, "My Games", "Binding of Isaac Repentance", "log.txt");
+        var path = ProjectPathSafety.GetDefaultIsaacLogPath();
         return File.Exists(path) ? path : null;
     }
 
     /// <summary>
     /// Start monitoring the given log file (or the default Isaac log).
+    /// Absolute paths must be the Core-allowed Isaac default log; relative
+    /// paths require <paramref name="projectDir"/> and stay in the sandbox.
     /// </summary>
-    public bool Start(string? logPath = null)
+    public bool Start(string? logPath = null, string? projectDir = null)
     {
-        _logPath = logPath ?? GetDefaultLogPath();
-        if (_logPath is null || !File.Exists(_logPath))
+        var (resolved, error) = ResolveMonitorPath(logPath, projectDir);
+        if (error is not null)
         {
-            StatusText = "log.txt not found. Start the game or set the path in Settings.";
+            StatusText = error;
             IsMonitoring = false;
             return false;
         }
+
+        if (resolved is null || !File.Exists(resolved))
+        {
+            StatusText = resolved is null
+                ? "log.txt not found. Start the game so the default Isaac log exists."
+                : $"log.txt not found at '{resolved}'.";
+            IsMonitoring = false;
+            return false;
+        }
+
+        _logPath = resolved;
 
         try
         {
@@ -123,6 +138,43 @@ public sealed partial class LogMonitorService : ObservableObject, IDisposable
             IsMonitoring = false;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Resolves a monitor target against Core path policy.
+    /// Returns (path, null) when policy allows; (null, message) when rejected.
+    /// Existence is checked by the caller.
+    /// </summary>
+    internal static (string? Path, string? Error) ResolveMonitorPath(string? logPath, string? projectDir)
+    {
+        if (logPath is null)
+            return (GetDefaultLogPath(), null);
+
+        if (Path.IsPathRooted(logPath))
+        {
+            if (!ProjectPathSafety.IsAllowedAbsoluteLogPath(logPath))
+            {
+                return (null,
+                    "Path not allowed. Only the default Isaac log.txt can be monitored as an absolute path.");
+            }
+
+            return (Path.GetFullPath(logPath), null);
+        }
+
+        if (string.IsNullOrWhiteSpace(projectDir))
+        {
+            return (null,
+                "Relative log paths require a project directory.");
+        }
+
+        var (fullPath, isSafe) = ProjectPathSafety.Resolve(projectDir, logPath);
+        if (!isSafe)
+        {
+            return (null,
+                "Path not allowed. Relative log paths must stay within the project directory.");
+        }
+
+        return (fullPath, null);
     }
 
     /// <summary>

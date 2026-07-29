@@ -44,7 +44,7 @@
 
 ## 不变量
 
-1. **路径安全**：`read_file` / `write_file` / `list_files` / `diagnose_lua` / `diff_apply` / `batch_edit`（及 Tools 内其他相对路径解析）必须通过 Core `ProjectPathSafety.IsWithinProject` / `Resolve`。`validate_xml` / `parse_log` 的相对路径与绝对路径 log 白名单同属该 Core 模块（Rag 侧切换见 #62）。
+1. **路径安全**：`read_file` / `write_file` / `list_files` / `diagnose_lua` / `diff_apply` / `batch_edit`（及 Tools 内其他相对路径解析）必须通过 Core `ProjectPathSafety.IsWithinProject` / `Resolve`。`validate_xml` / `parse_log` 的相对路径与绝对路径 log 白名单同属该 Core 模块；App `LogMonitorService` 监控目标亦走同一白名单 / 沙箱（见 [App.md](App.md)）。
 2. **用户输入转义**：`scaffold_mod` 的 XML 字段须 `SecurityElement.Escape`；Lua 模板字符串须转义。
 3. **危险命令**：`run_command` 拦截 `rm -rf`、`format`、PowerShell 危险模式等。
 4. 工具注册在 `ToolRegistry`；reconfigure 与 lookup 须线程安全（`SemaphoreSlim`）。

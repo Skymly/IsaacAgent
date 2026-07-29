@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Game Log Monitor path policy**: `LogMonitorService.Start` rejects absolute
+  paths outside the Core Isaac `log.txt` whitelist and relative paths outside
+  the project sandbox (via `ProjectPathSafety`); failure is reported in
+  `StatusText` instead of opening arbitrary files (issue #63).
 - **`parse_log` path policy**: relative paths and the Isaac default absolute
   `log.txt` whitelist go through Core `ProjectPathSafety` (no local
   `StartsWith` / whitelist copy); double-encoded traversal is rejected
