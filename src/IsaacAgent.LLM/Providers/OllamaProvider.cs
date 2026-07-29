@@ -30,7 +30,7 @@ public sealed class OllamaProvider : IChatService, IDisposable
         var payload = BuildPayload(request, stream: false);
 
         using var resp = await _http.PostAsJsonAsync("/api/chat", payload, ct);
-        EnsureSuccessStatusCodeWithDetail(resp);
+        HttpStatusErrorMapper.EnsureSuccessStatusCodeWithDetail(resp);
 
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
         var message = doc.RootElement.GetProperty("message");
@@ -69,29 +69,18 @@ public sealed class OllamaProvider : IChatService, IDisposable
             Content = JsonContent.Create(payload)
         };
         using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        EnsureSuccessStatusCodeWithDetail(resp);
+        HttpStatusErrorMapper.EnsureSuccessStatusCodeWithDetail(resp);
 
         using var stream = await resp.Content.ReadAsStreamAsync(ct);
         using var reader = new StreamReader(stream);
 
         // NDJSON streaming: same stall protection as OpenAI-compatible provider.
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeoutCts.CancelAfter(StreamReadTimeout);
+        using var timeoutCts = StreamStallGuard.CreateIdleTimeoutSource(ct, StreamReadTimeout);
 
         while (true)
         {
-            ct.ThrowIfCancellationRequested();
-            string? line;
-            try
-            {
-                line = await reader.ReadLineAsync(timeoutCts.Token);
-            }
-            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
-            {
-                _logger.LogWarning("Stream read timed out after {Seconds}s with no data", StreamReadTimeout.TotalSeconds);
-                throw new TimeoutException($"Ollama stream stalled: no data received within {StreamReadTimeout.TotalSeconds:F0}s.");
-            }
-            timeoutCts.CancelAfter(StreamReadTimeout);
+            var line = await StreamStallGuard.ReadLineOrThrowIfStalledAsync(
+                reader, timeoutCts, StreamReadTimeout, ct, _logger);
 
             if (line is null) break; // EOF
 
@@ -213,34 +202,6 @@ public sealed class OllamaProvider : IChatService, IDisposable
             });
         }
         return calls;
-    }
-
-    /// <summary>
-    /// Throws an <see cref="HttpRequestException"/> with a descriptive message
-    /// for common non-success status codes, falling back to
-    /// <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/> for others.
-    /// </summary>
-    private void EnsureSuccessStatusCodeWithDetail(HttpResponseMessage resp)
-    {
-        if (resp.IsSuccessStatusCode) return;
-
-        var status = resp.StatusCode;
-        if (status == System.Net.HttpStatusCode.TooManyRequests)
-        {
-            throw new HttpRequestException(
-                $"Rate limited by Ollama (429 Too ManyRequests). Request will be retried after backoff.",
-                null, status);
-        }
-
-        if (status == System.Net.HttpStatusCode.Unauthorized ||
-            status == System.Net.HttpStatusCode.Forbidden)
-        {
-            throw new HttpRequestException(
-                $"Authentication failed ({(int)status} {status}). Check Ollama access permissions.",
-                null, status);
-        }
-
-        resp.EnsureSuccessStatusCode();
     }
 
     public void Dispose()

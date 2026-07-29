@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -35,7 +34,7 @@ public sealed class OpenAICompatibleProvider : IChatService, IDisposable
     {
         var payload = BuildPayload(request, stream: false);
         using var resp = await _http.PostAsJsonAsync("/v1/chat/completions", payload, ct);
-        EnsureSuccessStatusCodeWithDetail(resp);
+        HttpStatusErrorMapper.EnsureSuccessStatusCodeWithDetail(resp);
 
         using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
         var choice = doc.RootElement.GetProperty("choices")[0].GetProperty("message");
@@ -64,33 +63,21 @@ public sealed class OpenAICompatibleProvider : IChatService, IDisposable
             Content = JsonContent.Create(payload)
         };
         using var resp = await _http.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, ct);
-        EnsureSuccessStatusCodeWithDetail(resp);
+        HttpStatusErrorMapper.EnsureSuccessStatusCodeWithDetail(resp);
 
         using var stream = await resp.Content.ReadAsStreamAsync(ct);
         using var reader = new StreamReader(stream);
 
         // SSE streaming: HttpClient.Timeout may not reliably cancel a stalled
-        // stream after headers are received. Use a linked CTS that resets on
-        // each successful line read so a hung server doesn't leave the UI
+        // stream after headers are received. StreamStallGuard resets the idle
+        // timer on each successful line so a hung server doesn't leave the UI
         // spinning indefinitely.
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        timeoutCts.CancelAfter(StreamReadTimeout);
+        using var timeoutCts = StreamStallGuard.CreateIdleTimeoutSource(ct, StreamReadTimeout);
 
         while (true)
         {
-            ct.ThrowIfCancellationRequested();
-            string? line;
-            try
-            {
-                line = await reader.ReadLineAsync(timeoutCts.Token);
-            }
-            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
-            {
-                _logger.LogWarning("Stream read timed out after {Seconds}s with no data", StreamReadTimeout.TotalSeconds);
-                throw new TimeoutException($"LLM stream stalled: no data received within {StreamReadTimeout.TotalSeconds:F0}s.");
-            }
-            // Reset the idle timeout for the next line
-            timeoutCts.CancelAfter(StreamReadTimeout);
+            var line = await StreamStallGuard.ReadLineOrThrowIfStalledAsync(
+                reader, timeoutCts, StreamReadTimeout, ct, _logger);
 
             if (line is null) break; // EOF
             if (!line.StartsWith("data: ")) continue;
@@ -204,34 +191,6 @@ public sealed class OpenAICompatibleProvider : IChatService, IDisposable
             });
         }
         return calls;
-    }
-
-    /// <summary>
-    /// Throws an <see cref="HttpRequestException"/> with a descriptive message
-    /// for common non-success status codes, falling back to
-    /// <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/> for others.
-    /// </summary>
-    private void EnsureSuccessStatusCodeWithDetail(HttpResponseMessage resp)
-    {
-        if (resp.IsSuccessStatusCode) return;
-
-        var status = resp.StatusCode;
-        if (status == System.Net.HttpStatusCode.TooManyRequests)
-        {
-            throw new HttpRequestException(
-                $"Rate limited by LLM provider (429 Too ManyRequests). Request will be retried after backoff.",
-                null, status);
-        }
-
-        if (status == System.Net.HttpStatusCode.Unauthorized ||
-            status == System.Net.HttpStatusCode.Forbidden)
-        {
-            throw new HttpRequestException(
-                $"Authentication failed ({(int)status} {status}). Check API key and permissions.",
-                null, status);
-        }
-
-        resp.EnsureSuccessStatusCode();
     }
 
     public void Dispose()
