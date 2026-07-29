@@ -228,6 +228,28 @@ public class LogMonitorServiceTests
     }
 
     [Fact]
+    public void Start_RelativePathInProjectMissingFile_ReportsResolvedPath()
+    {
+        var projectDir = Path.Combine(Path.GetTempPath(), $"isaac_mon_miss_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(projectDir);
+        try
+        {
+            var expected = Path.GetFullPath(Path.Combine(projectDir, "log.txt"));
+            var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());
+            var result = svc.Start("log.txt", projectDir);
+
+            Assert.False(result);
+            Assert.False(svc.IsMonitoring);
+            Assert.Contains(expected, svc.StatusText, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("default Isaac", svc.StatusText, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(projectDir, true);
+        }
+    }
+
+    [Fact]
     public void Stop_WhenNotMonitoring_SetsStoppedStatus()
     {
         var svc = new LogMonitorService(Mock.Of<ILogger<LogMonitorService>>());

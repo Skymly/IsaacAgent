@@ -101,7 +101,9 @@ public sealed partial class LogMonitorService : ObservableObject, IDisposable
 
         if (resolved is null || !File.Exists(resolved))
         {
-            StatusText = "log.txt not found. Start the game so the default Isaac log exists.";
+            StatusText = resolved is null
+                ? "log.txt not found. Start the game so the default Isaac log exists."
+                : $"log.txt not found at '{resolved}'.";
             IsMonitoring = false;
             return false;
         }
