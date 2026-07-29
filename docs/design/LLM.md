@@ -88,6 +88,15 @@ Settings apply
 
 畸形 JSON 行：log warning 并 skip，不中断整条流。
 
+### 共享内部辅助
+
+| 类型 | 职责 |
+|------|------|
+| `StreamStallGuard` | 创建 linked idle CTS；行读空闲超时后抛统一文案的 `TimeoutException`，成功读后重置计时 |
+| `HttpStatusErrorMapper` | 429 / 401 / 403 → 带说明的 `HttpRequestException`；其余走 `EnsureSuccessStatusCode` |
+
+二者均为 `internal`，仅供本模块 provider 复用；不新增公开契约。协议差异（SSE vs NDJSON、tool-arg 字符串 vs 对象）仍留在各 provider。
+
 ### 与 Agent 的边界
 
 - `AgentSession` 只依赖 `IChatService.StreamAsync`；本模块不编排 tool 循环。
