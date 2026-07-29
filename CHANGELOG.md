@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **LLM shared stream/HTTP helpers**: `OpenAICompatibleProvider` and `OllamaProvider`
+  use internal `StreamStallGuard` and `HttpStatusErrorMapper` for idle stream
+  timeout and 429/401/403 mapping (unified stall / auth messages; issue #65).
 - **App scaffolding façade**: ViewModels use injected `IScaffoldingService` /
   `ScaffoldingService` for basic mod skeletons and template-gallery writes;
   no App ViewModel constructs `ScaffoldModTool` directly. Command palette and
