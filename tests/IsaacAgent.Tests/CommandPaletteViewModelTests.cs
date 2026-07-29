@@ -30,7 +30,7 @@ public class CommandPaletteViewModelTests
             new AddPillSkill(),
             new AddBossSkill()
         ]);
-        return new CommandPaletteViewModel(registry);
+        return new CommandPaletteViewModel(skills: registry);
     }
 
     [AvaloniaFact]

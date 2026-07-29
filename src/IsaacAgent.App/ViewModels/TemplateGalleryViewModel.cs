@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
-using System.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using IsaacAgent.App.Services;
 using IsaacAgent.Core.Models;
 
 namespace IsaacAgent.App.ViewModels;
@@ -12,6 +12,8 @@ namespace IsaacAgent.App.ViewModels;
 /// </summary>
 public sealed partial class TemplateGalleryViewModel : ObservableObject
 {
+    private readonly IScaffoldingService _scaffolding;
+
     [ObservableProperty]
     private ModTemplate? _selectedTemplate;
 
@@ -35,6 +37,11 @@ public sealed partial class TemplateGalleryViewModel : ObservableObject
     /// </summary>
     public Func<Task>? ScaffoldRequested { get; set; }
 
+    public TemplateGalleryViewModel(IScaffoldingService scaffolding)
+    {
+        _scaffolding = scaffolding;
+    }
+
     [RelayCommand]
     private async Task ScaffoldAsync()
     {
@@ -57,68 +64,19 @@ public sealed partial class TemplateGalleryViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Scaffold the selected template into the given directory.
+    /// Scaffold the selected template into the given directory via
+    /// <see cref="IScaffoldingService"/>.
     /// </summary>
     public async Task<(string[]? Files, string? Error)> ScaffoldIntoAsync(string targetDir)
     {
         if (SelectedTemplate is null)
             return (null, "No template selected.");
 
-        var name = string.IsNullOrWhiteSpace(ModName) ? "MyMod" : ModName;
-        var description = string.IsNullOrWhiteSpace(ModDescription) ? "A custom Binding of Isaac mod" : ModDescription;
-        var author = string.IsNullOrWhiteSpace(ModAuthor) ? "Unknown" : ModAuthor;
-
-        try
-        {
-            Directory.CreateDirectory(targetDir);
-
-            var created = new List<string>();
-
-            // Create directories
-            foreach (var dir in SelectedTemplate.Directories)
-            {
-                var fullPath = Path.Combine(targetDir, dir);
-                Directory.CreateDirectory(fullPath);
-                created.Add(dir + "/");
-            }
-
-            // Write files with placeholder substitution
-            foreach (var (relPath, content) in SelectedTemplate.Files)
-            {
-                var fileContent = content
-                    .Replace("{name}", EscapeLuaString(name))
-                    .Replace("{description}", SecurityElement.Escape(description) ?? "")
-                    .Replace("{author}", SecurityElement.Escape(author) ?? "");
-
-                var fullPath = Path.Combine(targetDir, relPath);
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-                await File.WriteAllTextAsync(fullPath, fileContent);
-                created.Add(relPath);
-            }
-
-            return (created.ToArray(), null);
-        }
-        catch (Exception ex)
-        {
-            return (null, ex.Message);
-        }
-    }
-
-    private static string EscapeLuaString(string s)
-    {
-        var sb = new System.Text.StringBuilder(s.Length);
-        foreach (var c in s)
-        {
-            switch (c)
-            {
-                case '\\': sb.Append("\\\\"); break;
-                case '"': sb.Append("\\\""); break;
-                case '\n': sb.Append("\\n"); break;
-                case '\r': sb.Append("\\r"); break;
-                case '\t': sb.Append("\\t"); break;
-                default: sb.Append(c); break;
-            }
-        }
-        return sb.ToString();
+        return await _scaffolding.ScaffoldFromTemplateAsync(
+            targetDir,
+            SelectedTemplate,
+            ModName,
+            ModDescription,
+            ModAuthor);
     }
 }

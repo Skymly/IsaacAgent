@@ -1,3 +1,4 @@
+using Avalonia.Headless.XUnit;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using Microsoft.Extensions.Logging;
@@ -10,13 +11,14 @@ namespace IsaacAgent.Tests;
 ///   Unit tests for ProjectViewModel file management commands —
 ///   create, delete, rename, search, and path operations.
 /// </summary>
+[Collection("Avalonia")]
 public class ProjectViewModelFileManagementTests
 {
     private static ProjectViewModel CreateViewModel()
     {
         var logger = Mock.Of<ILogger<ProjectViewModel>>();
         var config = new AppConfiguration();
-        return new ProjectViewModel(logger, config);
+        return new ProjectViewModel(logger, config, new ScaffoldingService());
     }
 
     private static string CreateTempProject()
@@ -29,7 +31,7 @@ public class ProjectViewModelFileManagementTests
         return dir;
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task CreateNewFile_CreatesFileInProjectRoot()
     {
         var dir = CreateTempProject();
@@ -51,7 +53,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task CreateNewFolder_CreatesFolderInProjectRoot()
     {
         var dir = CreateTempProject();
@@ -71,7 +73,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task DeleteFile_RemovesFileFromDisk()
     {
         var dir = CreateTempProject();
@@ -91,7 +93,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task DeleteFile_RemovesFolderFromDisk()
     {
         var dir = CreateTempProject();
@@ -111,7 +113,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task RenameFile_RenamesOnDisk()
     {
         var dir = CreateTempProject();
@@ -133,7 +135,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task FileSearchText_FilteredFilesContainsMatches()
     {
         var dir = CreateTempProject();
@@ -154,7 +156,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task FileSearchText_Empty_ClearsFilteredFiles()
     {
         var dir = CreateTempProject();
@@ -176,7 +178,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task FileSearchText_NoMatch_EmptyFilteredFiles()
     {
         var dir = CreateTempProject();
@@ -195,7 +197,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task FileSearchText_CaseInsensitive()
     {
         var dir = CreateTempProject();
@@ -214,7 +216,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task DeleteFile_NullParameter_DoesNothing()
     {
         var dir = CreateTempProject();
@@ -234,7 +236,7 @@ public class ProjectViewModelFileManagementTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task RenameFile_NullParameter_DoesNothing()
     {
         var dir = CreateTempProject();

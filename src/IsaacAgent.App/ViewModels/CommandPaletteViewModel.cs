@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Views;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace IsaacAgent.App.ViewModels;
 
@@ -28,6 +27,8 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
 {
     private readonly List<CommandItem> _allCommands = [];
     private readonly SkillRegistry? _skills;
+    private readonly MainViewModel? _main;
+    private readonly MainWindow? _window;
     private Action? _closeAction;
 
     [ObservableProperty]
@@ -39,13 +40,18 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
     public ObservableCollection<CommandItem> FilteredCommands { get; } = [];
 
     /// <summary>
-    /// Constructs the palette. When <paramref name="skills"/> is null the
-    /// registry is resolved from <see cref="App.Services"/> at registration
-    /// time (production); tests may pass a registry explicitly.
+    /// Constructs the palette. Production DI injects <paramref name="skills"/>,
+    /// <paramref name="main"/>, and <paramref name="window"/>. Tests may omit
+    /// collaborators that action dispatch does not need.
     /// </summary>
-    public CommandPaletteViewModel(SkillRegistry? skills = null)
+    public CommandPaletteViewModel(
+        SkillRegistry? skills = null,
+        MainViewModel? main = null,
+        MainWindow? window = null)
     {
         _skills = skills;
+        _main = main;
+        _window = window;
         RegisterCommands();
         UpdateFilteredCommands();
     }
@@ -57,24 +63,23 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
         _allCommands.AddRange([
             new CommandItem { Title = "New Project", Category = "File", Shortcut = "Ctrl+N", Action = () => InvokeMain(vm => vm.NewProjectCommand.Execute(null)) },
             new CommandItem { Title = "Open Project", Category = "File", Shortcut = "Ctrl+O", Action = () => InvokeMain(vm => vm.OpenProjectCommand.Execute(null)) },
-            new CommandItem { Title = "Settings", Category = "File", Shortcut = "Ctrl+,", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.OpenSettings()) },
-            new CommandItem { Title = "Exit", Category = "File", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.Close()) },
+            new CommandItem { Title = "Settings", Category = "File", Shortcut = "Ctrl+,", Action = () => InvokeWindow(w => w.OpenSettings()) },
+            new CommandItem { Title = "Exit", Category = "File", Action = () => InvokeWindow(w => w.Close()) },
             new CommandItem { Title = "Clear Chat", Category = "Chat", Shortcut = "Ctrl+K", Action = () => InvokeMain(vm => vm.ClearChatCommand.Execute(null)) },
             new CommandItem { Title = "New Chat Tab", Category = "Chat", Action = () => InvokeMain(vm => vm.Chat.AddTabCommand.Execute(null)) },
             new CommandItem { Title = "Close Chat Tab", Category = "Chat", Action = () => InvokeMain(vm => vm.Chat.CloseTabCommand.Execute(vm.Chat.ActiveTab)) },
             new CommandItem { Title = "Send Message", Category = "Chat", Shortcut = "Ctrl+Enter", Action = () => InvokeMain(vm => { if (vm.Chat.ActiveTab is { } tab && !tab.IsGenerating && !string.IsNullOrWhiteSpace(tab.InputText)) tab.SendCommand.Execute(null); }) },
             new CommandItem { Title = "Cancel Generation", Category = "Chat", Action = () => InvokeMain(vm => vm.Chat.ActiveTab?.CancelCommand.Execute(null)) },
-            new CommandItem { Title = "Open File", Category = "Project", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.FocusFileList()) },
-            new CommandItem { Title = "About IsaacAgent", Category = "Help", Action = () => InvokeMain(_ => App.Services?.GetService<MainWindow>()?.ShowAbout()) },
+            new CommandItem { Title = "Open File", Category = "Project", Action = () => InvokeWindow(w => w.FocusFileList()) },
+            new CommandItem { Title = "About IsaacAgent", Category = "Help", Action = () => InvokeWindow(w => w.ShowAbout()) },
         ]);
 
         // Skills — enumerated from the SkillRegistry (single source of truth).
         // New skills registered in AgentServiceRegistration appear here
         // automatically; no parallel hardcoded list to keep in sync.
-        var registry = _skills ?? App.Services?.GetService<SkillRegistry>();
-        if (registry is not null)
+        if (_skills is not null)
         {
-            foreach (var skill in registry.All)
+            foreach (var skill in _skills.All)
             {
                 var slash = skill.SlashCommand;
                 if (string.IsNullOrEmpty(slash)) continue;
@@ -96,21 +101,23 @@ public sealed partial class CommandPaletteViewModel : ObservableObject
         }
     }
 
-    private static void InvokeSkill(string slashCommand)
+    private void InvokeSkill(string slashCommand)
     {
-        var vm = App.Services?.GetService<MainViewModel>();
-        if (vm?.Chat.ActiveTab is { } tab && !tab.IsGenerating)
+        if (_main?.Chat.ActiveTab is { } tab && !tab.IsGenerating)
         {
             tab.InputText = slashCommand;
-            // Focus the chat input so the user can type their request after the command
-            App.Services?.GetService<MainWindow>()?.FocusChatInput();
+            _window?.FocusChatInput();
         }
     }
 
-    private static void InvokeMain(Action<MainViewModel> action)
+    private void InvokeMain(Action<MainViewModel> action)
     {
-        var vm = App.Services?.GetService<MainViewModel>();
-        if (vm is not null) action(vm);
+        if (_main is not null) action(_main);
+    }
+
+    private void InvokeWindow(Action<MainWindow> action)
+    {
+        if (_window is not null) action(_window);
     }
 
     partial void OnSearchTextChanged(string value)
