@@ -1,3 +1,4 @@
+using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using IsaacAgent.Core.Models;
 using Xunit;
@@ -10,10 +11,13 @@ namespace IsaacAgent.Tests;
 /// </summary>
 public class TemplateGalleryViewModelTests
 {
+    private static TemplateGalleryViewModel CreateViewModel() =>
+        new(new ScaffoldingService());
+
     [Fact]
     public void Constructor_LoadsAllTemplates()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         Assert.NotEmpty(vm.Templates);
         Assert.Equal(ModTemplates.All.Count, vm.Templates.Count);
     }
@@ -21,7 +25,7 @@ public class TemplateGalleryViewModelTests
     [Fact]
     public void Constructor_Defaults_AreEmpty()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         Assert.Null(vm.SelectedTemplate);
         Assert.Equal("", vm.ModName);
         Assert.Equal("", vm.ModDescription);
@@ -32,7 +36,7 @@ public class TemplateGalleryViewModelTests
     [Fact]
     public async Task ScaffoldAsync_NoTemplate_SetsStatusMessage()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         await vm.ScaffoldCommand.ExecuteAsync(null);
         Assert.Equal("Please select a template.", vm.StatusMessage);
     }
@@ -40,7 +44,7 @@ public class TemplateGalleryViewModelTests
     [Fact]
     public async Task ScaffoldAsync_NoModName_SetsStatusMessage()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         vm.SelectedTemplate = vm.Templates[0];
         await vm.ScaffoldCommand.ExecuteAsync(null);
         Assert.Equal("Please enter a mod name.", vm.StatusMessage);
@@ -49,7 +53,7 @@ public class TemplateGalleryViewModelTests
     [Fact]
     public async Task ScaffoldAsync_ValidInput_InvokesScaffoldRequested()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         vm.SelectedTemplate = vm.Templates[0];
         vm.ModName = "TestMod";
         var wasCalled = false;
@@ -69,7 +73,7 @@ public class TemplateGalleryViewModelTests
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_tmpl_{Guid.NewGuid():N}");
         try
         {
-            var vm = new TemplateGalleryViewModel();
+            var vm = CreateViewModel();
             vm.SelectedTemplate = vm.Templates[0];
             vm.ModName = "MyTestMod";
             vm.ModDescription = "A test mod";
@@ -91,7 +95,7 @@ public class TemplateGalleryViewModelTests
     [Fact]
     public async Task ScaffoldIntoAsync_NoTemplate_ReturnsError()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         var (files, error) = await vm.ScaffoldIntoAsync(Path.GetTempPath());
         Assert.Null(files);
         Assert.NotNull(error);
@@ -104,7 +108,7 @@ public class TemplateGalleryViewModelTests
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_tmpl_def_{Guid.NewGuid():N}");
         try
         {
-            var vm = new TemplateGalleryViewModel();
+            var vm = CreateViewModel();
             vm.SelectedTemplate = vm.Templates[0];
             vm.ModName = "";
 
@@ -130,7 +134,7 @@ public class TemplateGalleryViewModelTests
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_tmpl_sub_{Guid.NewGuid():N}");
         try
         {
-            var vm = new TemplateGalleryViewModel();
+            var vm = CreateViewModel();
             vm.SelectedTemplate = vm.Templates[0];
             vm.ModName = "CustomMod";
             vm.ModDescription = "My description";
@@ -156,7 +160,7 @@ public class TemplateGalleryViewModelTests
         var tempDir = Path.Combine(Path.GetTempPath(), $"isaac_tmpl_esc_{Guid.NewGuid():N}");
         try
         {
-            var vm = new TemplateGalleryViewModel();
+            var vm = CreateViewModel();
             vm.SelectedTemplate = vm.Templates[0];
             vm.ModName = "Test\"Mod\\Name";
 
@@ -178,7 +182,7 @@ public class TemplateGalleryViewModelTests
     [Fact]
     public void SelectedTemplate_SetAndGet_WorksCorrectly()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         var template = vm.Templates[0];
         vm.SelectedTemplate = template;
         Assert.Same(template, vm.SelectedTemplate);
@@ -187,7 +191,7 @@ public class TemplateGalleryViewModelTests
     [Fact]
     public void StatusMessage_SetAndGet_WorksCorrectly()
     {
-        var vm = new TemplateGalleryViewModel();
+        var vm = CreateViewModel();
         vm.StatusMessage = "Test status";
         Assert.Equal("Test status", vm.StatusMessage);
     }

@@ -25,8 +25,22 @@
 | ViewModel | 职责 |
 |-----------|------|
 | `ChatTabViewModel` | 单 Tab 聊天；持有 `AgentSession`；切换项目 Dispose |
-| `ProjectViewModel` | 文件树；`RefreshFilesAsync` UI 线程 marshal |
-| `SettingsViewModel` | 配置编辑、索引状态；Save 经注入的 **Settings apply** |
+| `ProjectViewModel` | 文件树；`RefreshFilesAsync` UI 线程 marshal；新建项目经 **Scaffolding** |
+| `SettingsViewModel` | 配置编辑、索引状态；Save 经注入的 **Settings apply**；语言/主题经注入的 Localization / Theme |
+| `TemplateGalleryViewModel` | 模板浏览；脚手架经 **Scaffolding** |
+| `CommandPaletteViewModel` | 命令面板；构造注入 `MainViewModel` / `MainWindow` / `SkillRegistry`（不 service-locate） |
+
+### Scaffolding
+
+| 类型 | 职责 |
+|------|------|
+| `IScaffoldingService` / `ScaffoldingService` | App 门面：基础 mod 骨架（内部委托 `ScaffoldModTool`）与模板画廊写出（占位符 / Lua escape） |
+
+不变量：
+
+- App ViewModel **不**直接 `new ScaffoldModTool`；UI 只经 `IScaffoldingService`
+- Agent `ToolRegistry` 仍是 LLM tool loop 中构造 `ScaffoldModTool` 的路径（不经本门面）
+- `ScaffoldingService` 在 `App.ConfigureServices` 注册为单例
 
 ### Settings apply
 
@@ -92,6 +106,7 @@
 - `[assembly: AvaloniaTestApplication]` + `HeadlessTestApp`
 - Avalonia 测试用 `[AvaloniaFact]`，非 `[Fact]`
 - `AvaloniaTestHelper.FlushDispatcher()` 委托 `HeadlessUnitTestSession`
+- Scaffolding 缝：`ScaffoldingServiceTests`；VM 经注入的 `IScaffoldingService`（`TemplateGalleryViewModelTests` / `ProjectViewModel*`）
 - Settings apply 缝：`SettingsApplyTests`（fake Embedding apply / chat 工厂）；Save 路径：`SettingsViewModelTests`（fake `ISettingsApply`）
 - Checkpoint Restore UX 缝：`ChatTabViewModelTests`（fake `IRestoreConfirmDialog` + Scripted/Gate chat）
 - Chat session store 项目切换水合缝：`MainViewModelTests`（fake/memory `IChatSessionStore`；store 有消息 ⇒ `AgentSession` history 非空）
@@ -105,12 +120,14 @@
 - **Markdown 自绘**：`MarkdownRenderer` 适配 Avalonia 能力（无 WPF `Run.Underline`）。
 - **Settings apply 薄模块**：chat 换源 + 条件触发 Embedding apply；重建深度留在 Rag。
 - **Restore 入口贴用户消息**：与「每条用户消息一个 Checkpoint」同位，对齐 VS Code Chat 发现路径。
+- **Scaffolding 门面**：UI 与 LLM tool loop 共用 `ScaffoldModTool` 语义，但 UI 经 App 门面注入，避免 ViewModel 直接依赖 Tools 实现类型。
 
 ## 已知局限
 
 - 无 macOS / Linux 官方构建或库层跨平台 CI（严格 Windows-only；见 ADR-003）
 - Toast 自动消失依赖 `TestDismissScheduler` 测试 hook
 - 启动预热失败仍可能经 `App.Services` 更新 Settings 状态（非 Save 路径）
+- Views 可一次性 resolve 根 VM / 瞬态窗口 VM（如 `MainWindow`、`CommandPaletteWindow`、`SettingsWindow`、`TemplateGalleryWindow`）；ViewModel 内部不再 service-locate 协作方
 - Hand-edit conflict mode：Settings Agent 区已落地；聊天 Restore 经 `AppConfiguration.HandEditConflictMode` 消费（默认可注入 `Func<HandEditConflictMode>` 便于测试）
 
 ## 参考

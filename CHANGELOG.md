@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **App scaffolding façade**: ViewModels use injected `IScaffoldingService` /
+  `ScaffoldingService` for basic mod skeletons and template-gallery writes;
+  no App ViewModel constructs `ScaffoldModTool` directly. Command palette and
+  Settings chrome (language / theme) take constructor-injected collaborators
+  instead of resolving them via `App.Services`. `ProjectViewModelFileManagementTests`
+  use `[AvaloniaFact]` (issue #64).
 - **Game Log Monitor path policy**: `LogMonitorService.Start` rejects absolute
   paths outside the Core Isaac `log.txt` whitelist and relative paths outside
   the project sandbox (via `ProjectPathSafety`); failure is reported in

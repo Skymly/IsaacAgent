@@ -16,7 +16,7 @@ public class ProjectViewModelTests
     {
         var logger = Mock.Of<ILogger<ProjectViewModel>>();
         var config = new AppConfiguration();
-        return new ProjectViewModel(logger, config);
+        return new ProjectViewModel(logger, config, new ScaffoldingService());
     }
 
     /// <summary>

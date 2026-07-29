@@ -5,7 +5,6 @@ using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace IsaacAgent.App.ViewModels;
 
@@ -85,15 +84,21 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly AppConfiguration _config;
     private readonly ISettingsApply _settingsApply;
     private readonly ToastService? _toasts;
+    private readonly LocalizationService? _localization;
+    private readonly ThemeService? _theme;
 
     public SettingsViewModel(
         AppConfiguration config,
         ISettingsApply? settingsApply = null,
-        ToastService? toasts = null)
+        ToastService? toasts = null,
+        LocalizationService? localization = null,
+        ThemeService? theme = null)
     {
         _config = config;
         _settingsApply = settingsApply ?? NoOpSettingsApply.Instance;
         _toasts = toasts;
+        _localization = localization;
+        _theme = theme;
         _endpoint = config.Endpoint;
         _model = config.Model;
         _apiKey = config.ApiKey;
@@ -148,11 +153,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         _settingsApply.Apply(intent, new SettingsApplyProgress(this, _toasts));
 
         if (languageChanged)
-            App.Services.GetRequiredService<LocalizationService>().SetLanguage(SelectedLanguage);
+            _localization?.SetLanguage(SelectedLanguage);
         if (themeChanged)
-            App.Services.GetRequiredService<ThemeService>().SetTheme(SelectedTheme);
+            _theme?.SetTheme(SelectedTheme);
         if (accentChanged)
-            App.Services.GetRequiredService<ThemeService>().ApplyAccentColor(AccentColor);
+            _theme?.ApplyAccentColor(AccentColor);
 
         FontSizeService.ApplyFontSize(SelectedFontSize);
     }

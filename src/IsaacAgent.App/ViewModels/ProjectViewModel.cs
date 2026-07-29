@@ -4,7 +4,6 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.App.Services;
-using IsaacAgent.Tools.Implementations;
 using Microsoft.Extensions.Logging;
 
 namespace IsaacAgent.App.ViewModels;
@@ -13,6 +12,7 @@ public sealed partial class ProjectViewModel : ObservableObject
 {
     private readonly ILogger<ProjectViewModel> _logger;
     private readonly AppConfiguration _config;
+    private readonly IScaffoldingService _scaffolding;
 
     [ObservableProperty]
     private string _projectName = "(No project)";
@@ -51,10 +51,14 @@ public sealed partial class ProjectViewModel : ObservableObject
     /// </summary>
     public event Func<string?, Task>? ProjectLoaded;
 
-    public ProjectViewModel(ILogger<ProjectViewModel> logger, AppConfiguration config)
+    public ProjectViewModel(
+        ILogger<ProjectViewModel> logger,
+        AppConfiguration config,
+        IScaffoldingService scaffolding)
     {
         _logger = logger;
         _config = config;
+        _scaffolding = scaffolding;
     }
 
     [RelayCommand]
@@ -69,10 +73,7 @@ public sealed partial class ProjectViewModel : ObservableObject
 
         try
         {
-            Directory.CreateDirectory(projectDir);
-            var scaffold = new ScaffoldModTool(projectDir);
-            var args = System.Text.Json.JsonSerializer.Serialize(new { name = modName });
-            await scaffold.ExecuteAsync(args);
+            await _scaffolding.CreateSkeletonAsync(projectDir, modName);
         }
         catch (Exception ex)
         {

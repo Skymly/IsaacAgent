@@ -100,6 +100,7 @@ public class MainViewModelTests
         services.AddSingleton(Mock.Of<ILogger<ProjectViewModel>>());
         services.AddSingleton(Mock.Of<IRestoreConfirmDialog>());
         services.AddSingleton(new AppConfiguration());
+        services.AddSingleton<IScaffoldingService, ScaffoldingService>();
         services.AddSingleton<IChatSessionStore>(store);
         services.AddSingleton<ChatViewModel>();
         services.AddSingleton<ProjectViewModel>();

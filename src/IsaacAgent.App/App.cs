@@ -115,7 +115,9 @@ public sealed class App : Application
         services.AddSingleton<LogMonitorService>();
         services.AddSingleton<DiffService>();
         services.AddSingleton<DiffViewerViewModel>();
+        services.AddSingleton<IScaffoldingService, ScaffoldingService>();
         services.AddSingleton<TemplateGalleryViewModel>();
+        services.AddTransient<CommandPaletteViewModel>();
         services.AddSingleton<ToastService>();
         services.AddSingleton<LocalizationService>();
         services.AddSingleton<ThemeService>();

@@ -3,6 +3,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using IsaacAgent.App.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace IsaacAgent.App.Views;
 
@@ -13,7 +14,9 @@ public sealed partial class CommandPaletteWindow : Window
     public CommandPaletteWindow()
     {
         InitializeComponent();
-        _vm = new CommandPaletteViewModel();
+        // Intentional view-codebehind resolve of the palette VM (registered in DI
+        // with MainViewModel / MainWindow / SkillRegistry already injected).
+        _vm = App.Services.GetRequiredService<CommandPaletteViewModel>();
         _vm.SetCloseAction(Close);
         DataContext = _vm;
         this.AttachedToVisualTree += (_, _) => SearchBox.Focus();
