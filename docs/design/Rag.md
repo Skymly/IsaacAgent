@@ -61,12 +61,15 @@
 ### 索引管线
 
 ```
-Resources/docs/**/*.md
-  → ApiDocChunker / PatternChunker（MkDocs 风格分块）
+Resources/docs/**/*.md + patterns + examples
+  → ApiDocChunker（硬编码 API 字典）
+  → MarkdownKnowledgeChunker（单一入口；ForMkDocsDocs / ForPatternsOrExamples 预设）
   → IndexBuilder（批量嵌入，O(batch) GetRange）
   → InMemoryVectorStore.ReplaceAll
   → SaveAsync(index.bin)
 ```
+
+`MarkdownKnowledgeChunker` 吞掉 front matter、围栏安全的标题切分、重叠窗口与可选 MkDocs 清理；`IndexBuilder` 按源选择预设，不引入 `IChunker`。
 
 ### 嵌入 Provider
 

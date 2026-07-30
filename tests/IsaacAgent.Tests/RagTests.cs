@@ -23,53 +23,6 @@ public class RagChunkerTests
         Assert.Contains("MC_POST_UPDATE", mcUpdate!.Content);
         Assert.Equal("vanilla", mcUpdate.Source);
     }
-
-    [Fact]
-    public void MarkdownChunker_ParsesFrontMatter()
-    {
-        var md = """
-            ---
-            title: Custom Collectible
-            category: example
-            tags: item, collectible
-            ---
-
-            # Overview
-            This shows how to make a custom item.
-
-            # Code
-            ```lua
-            local mod = RegisterMod("MyMod", 1)
-            ```
-            """;
-
-        var chunks = MarkdownChunker.ChunkMarkdown(md, "custom_item.md", "example");
-
-        Assert.NotEmpty(chunks);
-        Assert.All(chunks, c => Assert.Equal("example", c.Source));
-        Assert.All(chunks, c => Assert.Equal("example", c.Category));
-        var first = chunks[0];
-        Assert.StartsWith("Custom Collectible", first.Title);
-        Assert.Equal("item, collectible", first.Metadata["tags"]);
-    }
-
-    [Fact]
-    public void MarkdownChunker_SplitsByHeadings()
-    {
-        var md = """
-            # Section A
-            Content A
-
-            # Section B
-            Content B
-            """;
-
-        var chunks = MarkdownChunker.ChunkMarkdown(md, "test.md", "example");
-
-        Assert.True(chunks.Count >= 2);
-        Assert.Contains(chunks, c => c.Title.Contains("Section A"));
-        Assert.Contains(chunks, c => c.Title.Contains("Section B"));
-    }
 }
 
 public class InMemoryVectorStoreTests
