@@ -9,16 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-<<<<<<< HEAD
 - **Rag markdown chunking**: `MarkdownChunker` / `SmartMarkdownChunker` /
   `MkDocsChunker` merged into `MarkdownKnowledgeChunker` with
   `MarkdownChunkOptions` presets (`ForMkDocsDocs`, `ForPatternsOrExamples`);
   `IndexBuilder` calls the single entry (issue #66).
-=======
 - **LLM shared stream/HTTP helpers**: `OpenAICompatibleProvider` and `OllamaProvider`
   use internal `StreamStallGuard` and `HttpStatusErrorMapper` for idle stream
   timeout and 429/401/403 mapping (unified stall / auth messages; issue #65).
->>>>>>> origin/main
 - **App scaffolding façade**: ViewModels use injected `IScaffoldingService` /
   `ScaffoldingService` for basic mod skeletons and template-gallery writes;
   no App ViewModel constructs `ScaffoldModTool` directly. Command palette and
