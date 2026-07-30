@@ -15,13 +15,13 @@
 
 ## API 面
 
-### 核心接口
+### 核心类型
 
-| 接口 | 职责 |
+| 类型 | 职责 |
 |------|------|
 | `IRetriever` | 向量检索入口 |
 | `IEmbeddingProvider` | 文本 → 向量（ONNX 或 Ollama） |
-| `IVectorStore` | 内存向量存储与余弦相似度搜索 |
+| `InMemoryVectorStore` | 具体类型（无端口）：内存余弦相似度搜索；磁盘 `index.bin` 缓存（`LoadAsync` / `SaveAsync`） |
 | `EmbeddingApply` | **Embedding apply**：换嵌入 provider（允许维度变化）→ 作废知识索引 → 重建；新一次 apply / 外部取消令牌可取消进行中的重建 |
 
 ### 知识库资源
@@ -44,7 +44,7 @@
 
 ## 不变量
 
-1. 查询期使用内存 `InMemoryVectorStore`；磁盘缓存为 `%APPDATA%\IsaacAgent\rag\index.bin`（启动时优先加载，模型名/维度不匹配时全量重建）。
+1. 查询期使用具体类型 `InMemoryVectorStore`；磁盘缓存为 `%APPDATA%\IsaacAgent\rag\index.bin`，由该类型的 `LoadAsync` / `SaveAsync` 读写（启动时优先加载，模型名/维度不匹配或空索引时全量重建）。
 2. `InMemoryVectorStore.Search` 使用防御性快照（`ToList()`），避免并发修改。
 3. ONNX 嵌入维度从模型输出推断，不硬编码。
 4. `search_knowledge` / `get_pattern` 依赖已构建索引；索引未就绪时返回明确错误。
@@ -84,9 +84,9 @@ Resources/docs/**/*.md + patterns + examples
 
 **取消**：`ApplyAsync` 接受 `CancellationToken`（应用关闭可传入 shutdown token）。新一次 Embedding apply 会取消仍在进行的重建，使最终索引与最新 provider 意图一致；被取消的重建不得将知识索引标为 ready，也不应表现为成功完成。取消后再次 Embedding apply 可正常完成重建。
 
-### 检索
+### 向量存储与检索
 
-`InMemoryVectorStore.Search`：余弦相似度 Top-K；搜索时快照防并发。
+`InMemoryVectorStore` 为唯一生产实现：查询走内存余弦相似度 Top-K（`Search` 快照防并发）；持久化走同类型上的 `SaveAsync` / `LoadAsync`（`index.bin`）。`Retriever`、`IndexBuilder`、`EmbeddingApply` 直接依赖该具体类型。
 
 ### App 集成
 
@@ -96,7 +96,7 @@ Resources/docs/**/*.md + patterns + examples
 
 ## 设计权衡
 
-- **内存查询 + 磁盘缓存**：冷启动可跳过重建；模型/维度变化仍全量 ReplaceAll。
+- **具体 `InMemoryVectorStore`、无端口**：仅一种本地内存实现时不引入 `IVectorStore`；内存查询 + `index.bin` 磁盘缓存即可，冷启动可跳过重建，模型/维度变化仍全量 `ReplaceAll`。
 - **捆绑 ONNX vs 在线拉取**：默认离线可用；约 90 MB 模型不入库，由构建目标下载并经 CI cache 加速。
 - **嵌入资源知识 vs 用户扩展**：产品知识随发版；用户目录追加知识见 Roadmap R-012。
 
@@ -118,6 +118,7 @@ Resources/docs/**/*.md + patterns + examples
 
 ## 参考
 
+- `src/IsaacAgent.Rag/Store/InMemoryVectorStore.cs`
 - `src/IsaacAgent.Rag/Indexing/`
 - `src/IsaacAgent.Rag/Embedding/DefaultOnnxAssets.cs`
 - `src/IsaacAgent.Rag/Resources/onnx/`
