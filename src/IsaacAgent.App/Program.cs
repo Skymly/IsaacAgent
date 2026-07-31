@@ -7,11 +7,19 @@ namespace IsaacAgent.App;
 
 internal sealed class Program
 {
+    /// <summary>
+    /// Optional path from <c>--project</c>, captured before Avalonia starts.
+    /// Null when omitted or invalid; does not imply the directory exists.
+    /// </summary>
+    internal static string? StartupProjectPath { get; private set; }
+
     [STAThread]
     public static int Main(string[] args)
     {
         if (args.Any(a => string.Equals(a, "--verify-onnx", StringComparison.OrdinalIgnoreCase)))
             return OnnxPublishVerifier.Run();
+
+        StartupProjectPath = AppLaunchArgs.TryGetProjectPath(args);
 
         IconProvider.Current.Register<MaterialDesignIconProvider>();
         BuildAvaloniaApp()
