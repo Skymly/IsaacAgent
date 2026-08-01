@@ -48,12 +48,12 @@ jobs:
 
       - name: Run full CI via Nuke (CiAll)
         env:
-          # dotnet format internally spawns a child process to load the
-          # workspace; on runners with multiple .NET runtimes pre-installed
-          # (e.g. .NET 10 runtime alongside the .NET 8 SDK), the child
-          # process can fail to locate the correct SDK. DOTNET_ROOT ensures
-          # it finds the right one.
-          DOTNET_ROOT: ${{ steps.setup-dotnet.outputs.dotnet-path }}
+          # dotnet format spawns a child process; with multiple .NET runtimes
+          # on the runner (e.g. .NET 10 alongside the .NET 8 SDK), an empty
+          # DOTNET_ROOT makes format fail to locate the CLI (exit 4).
+          # setup-dotnet@v4 has no `dotnet-path` output — using that expression
+          # wiped the env that setup-dotnet already set. Pin the install root.
+          DOTNET_ROOT: C:\Program Files\dotnet
         run: dotnet run --project build/_build.csproj -- --root . --target CiAll --configuration Release
 
       - name: Upload test results
