@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **App `--project` launch seam + AutomationId contract**: optional
+  `IsaacAgent.exe --project <path>` opens a folder via existing
+  `LoadProjectAsync` (no OS picker); stable FlaUI ids `MainWindow`,
+  `StatusSurface`, `FileTree` on the main shell (issue #79).
+
 ### Changed
 
 - **Rag markdown chunking**: `MarkdownChunker` / `SmartMarkdownChunker` /

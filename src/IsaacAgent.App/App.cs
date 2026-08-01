@@ -46,11 +46,31 @@ public sealed class App : Application
         var config = Services.GetRequiredService<AppConfiguration>();
         FontSizeService.ApplyFontSize(string.IsNullOrEmpty(config.FontSize) ? "medium" : config.FontSize);
 
+        // Optional --project <path> from Program.Main (UI E2E / scripted open).
+        _ = ApplyStartupProjectAsync();
+
         // Pre-warm the RAG index in the background so the first search_knowledge
         // call doesn't block the UI for tens of seconds (especially with ONNX).
         _ = Task.Run(() => PrewarmRagIndexAsync(_shutdownCts.Token), _shutdownCts.Token);
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static async Task ApplyStartupProjectAsync()
+    {
+        var path = Program.StartupProjectPath;
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        try
+        {
+            var main = Services.GetRequiredService<MainViewModel>();
+            await StartupProjectLoader.TryLoadAsync(path, main.Project);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to load --project path {Path}", path);
+        }
     }
 
     private static void OnShutdownRequested(object? sender, ShutdownRequestedEventArgs e)

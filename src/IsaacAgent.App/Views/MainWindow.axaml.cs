@@ -29,6 +29,12 @@ public sealed partial class MainWindow : Window
         _mainVm = vm;
         DataContext = vm;
 
+        var statusSurface = this.FindControl<Border>("StatusSurfaceBorder")
+            ?? throw new InvalidOperationException("StatusSurfaceBorder missing from MainWindow.axaml");
+        var fileTree = this.FindControl<TreeView>("FileTreeView")
+            ?? throw new InvalidOperationException("FileTreeView missing from MainWindow.axaml");
+        UiAutomationIds.Attach(this, statusSurface, fileTree);
+
         vm.Project.PickFolderAsync = async () =>
         {
             var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions

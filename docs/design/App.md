@@ -63,6 +63,16 @@
 - **API Key**：内存明文 + DPAPI 持久化；`ApiKey` 带 `[JsonIgnore]`，磁盘仅写 `EncryptedApiKey`
 - **拖放**：文件夹打开为项目；文件注入聊天上下文，单文件上限 256 KB（与 Before-image 单文件上限对齐，见 [Agent.md](Agent.md) Checkpoint 合同）
 - **发布校验**：`IsaacAgent.exe --verify-onnx` 无 UI 校验捆绑 ONNX 可加载（供 Nuke `PublishVerify`）
+- **启动 `--project`**：`IsaacAgent.exe --project <path>` 在桌面壳启动后经既有 `ProjectViewModel.LoadProjectAsync` 打开目录（供 FlaUI / 脚本化打开，避免 OS 文件夹选择器）。省略、缺值或下一 token 为另一 flag 时行为与今日启动一致；路径不存在时 `LoadProjectAsync` 为 no-op。解析见 `AppLaunchArgs`；应用见 `StartupProjectLoader`（`Program.StartupProjectPath`）
+- **AutomationId 契约（FlaUI）**：主壳稳定 id（勿轻改；FlaUI 选择器依赖）：
+
+  | AutomationId | 控件 |
+  |--------------|------|
+  | `MainWindow` | 主窗口 |
+  | `StatusSurface` | 底部状态栏（`StatusSurfaceBorder`） |
+  | `FileTree` | 项目文件树（`FileTreeView`） |
+
+  常量与挂载：`UiAutomationIds`（`MainWindow` 构造后 `Attach`）
 - **Game Log Monitor**：`LogMonitorService.Start` 经 Core [`ProjectPathSafety`](Core.md) 解析目标——`null` 仅默认 Isaac `log.txt`（存在时）；绝对路径须 `IsAllowedAbsoluteLogPath`；相对路径须提供 `projectDir` 且 `Resolve` 安全。拒绝时 `StatusText` 明确说明，不静默打开任意文件。默认路径文案与 `GetDefaultLogPath` 委托 `GetDefaultIsaacLogPath`（见 [Tools.md](Tools.md) 路径安全不变量 / `parse_log`）
 
 ### Chat session store
@@ -113,6 +123,8 @@
 - Chat session store 关键时刻持久化缝：`ChatTabViewModelTests`（recording store；send / Checkpoint Restore）；`ChatViewModelTests`（关 tab / AddTab 后 Persist）；`MainViewModelTests`（`FlushCurrentSessionAsync`）
 - ChatHistoryService 仅 export/search：`ChatHistoryServiceTests`（live UI；反射守卫禁止重新引入 SaveSession/RestoreSession 等磁盘 API）
 - Log Monitor 路径安全缝：`LogMonitorServiceTests`（非白名单绝对路径拒绝；相对路径越界 / 缺 `projectDir` 拒绝；项目内相对路径与允许的默认绝对路径可通过）
+- 启动 `--project` 缝：`AppLaunchArgsTests`（解析）；`StartupProjectLoaderTests`（委托 `LoadProjectAsync`；空 / 缺失路径 no-op）
+- AutomationId 契约缝：`UiAutomationIdsTests`（稳定字面量 + `Attach` 挂载）
 
 ## 设计权衡
 

@@ -560,7 +560,7 @@
             </Grid>
         </Expander>
 
-        <Border Grid.Row="3" Background="{DynamicResource IsaacSurfaceBrush}" Padding="12,6"
+        <Border x:Name="StatusSurfaceBorder" Grid.Row="3" Background="{DynamicResource IsaacSurfaceBrush}" Padding="12,6"
                 BorderBrush="{DynamicResource IsaacBorderSubtleBrush}" BorderThickness="0,1,0,0">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Right" Classes="caption mono"
