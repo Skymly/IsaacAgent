@@ -37,6 +37,7 @@ Nuke targets; the same commands run locally.
 |-------------|-------------|
 | **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` |
 | **CiAll** | `Format` + `Ci` (full local/CI verification) |
+| **UiTest** | Build App (Release) + run `IsaacAgent.UiTests` (Nightly / manual; not part of `Ci` / `CiAll`) |
 | **Test** | Alias for `UnitTest` |
 | **Format** | `dotnet format --verify-no-changes` (fails if formatting needed) |
 | **FormatFix** | `dotnet format` (applies formatting in-place) |
@@ -52,6 +53,9 @@ Parameters: `--configuration`, `--runtime` (default / expected `win-x64`), `--ve
 
 # Quick local build + test
 ./build.ps1 --target Ci
+
+# FlaUI UI tests (Nightly / manual; same as ui-tests.yml)
+./build.ps1 --target UiTest --configuration Release
 
 # Check formatting without changing files
 ./build.ps1 --target Format

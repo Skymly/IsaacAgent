@@ -3,7 +3,7 @@
 > 滚动维护的功能与技术 backlog。技术债明细见 [ISSUES.md](../ISSUES.md)。
 > 状态：`候选` → `排期` → `进行中` → `已完成（归档）` / `暂缓` / `明确不做`
 
-最后更新：2026-07-28
+最后更新：2026-08-03
 
 ---
 
@@ -17,8 +17,9 @@
 
 | ID | 项 | 说明 | 目标阶段 |
 |----|-----|------|----------|
-| R-011 | E2E 测试扩展 | 扩展 `IsaacAgent.E2ETest` 覆盖关键用户流程 | v0.3 |
+| R-011 | E2E 测试扩展 | 扩展 `IsaacAgent.E2ETest` 覆盖关键用户流程（非真窗 UI；与 R-013 独立） | v0.3 |
 | R-012 | 用户可扩展 RAG 知识 | 支持用户目录追加知识块 | v0.4 |
+| R-013 | 桌面 UI 自动化（FlaUI Nightly） | Windows 真窗 A→B smoke；Nuke `UiTest` + `ui-tests` workflow（非 PR `Ci`/`CiAll`）；Publish 制品冒烟为后续可选 | v0.3 |
 
 ---
 

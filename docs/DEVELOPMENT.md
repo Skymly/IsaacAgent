@@ -25,11 +25,11 @@ dotnet run --project src/IsaacAgent.App/IsaacAgent.App.csproj -c Release
 ## 测试
 
 ```powershell
-# CI 等价（format + build + 全量测试）
+# CI 等价（format + build + 单元/Headless 测试；不含 FlaUI）
 ./build.ps1 --target CiAll --configuration Release
 
-# 仅测试
-dotnet test IsaacAgent.sln -c Release
+# 仅单元 / Headless 测试项目
+dotnet test tests/IsaacAgent.Tests/IsaacAgent.Tests.csproj -c Release
 ```
 
 ### Avalonia Headless 测试
@@ -38,12 +38,28 @@ dotnet test IsaacAgent.sln -c Release
 - 程序集属性：`[assembly: AvaloniaTestApplication(typeof(HeadlessTestApp))]`
 - 详见 [design/App.md](design/App.md)、[ADR-005](adr/ADR-005-headless-unit-test-session.md)
 
+### FlaUI UI 测试（Nightly / 本地手动）
+
+真窗自动化在独立项目 `tests/IsaacAgent.UiTests`（FlaUI + xUnit），**不**纳入 `Ci` / `CiAll`。
+Nuke `UiTest` 先 `dotnet build` App（Release 输出，非 Publish），再跑 UiTests。
+
+```powershell
+# 本地与 Nightly 共用同一入口
+./build.ps1 --target UiTest --configuration Release
+```
+
+- GitHub Actions：`.github/workflows/ui-tests.yml`（`schedule` + `workflow_dispatch`，`windows-latest`）
+- 可选覆盖被测 exe：环境变量 `ISAACAGENT_APP_EXE`
+- AutomationId / `--project` 契约见 [design/App.md](design/App.md)
+- Windows runner 的 GUI 会话偶发不稳定时，优先用 `workflow_dispatch` 或本地 `UiTest` 验证；勿为此把 FlaUI 绑进 PR CI
+
 ## Nuke 目标
 
 | 目标 | 说明 |
 |------|------|
 | `Ci` | Clean → Restore → Compile → UnitTest |
 | `CiAll` | Format + Ci |
+| `UiTest` | 构建 App（Release）并运行 `IsaacAgent.UiTests`（非 Ci/CiAll 依赖） |
 | `Format` / `FormatFix` | 格式化检查 / 修复 |
 | `Publish` | 自包含 win-x64 exe → `artifacts/publish/` |
 | `PublishVerify` | Publish + EXE 体积 / 旁路 ONNX / EXE-only `--verify-onnx` |
@@ -60,7 +76,8 @@ src/
   IsaacAgent.Agent/     会话编排、Skill
   IsaacAgent.Rag/       RAG 管线 + 嵌入知识
 tests/
-  IsaacAgent.Tests/
+  IsaacAgent.Tests/     单元 / Avalonia Headless
+  IsaacAgent.UiTests/   FlaUI 真窗（Nightly / Nuke UiTest）
 build/                  Nuke 脚本
 docs/                   维护者文档（本体系）
 ```

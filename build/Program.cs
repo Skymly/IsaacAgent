@@ -35,6 +35,7 @@ sealed class Build : NukeBuild
     AbsolutePath Root => RootDirectory;
     AbsolutePath SolutionFile => Root / "IsaacAgent.sln";
     AbsolutePath AppProject => Root / "src" / "IsaacAgent.App" / "IsaacAgent.App.csproj";
+    AbsolutePath UiTestProject => Root / "tests" / "IsaacAgent.UiTests" / "IsaacAgent.UiTests.csproj";
     AbsolutePath TestResultsDirectory => Root / "TestResults";
     AbsolutePath ArtifactsDirectory => Root / "artifacts";
     AbsolutePath PublishDirectory => ArtifactsDirectory / "publish" / Runtime;
@@ -106,6 +107,37 @@ sealed class Build : NukeBuild
     /// </summary>
     Target Test => _ => _
         .DependsOn(UnitTest);
+
+    /// <summary>
+    ///   Builds the App (Release output) and runs FlaUI UiTests.
+    ///   Nightly / manual only — not part of Ci or CiAll.
+    /// </summary>
+    Target UiTest => _ => _
+        .Executes(() =>
+        {
+            if (!UiTestProject.FileExists())
+            {
+                throw new InvalidOperationException($"UiTest project not found: {UiTestProject}");
+            }
+
+            // UiTests resolve IsaacAgent.exe under bin/Release (not Publish).
+            const string uiConfiguration = "Release";
+
+            DotNetBuild(s => s
+                .SetProjectFile(AppProject)
+                .SetConfiguration(uiConfiguration));
+
+            if (!TestResultsDirectory.DirectoryExists())
+            {
+                TestResultsDirectory.CreateDirectory();
+            }
+
+            DotNetTest(s => s
+                .SetProjectFile(UiTestProject)
+                .SetConfiguration(uiConfiguration)
+                .SetResultsDirectory(TestResultsDirectory)
+                .SetLoggers("trx;LogFileName=" + UiTestProject.NameWithoutExtension + ".trx"));
+        });
 
     Target Format => _ => _
         .Executes(() =>

@@ -35,6 +35,7 @@
         "Release",
         "Restore",
         "Test",
+        "UiTest",
         "UnitTest"
       ]
     },
