@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+    <name>MinimalMod</name>
+    <description>Committed fixture for IsaacAgent UiTests FlaUI smoke (issue #80).</description>
+    <author>Skymly</author>
+    <version>1.0</version>
+    <apiVersion>1</apiVersion>
+</metadata>
