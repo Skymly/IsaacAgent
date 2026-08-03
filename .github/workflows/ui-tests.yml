@@ -1,0 +1,57 @@
+name: UI Tests (Nightly)
+
+on:
+  schedule:
+    # 02:00 UTC daily — Windows FlaUI smoke; not a PR gate.
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ui-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Real-window FlaUI A→B smoke against Release App build output (not Publish).
+  # Separate from Build and Test / Nuke CiAll so PR CI stays free of FlaUI.
+  ui-tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history required by MinVer (Git-tag-based versioning).
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/*.sln') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Cache bundled ONNX embedding model
+        uses: actions/cache@v4
+        with:
+          path: src/IsaacAgent.Rag/Resources/onnx/model.onnx
+          key: onnx-all-minilm-l6-v2-model-onnx-v1
+
+      - name: Run FlaUI UiTests via Nuke (UiTest)
+        env:
+          DOTNET_ROOT: C:\Program Files\dotnet
+        run: dotnet run --project build/_build.csproj -- --root . --target UiTest --configuration Release
+
+      - name: Upload UI test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: TestResults/
+          if-no-files-found: warn

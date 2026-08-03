@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Nuke `UiTest` + Nightly UI workflow (R-013)**: `UiTest` builds App
+  Release output and runs `IsaacAgent.UiTests`;
+  `.github/workflows/ui-tests.yml` runs on schedule + `workflow_dispatch`
+  (Windows only). PR `Ci` / `CiAll` stay free of FlaUI (issue #81).
 - **App `--project` launch seam + AutomationId contract**: optional
   `IsaacAgent.exe --project <path>` opens a folder via existing
   `LoadProjectAsync` (no OS picker); stable FlaUI ids `MainWindow`,
