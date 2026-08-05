@@ -33,7 +33,19 @@ public sealed partial class MainWindow : Window
             ?? throw new InvalidOperationException("StatusSurfaceBorder missing from MainWindow.axaml");
         var fileTree = this.FindControl<TreeView>("FileTreeView")
             ?? throw new InvalidOperationException("FileTreeView missing from MainWindow.axaml");
-        UiAutomationIds.Attach(this, statusSurface, fileTree);
+        var fileMenu = this.FindControl<MenuItem>("FileMenuItem")
+            ?? throw new InvalidOperationException("FileMenuItem missing from MainWindow.axaml");
+        var settingsMenuItem = this.FindControl<MenuItem>("SettingsMenuItem")
+            ?? throw new InvalidOperationException("SettingsMenuItem missing from MainWindow.axaml");
+        var chatInput = this.FindControl<TextBox>("ChatInputBox")
+            ?? throw new InvalidOperationException("ChatInputBox missing from MainWindow.axaml");
+        UiAutomationIds.AttachMainShell(
+            this,
+            statusSurface,
+            fileTree,
+            fileMenu,
+            settingsMenuItem,
+            chatInput);
 
         vm.Project.PickFolderAsync = async () =>
         {

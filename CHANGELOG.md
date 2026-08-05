@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Chat / Settings AutomationId contract (R-014)**: stable FlaUI ids now
+  identify the File menu, File → Settings item, Settings window root, and
+  main-shell chat input without requiring a real LLM (issue #87).
 - **Nuke `UiTest` + Nightly UI workflow (R-013)**: `UiTest` builds App
   Release output and runs `IsaacAgent.UiTests`;
   `.github/workflows/ui-tests.yml` runs on schedule + `workflow_dispatch`

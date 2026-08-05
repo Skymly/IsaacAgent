@@ -71,8 +71,12 @@
   | `MainWindow` | 主窗口 |
   | `StatusSurface` | 底部状态栏（`StatusSurfaceBorder`） |
   | `FileTree` | 项目文件树（`FileTreeView`） |
+  | `MenuFile` | File 顶层菜单（FlaUI 先 Expand） |
+  | `MenuFileSettings` | File → Settings 菜单项（FlaUI 再 Invoke） |
+  | `SettingsWindow` | Settings 窗口根 |
+  | `ChatInput` | 主壳聊天输入框（`ChatInputBox`） |
 
-  常量与挂载：`UiAutomationIds`（`MainWindow` 构造后 `Attach`）
+  常量与挂载：`UiAutomationIds`（`MainWindow` 构造后 `AttachMainShell`；`SettingsWindow` 构造后 `AttachSettingsWindow`）
 - **Game Log Monitor**：`LogMonitorService.Start` 经 Core [`ProjectPathSafety`](Core.md) 解析目标——`null` 仅默认 Isaac `log.txt`（存在时）；绝对路径须 `IsAllowedAbsoluteLogPath`；相对路径须提供 `projectDir` 且 `Resolve` 安全。拒绝时 `StatusText` 明确说明，不静默打开任意文件。默认路径文案与 `GetDefaultLogPath` 委托 `GetDefaultIsaacLogPath`（见 [Tools.md](Tools.md) 路径安全不变量 / `parse_log`）
 
 ### Chat session store

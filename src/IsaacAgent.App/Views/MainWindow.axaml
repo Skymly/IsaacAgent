@@ -14,12 +14,12 @@
     <Grid RowDefinitions="Auto,*,Auto,Auto">
 
         <Menu Grid.Row="0" Background="{DynamicResource IsaacSurfaceBrush}">
-            <MenuItem Header="{DynamicResource MenuFile}">
+            <MenuItem x:Name="FileMenuItem" Header="{DynamicResource MenuFile}">
                 <MenuItem Header="{DynamicResource MenuFileNewProject}" Command="{Binding NewProjectAsyncCommand}" />
                 <MenuItem Header="{DynamicResource MenuFileNewFromTemplate}" Click="OnTemplateGallery" InputGesture="Ctrl+Shift+T" />
                 <MenuItem Header="{DynamicResource MenuFileOpenProject}" Command="{Binding OpenProjectAsyncCommand}" />
                 <Separator />
-                <MenuItem Header="{DynamicResource MenuFileSettings}" Click="OnSettings" />
+                <MenuItem x:Name="SettingsMenuItem" Header="{DynamicResource MenuFileSettings}" Click="OnSettings" />
                 <Separator />
                 <MenuItem Header="{DynamicResource MenuFileExit}" Click="OnExit" />
             </MenuItem>

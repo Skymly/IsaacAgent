@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
+using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,6 +12,7 @@ public sealed partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        UiAutomationIds.AttachSettingsWindow(this);
         DataContext = App.Services.GetRequiredService<SettingsViewModel>();
     }
 
