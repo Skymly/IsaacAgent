@@ -25,7 +25,7 @@
 | `GetDefaultIsaacLogPath()` | Documents/My Games/Binding of Isaac Repentance/log.txt（不检查存在） |
 | `IsAllowedAbsoluteLogPath(path)` | 绝对路径白名单：须为 rooted，且等于默认 Isaac log（忽略大小写）；相对路径恒为 false |
 
-消费方切换（删除本地副本）见 follow-ups #60–#63；本模块 PR 只发布 API + 单测。
+消费方已切换：Tools / Agent / Rag / App 经 #60–#63 删除本地副本，统一调用本类型。
 
 ## 不变量
 
@@ -40,15 +40,14 @@
 
 ## 设计权衡
 
-- **静态深模块 vs instance**：调用方已习惯 `(projectDir, path)` 参数形式；静态 API 便于 #60–#63 逐点替换，且无生命周期需求。
+- **静态深模块 vs instance**：调用方已习惯 `(projectDir, path)` 参数形式；静态 API 便于跨模块替换，且无生命周期需求。
 - **白名单与文件是否存在解耦**：`GetDefaultIsaacLogPath` 始终返回规范路径；存在性由调用方（如 `parse_log`）自行判断。
 
 ## 已知局限
 
-- 尚未替换 Tools / Agent / Rag / App 内联副本（#60–#63）。
 - Windows 路径比较使用 `OrdinalIgnoreCase`，与现网工具行为一致。
 
 ## 参考
 
 - [Tools.md](Tools.md) 路径安全不变量
-- Issue #58（父）、#59（本提取）
+- Issue #58（父）、#59（提取）、#60–#63（消费方切换，已关闭）
