@@ -236,9 +236,11 @@ internal sealed class AppSession : IDisposable
         }
 
         // Avalonia submenus can appear under the desktop tree, not only app top-levels.
+        // Scope by process so common ids (e.g. MainWindow) never match another app.
         try
         {
-            return _automation.GetDesktop().FindFirstDescendant(cf.ByAutomationId(automationId));
+            return _automation.GetDesktop().FindFirstDescendant(
+                cf.ByAutomationId(automationId).And(cf.ByProcessId(ProcessId)));
         }
         catch
         {
