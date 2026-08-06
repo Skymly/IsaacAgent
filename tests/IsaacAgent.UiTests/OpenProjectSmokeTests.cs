@@ -13,6 +13,7 @@ namespace IsaacAgent.UiTests;
 public sealed class OpenProjectSmokeTests
 {
     [Fact]
+    [Trait("FlaUI", "PublishSmoke")]
     public void Launch_WithProject_StatusOrTreeShowsFixture_ThenCleanExit()
     {
         var fixtureDir = MinimalModFixture.ResolveDirectory();
