@@ -38,6 +38,14 @@ _Avoid_: Workflow macro, agent mode (when you mean Skill)
 An atomic, schema-described capability the agent may invoke (file ops, scaffold, search, …).
 _Avoid_: Function, action (when you mean Tool)
 
+**Agent tool-chain integration**:
+A verification that a scripted LLM drive causes production Tools (via the real registry) to run against a real project directory with observable disk or validation outcomes. Distinct from orchestration-loop tests that substitute fake tools.
+_Avoid_: Agent E2E (when you mean this), FlaUI E2E, RAG console e2e-test, process-level smoke (when you mean in-process tool-chain integration)
+
+**Orchestration-loop test**:
+A verification of the AgentSession multi-iteration tool-call loop using a scripted LLM and substitute tools, without requiring production Tool implementations or disk side effects.
+_Avoid_: Agent tool-chain integration, Agent E2E (when you mean FakeTool orchestration)
+
 ### Chat persistence
 
 **Chat session store**:
