@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-07
+
+Quality theme (R-013 / R-014 / R-011): FlaUI Nightly + Publish smoke, Agent
+tool-chain integration in PR CI; Checkpoint Restore; unified chat session store;
+path-safety and Settings/Embedding apply hardening.
+
 ### Added
 
 - **Agent tool-chain integration tests (R-011)**: `AgentToolChainIntegrationTests`
@@ -32,38 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `IsaacAgent.exe --project <path>` opens a folder via existing
   `LoadProjectAsync` (no OS picker); stable FlaUI ids `MainWindow`,
   `StatusSurface`, `FileTree` on the main shell (issue #79).
-
-### Changed
-
-- **Rag markdown chunking**: `MarkdownChunker` / `SmartMarkdownChunker` /
-  `MkDocsChunker` merged into `MarkdownKnowledgeChunker` with
-  `MarkdownChunkOptions` presets (`ForMkDocsDocs`, `ForPatternsOrExamples`);
-  `IndexBuilder` calls the single entry (issue #66).
-- **LLM shared stream/HTTP helpers**: `OpenAICompatibleProvider` and `OllamaProvider`
-  use internal `StreamStallGuard` and `HttpStatusErrorMapper` for idle stream
-  timeout and 429/401/403 mapping (unified stall / auth messages; issue #65).
-- **App scaffolding façade**: ViewModels use injected `IScaffoldingService` /
-  `ScaffoldingService` for basic mod skeletons and template-gallery writes;
-  no App ViewModel constructs `ScaffoldModTool` directly. Command palette and
-  Settings chrome (language / theme) take constructor-injected collaborators
-  instead of resolving them via `App.Services`. `ProjectViewModelFileManagementTests`
-  use `[AvaloniaFact]` (issue #64).
-- **Game Log Monitor path policy**: `LogMonitorService.Start` rejects absolute
-  paths outside the Core Isaac `log.txt` whitelist and relative paths outside
-  the project sandbox (via `ProjectPathSafety`); failure is reported in
-  `StatusText` instead of opening arbitrary files (issue #63).
-- **`parse_log` path policy**: relative paths and the Isaac default absolute
-  `log.txt` whitelist go through Core `ProjectPathSafety` (no local
-  `StartsWith` / whitelist copy); double-encoded traversal is rejected
-  (issue #62).
-- **Chat session store is the sole authoritative chat persistence path**:
-  removed `ChatHistoryService` disk helpers (`SaveSession` / `RestoreSession` /
-  `LoadSession` / `DeleteSession` / `GetHistoryPath`). Export to Markdown/JSON
-  and in-memory search across open tabs still use the live UI only; legacy
-  `chat-history/` / `history/` remain migration inputs only (issue #51).
-
-### Added
-
 - **Chat session store persist triggers**: successful send completion, Checkpoint
   Restore, tab close, and app shutdown flush the current project via
   `IChatSessionStore` so disk matches the live multi-tab session; no write when
@@ -111,6 +85,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dimension changes, invalidate the knowledge index, and rebuild (issue #12).
   Newer apply or external/shutdown cancellation stops an in-flight rebuild
   without leaving the knowledge index marked ready (issue #14).
+
+
+### Changed
+
+- **Rag markdown chunking**: `MarkdownChunker` / `SmartMarkdownChunker` /
+  `MkDocsChunker` merged into `MarkdownKnowledgeChunker` with
+  `MarkdownChunkOptions` presets (`ForMkDocsDocs`, `ForPatternsOrExamples`);
+  `IndexBuilder` calls the single entry (issue #66).
+- **LLM shared stream/HTTP helpers**: `OpenAICompatibleProvider` and `OllamaProvider`
+  use internal `StreamStallGuard` and `HttpStatusErrorMapper` for idle stream
+  timeout and 429/401/403 mapping (unified stall / auth messages; issue #65).
+- **App scaffolding façade**: ViewModels use injected `IScaffoldingService` /
+  `ScaffoldingService` for basic mod skeletons and template-gallery writes;
+  no App ViewModel constructs `ScaffoldModTool` directly. Command palette and
+  Settings chrome (language / theme) take constructor-injected collaborators
+  instead of resolving them via `App.Services`. `ProjectViewModelFileManagementTests`
+  use `[AvaloniaFact]` (issue #64).
+- **Game Log Monitor path policy**: `LogMonitorService.Start` rejects absolute
+  paths outside the Core Isaac `log.txt` whitelist and relative paths outside
+  the project sandbox (via `ProjectPathSafety`); failure is reported in
+  `StatusText` instead of opening arbitrary files (issue #63).
+- **`parse_log` path policy**: relative paths and the Isaac default absolute
+  `log.txt` whitelist go through Core `ProjectPathSafety` (no local
+  `StartsWith` / whitelist copy); double-encoded traversal is rejected
+  (issue #62).
+- **Chat session store is the sole authoritative chat persistence path**:
+  removed `ChatHistoryService` disk helpers (`SaveSession` / `RestoreSession` /
+  `LoadSession` / `DeleteSession` / `GetHistoryPath`). Export to Markdown/JSON
+  and in-memory search across open tabs still use the live UI only; legacy
+  `chat-history/` / `history/` remain migration inputs only (issue #51).
+
 
 ### Removed
 

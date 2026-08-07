@@ -5,7 +5,7 @@
 
 最后更新：2026-08-07
 
-**v0.3 主题**：质量 / 测试加深（FlaUI + 非 UI E2E）。R-014 Nightly 加深路径已落地；`v0.3` tag 见 R-105。
+**v0.3 主题**：质量 / 测试加深（FlaUI + 非 UI E2E）— 已以 `v0.3.0` 收束。下一阶段见 R-012（v0.4）。
 
 ---
 
@@ -35,9 +35,7 @@
 
 ## 暂缓
 
-| ID | 项 | 理由 |
-|----|-----|------|
-| R-105 | 立刻打 `v0.3` tag | R-014 Nightly 路径已落地；发版时机由维护者决定 |
+（无）
 
 ---
 
@@ -54,7 +52,8 @@
 
 | ID | 项 | 完成版本 | 备注 |
 |----|-----|----------|------|
-| R-011 | 非 UI Agent/工具链 E2E | — | Spec #94；ticket #95；`AgentToolChainIntegrationTests`（scripted LLM + production Tools via `ReconfigureForProject`；`read_file`/`write_file`/`list_files`/`validate_xml`）；Nuke `UnitTest`/`Ci`/`CiAll`；正交于 FlaUI；非 `tools/e2e-test` |
+| R-105 | 立刻打 `v0.3` tag | v0.3.0 | Git tag `v0.3.0` + GitHub Release；CHANGELOG 收束 Unreleased |
+| R-011 | 非 UI Agent/工具链 E2E | v0.3.0 | Spec #94；ticket #95；`AgentToolChainIntegrationTests`（scripted LLM + production Tools via `ReconfigureForProject`；`read_file`/`write_file`/`list_files`/`validate_xml`）；Nuke `UnitTest`/`Ci`/`CiAll`；正交于 FlaUI；非 `tools/e2e-test` |
 | R-014 | FlaUI 加深（Chat/Settings + Publish smoke） | — | Spec #86；tickets #87–#89；`UiTest` 全套（含 Chat/Settings）+ Nuke `UiTestPublish`（`Publish` + `FlaUI=PublishSmoke` A→B）；Nightly `ui-tests.yml` 同 job 两步；不进 PR `Ci`/`CiAll`/`Release` |
 | R-013 | 桌面 UI 自动化（FlaUI Nightly A→B） | — | Spec #78；tickets #79–#81；`IsaacAgent.UiTests` + Nuke `UiTest` + `ui-tests.yml`；Publish 冒烟见 R-014 |
 | R-022 | 对话导出（MVP） | — | 菜单导出 Markdown / JSON（live UI）；session-store 导出 / 保存对话框若需要则另开小票 |
