@@ -4,11 +4,13 @@ namespace IsaacAgent.UiTests;
 
 /// <summary>
 /// Path A: cold-start smoke through the real App window (issue #80).
+/// Tagged for Publish artifact smoke subset (issue #88).
 /// </summary>
 [Collection("Ui")]
 public sealed class ColdStartSmokeTests
 {
     [Fact]
+    [Trait("FlaUI", "PublishSmoke")]
     public void Launch_ReleaseApp_MainWindowAppears_ThenCleanExit()
     {
         using var session = AppSession.Launch();

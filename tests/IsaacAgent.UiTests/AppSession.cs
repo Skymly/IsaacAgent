@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Conditions;
+using FlaUI.Core.Definitions;
 using FlaUI.Core.Tools;
 using FlaUI.UIA3;
 
@@ -65,6 +67,38 @@ internal sealed class AppSession : IDisposable
             ignoreException: true).Result;
     }
 
+    /// <summary>
+    /// Brings the App main window to the foreground so menu Click works under nested hosts (Nuke).
+    /// </summary>
+    public void BringMainWindowToForeground()
+    {
+        ThrowIfDisposed();
+        try
+        {
+            var main = _application.GetMainWindow(_automation, TimeSpan.FromSeconds(5));
+            main?.SetForeground();
+        }
+        catch
+        {
+            // Best-effort.
+        }
+
+        try
+        {
+            using var process = Process.GetProcessById(ProcessId);
+            var handle = process.MainWindowHandle;
+            if (handle != IntPtr.Zero)
+            {
+                ShowWindow(handle, SwRestore);
+                SetForegroundWindow(handle);
+            }
+        }
+        catch
+        {
+            // Best-effort.
+        }
+    }
+
     public bool CloseMainWindowCleanly(TimeSpan exitTimeout)
     {
         ThrowIfDisposed();
@@ -80,6 +114,67 @@ internal sealed class AppSession : IDisposable
 
         return closedGracefully;
     }
+
+    /// <summary>
+    /// Closes a top-level window by AutomationId (e.g. Settings) without Apply.
+    /// Prefers Cancel button Click; falls back to Window Close.
+    /// </summary>
+    public void CloseWindowByAutomationId(string automationId, TimeSpan timeout)
+    {
+        ThrowIfDisposed();
+        var element = WaitForAutomationId(automationId, timeout);
+        DismissWindowWithoutApply(element);
+
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (FindByAutomationId(automationId) is null)
+                return;
+            Thread.Sleep(250);
+        }
+
+        if (FindByAutomationId(automationId) is not null)
+        {
+            throw new TimeoutException(
+                $"AutomationId '{automationId}' still present after Close within {timeout}.");
+        }
+    }
+
+    private static void DismissWindowWithoutApply(AutomationElement windowElement)
+    {
+        var cf = new ConditionFactory(new UIA3PropertyLibrary());
+        var buttons = windowElement.FindAllDescendants(cf.ByControlType(ControlType.Button));
+        foreach (var button in buttons)
+        {
+            var name = button.Name ?? string.Empty;
+            if (IsCancelButtonName(name))
+            {
+                button.Click();
+                return;
+            }
+        }
+
+        try
+        {
+            if (windowElement.Patterns.Window.IsSupported)
+            {
+                windowElement.Patterns.Window.Pattern.Close();
+                return;
+            }
+        }
+        catch
+        {
+            // Fall through.
+        }
+
+        windowElement.AsWindow().Close();
+    }
+
+    private static bool IsCancelButtonName(string name) =>
+        name.Equals("Cancel", StringComparison.OrdinalIgnoreCase) ||
+        name.Equals("取消", StringComparison.Ordinal) ||
+        name.Equals("キャンセル", StringComparison.Ordinal) ||
+        name.Equals("취소", StringComparison.Ordinal);
 
     public void Dispose()
     {
@@ -104,24 +199,53 @@ internal sealed class AppSession : IDisposable
         if (_application.HasExited)
             return null;
 
-        Window? main;
+        var cf = new ConditionFactory(new UIA3PropertyLibrary());
+
+        Window[] windows;
         try
         {
-            main = _application.GetMainWindow(_automation, TimeSpan.FromSeconds(1));
+            windows = _application.GetAllTopLevelWindows(_automation);
+        }
+        catch
+        {
+            windows = [];
+        }
+
+        foreach (var window in windows)
+        {
+            try
+            {
+                if (string.Equals(window.AutomationId, automationId, StringComparison.Ordinal))
+                    return window;
+            }
+            catch
+            {
+                // Avalonia popup menus may lack AutomationId; still search descendants.
+            }
+
+            try
+            {
+                var found = window.FindFirstDescendant(cf.ByAutomationId(automationId));
+                if (found is not null)
+                    return found;
+            }
+            catch
+            {
+                // Ignore flaky UIA queries on transient popups.
+            }
+        }
+
+        // Avalonia submenus can appear under the desktop tree, not only app top-levels.
+        // Scope by process so common ids (e.g. MainWindow) never match another app.
+        try
+        {
+            return _automation.GetDesktop().FindFirstDescendant(
+                cf.ByAutomationId(automationId).And(cf.ByProcessId(ProcessId)));
         }
         catch
         {
             return null;
         }
-
-        if (main is null)
-            return null;
-
-        if (string.Equals(main.AutomationId, automationId, StringComparison.Ordinal))
-            return main;
-
-        var cf = new ConditionFactory(new UIA3PropertyLibrary());
-        return main.FindFirstDescendant(cf.ByAutomationId(automationId));
     }
 
     private void KillProcessTree()
@@ -153,4 +277,12 @@ internal sealed class AppSession : IDisposable
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
+
+    private const int SwRestore = 9;
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 }
