@@ -37,7 +37,8 @@ Nuke targets; the same commands run locally.
 |-------------|-------------|
 | **Ci** | `Clean` → `Restore` → `Compile` → `UnitTest` |
 | **CiAll** | `Format` + `Ci` (full local/CI verification) |
-| **UiTest** | Build App (Release) + run `IsaacAgent.UiTests` (Nightly / manual; not part of `Ci` / `CiAll`) |
+| **UiTest** | Build App (Release) + run `IsaacAgent.UiTests` full suite (Nightly / manual; not part of `Ci` / `CiAll`) |
+| **UiTestPublish** | `Publish` then run UiTests with `--filter FlaUI=PublishSmoke` against `artifacts/publish/win-x64/IsaacAgent.exe` via `ISAACAGENT_APP_EXE` (Nightly / manual; not part of `Ci` / `CiAll` / `Release`) |
 | **Test** | Alias for `UnitTest` |
 | **Format** | `dotnet format --verify-no-changes` (fails if formatting needed) |
 | **FormatFix** | `dotnet format` (applies formatting in-place) |
@@ -54,8 +55,11 @@ Parameters: `--configuration`, `--runtime` (default / expected `win-x64`), `--ve
 # Quick local build + test
 ./build.ps1 --target Ci
 
-# FlaUI UI tests (Nightly / manual; same as ui-tests.yml)
+# FlaUI UI tests — build-output full suite (Nightly / manual; ui-tests.yml)
 ./build.ps1 --target UiTest --configuration Release
+
+# FlaUI Publish smoke — A→B subset against publish exe (Nightly / manual)
+./build.ps1 --target UiTestPublish --configuration Release --runtime win-x64
 
 # Check formatting without changing files
 ./build.ps1 --target Format
