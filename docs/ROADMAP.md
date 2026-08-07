@@ -19,7 +19,6 @@
 
 | ID | 项 | 说明 | 目标阶段 |
 |----|-----|------|----------|
-| R-011 | 非 UI Agent/工具链 E2E | 重定义：库内 / 进程内 Agent + 工具关键路径（可 mock LLM）；与 FlaUI 正交。**不以**扩展 `tools/e2e-test` Ollama RAG 控制台为成功标准 | v0.3 |
 | R-012 | 用户可扩展 RAG 知识 | 支持用户目录追加知识块 | v0.4 |
 
 ---
@@ -55,6 +54,7 @@
 
 | ID | 项 | 完成版本 | 备注 |
 |----|-----|----------|------|
+| R-011 | 非 UI Agent/工具链 E2E | — | Spec #94；ticket #95；`AgentToolChainIntegrationTests`（scripted LLM + production Tools via `ReconfigureForProject`；`read_file`/`write_file`/`list_files`/`validate_xml`）；Nuke `UnitTest`/`Ci`/`CiAll`；正交于 FlaUI；非 `tools/e2e-test` |
 | R-014 | FlaUI 加深（Chat/Settings + Publish smoke） | — | Spec #86；tickets #87–#89；`UiTest` 全套（含 Chat/Settings）+ Nuke `UiTestPublish`（`Publish` + `FlaUI=PublishSmoke` A→B）；Nightly `ui-tests.yml` 同 job 两步；不进 PR `Ci`/`CiAll`/`Release` |
 | R-013 | 桌面 UI 自动化（FlaUI Nightly A→B） | — | Spec #78；tickets #79–#81；`IsaacAgent.UiTests` + Nuke `UiTest` + `ui-tests.yml`；Publish 冒烟见 R-014 |
 | R-022 | 对话导出（MVP） | — | 菜单导出 Markdown / JSON（live UI）；session-store 导出 / 保存对话框若需要则另开小票 |

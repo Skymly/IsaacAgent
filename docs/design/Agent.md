@@ -154,6 +154,17 @@ Checkpoint 游标是 `ChatMessage` **引用**（非易变下标）。`ClearHisto
 - .NET 8
 - OpenAI-compatible / Ollama 流式 API（见 [LLM.md](LLM.md)）
 
+## 测试
+
+术语见根目录 `CONTEXT.md`（**Orchestration-loop test**、**Agent tool-chain integration**）。
+
+| 套件 | 位置 | 覆盖 |
+|------|------|------|
+| Orchestration-loop | `AgentSessionE2ETests` | scripted LLM + FakeTool；多轮 tool call / 结果回灌 / 错误反馈；不要求生产工具或磁盘副作用 |
+| Agent tool-chain integration | `AgentToolChainIntegrationTests` | scripted LLM + `ToolRegistry.ReconfigureForProject(tempDir)` 注册的生产 Tools；主缝 `AgentSession.SendMessageAsync`；临界路径 `write_file` → `read_file` / `list_files` → `validate_xml`（合法 XML 与无效 XML）；可观察磁盘与校验结果；进 Nuke `UnitTest` / `Ci` / `CiAll` |
+
+两者均无 live LLM、无 FlaUI、不依赖 `tools/e2e-test`。Skill 激活、RAG prefetch、Checkpoint/Restore、路径穿越负例不在 tool-chain 首切片内。
+
 ## 不在范围内
 
 - UI 聊天渲染与 Settings 控件（见 [App.md](App.md)）

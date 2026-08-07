@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Agent tool-chain integration tests (R-011)**: `AgentToolChainIntegrationTests`
+  drives production `write_file` / `read_file` / `list_files` / `validate_xml`
+  through `AgentSession.SendMessageAsync` with a scripted LLM and
+  `ToolRegistry.ReconfigureForProject` on a synthetic temp project (happy path
+  + invalid-XML failure). Glossary terms in `CONTEXT.md`; runs under Nuke
+  `UnitTest` / `Ci` / `CiAll` (issue #95).
 - **Nuke `UiTestPublish` + Nightly Publish smoke (R-014)**: `UiTestPublish`
   depends on `Publish` (not `PublishVerify`), sets `ISAACAGENT_APP_EXE` to
   `artifacts/publish/win-x64/IsaacAgent.exe`, and runs UiTests with

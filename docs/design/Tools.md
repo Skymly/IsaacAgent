@@ -109,6 +109,10 @@
 - `batch_edit` 无事务回滚（与 Checkpoint 按路径 Before-image 一致，非整批原子）
 - `git_status` 依赖本机 git 可用
 
+## 测试
+
+生产工具接线（`write_file` / `read_file` / `list_files` / `validate_xml`）的进程内 Agent tool-chain integration 见 [Agent.md](Agent.md)「测试」节与 `AgentToolChainIntegrationTests`；工具实现体自身的单元测试仍可 mock 项目目录独立运行。
+
 ## 参考
 
 - `src/IsaacAgent.Tools/Implementations/`
