@@ -145,6 +145,8 @@ sealed class Build : NukeBuild
     ///   Nightly / manual only — not part of Ci, CiAll, or Release.
     /// </summary>
     Target UiTestPublish => _ => _
+        // Same Release guard as UiTest: do not publish/smoke under local Debug default.
+        .Requires(() => Configuration.Equals("Release", StringComparison.OrdinalIgnoreCase))
         .DependsOn(Publish)
         .Executes(() =>
         {
