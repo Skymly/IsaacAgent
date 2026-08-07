@@ -14,8 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Real-window FlaUI A→B smoke against Release App build output (not Publish).
-  # Separate from Build and Test / Nuke CiAll so PR CI stays free of FlaUI.
+  # Real-window FlaUI: full suite against Release App build output, then
+  # PublishSmoke subset against the Publish exe. Separate from Build and Test /
+  # Nuke CiAll so PR CI stays free of FlaUI.
   ui-tests:
     runs-on: windows-latest
     steps:
@@ -48,10 +49,24 @@ jobs:
           DOTNET_ROOT: C:\Program Files\dotnet
         run: dotnet run --project build/_build.csproj -- --root . --target UiTest --configuration Release
 
-      - name: Upload UI test results
+      # Upload before UiTestPublish: Publish → Clean wipes TestResults/.
+      - name: Upload UI test results (build output)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ui-test-results
+          path: TestResults/
+          if-no-files-found: warn
+
+      - name: Run FlaUI Publish smoke via Nuke (UiTestPublish)
+        env:
+          DOTNET_ROOT: C:\Program Files\dotnet
+        run: dotnet run --project build/_build.csproj -- --root . --target UiTestPublish --configuration Release --runtime win-x64
+
+      - name: Upload UI test results (Publish smoke)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-publish-results
           path: TestResults/
           if-no-files-found: warn

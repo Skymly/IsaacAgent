@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Nuke `UiTestPublish` + Nightly Publish smoke (R-014)**: `UiTestPublish`
+  depends on `Publish` (not `PublishVerify`), sets `ISAACAGENT_APP_EXE` to
+  `artifacts/publish/win-x64/IsaacAgent.exe`, and runs UiTests with
+  `--filter FlaUI=PublishSmoke`. Nightly `ui-tests.yml` runs `UiTest` then
+  `UiTestPublish` in one job. Still not part of `Ci` / `CiAll` / `Release`
+  (issue #89).
 - **Chat / Settings AutomationId contract (R-014)**: stable FlaUI ids now
   identify the File menu, File → Settings item, Settings window root, and
   main-shell chat input without requiring a real LLM (issue #87).

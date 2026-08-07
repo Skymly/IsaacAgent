@@ -40,18 +40,25 @@ dotnet test tests/IsaacAgent.Tests/IsaacAgent.Tests.csproj -c Release
 
 ### FlaUI UI 测试（Nightly / 本地手动）
 
-真窗自动化在独立项目 `tests/IsaacAgent.UiTests`（FlaUI + xUnit），**不**纳入 `Ci` / `CiAll`。
-Nuke `UiTest` 先 `dotnet build` App（Release 输出，非 Publish），再跑 UiTests。
+真窗自动化在独立项目 `tests/IsaacAgent.UiTests`（FlaUI + xUnit），**不**纳入 `Ci` / `CiAll` / `Release`。
+
+| Nuke 目标 | 被测产物 | 范围 |
+|-----------|----------|------|
+| `UiTest` | App `bin/Release`（非 Publish） | 全套 UiTests（含 Chat / Settings smoke） |
+| `UiTestPublish` | `artifacts/publish/win-x64/IsaacAgent.exe`（依赖 `Publish`，非 `PublishVerify`） | `--filter FlaUI=PublishSmoke`（冷启动 + `--project` A→B） |
 
 ```powershell
-# 本地与 Nightly 共用同一入口
+# 构建输出全套（Nightly 第一步）
 ./build.ps1 --target UiTest --configuration Release
+
+# Publish 制品冒烟（Nightly 第二步；设置 ISAACAGENT_APP_EXE）
+./build.ps1 --target UiTestPublish --configuration Release --runtime win-x64
 ```
 
-- GitHub Actions：`.github/workflows/ui-tests.yml`（`schedule` + `workflow_dispatch`，`windows-latest`）
-- 可选覆盖被测 exe：环境变量 `ISAACAGENT_APP_EXE`
-- AutomationId / `--project` 契约见 [design/App.md](design/App.md)
-- Windows runner 的 GUI 会话偶发不稳定时，优先用 `workflow_dispatch` 或本地 `UiTest` 验证；勿为此把 FlaUI 绑进 PR CI
+- GitHub Actions：`.github/workflows/ui-tests.yml`（`schedule` + `workflow_dispatch`，`windows-latest`；同 job 先 `UiTest` 再 `UiTestPublish`）
+- 可选覆盖被测 exe：环境变量 `ISAACAGENT_APP_EXE`（`UiTestPublish` 会指向 Publish 产物）
+- AutomationId / `--project` / `FlaUI=PublishSmoke` 契约见 [design/App.md](design/App.md)
+- Windows runner 的 GUI 会话偶发不稳定时，优先用 `workflow_dispatch` 或本地 `UiTest` / `UiTestPublish` 验证；勿为此把 FlaUI 绑进 PR CI
 
 ## Nuke 目标
 
@@ -59,7 +66,8 @@ Nuke `UiTest` 先 `dotnet build` App（Release 输出，非 Publish），再跑 
 |------|------|
 | `Ci` | Clean → Restore → Compile → UnitTest |
 | `CiAll` | Format + Ci |
-| `UiTest` | 构建 App（Release）并运行 `IsaacAgent.UiTests`（非 Ci/CiAll 依赖） |
+| `UiTest` | 构建 App（Release）并运行 `IsaacAgent.UiTests` 全套（非 Ci/CiAll 依赖） |
+| `UiTestPublish` | `Publish` 后对 Publish exe 跑 `FlaUI=PublishSmoke`（非 Ci/CiAll/Release 依赖） |
 | `Format` / `FormatFix` | 格式化检查 / 修复 |
 | `Publish` | 自包含 win-x64 exe → `artifacts/publish/` |
 | `PublishVerify` | Publish + EXE 体积 / 旁路 ONNX / EXE-only `--verify-onnx` |
@@ -77,7 +85,7 @@ src/
   IsaacAgent.Rag/       RAG 管线 + 嵌入知识
 tests/
   IsaacAgent.Tests/     单元 / Avalonia Headless
-  IsaacAgent.UiTests/   FlaUI 真窗（Nightly / Nuke UiTest）
+  IsaacAgent.UiTests/   FlaUI 真窗（Nightly / Nuke UiTest + UiTestPublish）
 build/                  Nuke 脚本
 docs/                   维护者文档（本体系）
 ```

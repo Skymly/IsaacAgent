@@ -139,6 +139,44 @@ sealed class Build : NukeBuild
                 .SetLoggers("trx;LogFileName=" + UiTestProject.NameWithoutExtension + ".trx"));
         });
 
+    /// <summary>
+    ///   Publishes the App then runs the FlaUI <c>PublishSmoke</c> subset
+    ///   against <c>artifacts/publish/{Runtime}/IsaacAgent.exe</c>.
+    ///   Nightly / manual only — not part of Ci, CiAll, or Release.
+    /// </summary>
+    Target UiTestPublish => _ => _
+        // Same Release guard as UiTest: do not publish/smoke under local Debug default.
+        .Requires(() => Configuration.Equals("Release", StringComparison.OrdinalIgnoreCase))
+        .DependsOn(Publish)
+        .Executes(() =>
+        {
+            if (!UiTestProject.FileExists())
+            {
+                throw new InvalidOperationException($"UiTest project not found: {UiTestProject}");
+            }
+
+            AbsolutePath exe = PublishDirectory / "IsaacAgent.exe";
+            Assert.FileExists(exe,
+                $"Published entry point not found. Expected {exe} in {PublishDirectory}");
+
+            // UiTests default to build-output exe; override for Publish artifact smoke.
+            Environment.SetEnvironmentVariable("ISAACAGENT_APP_EXE", exe);
+
+            const string uiConfiguration = "Release";
+
+            if (!TestResultsDirectory.DirectoryExists())
+            {
+                TestResultsDirectory.CreateDirectory();
+            }
+
+            DotNetTest(s => s
+                .SetProjectFile(UiTestProject)
+                .SetConfiguration(uiConfiguration)
+                .SetFilter("FlaUI=PublishSmoke")
+                .SetResultsDirectory(TestResultsDirectory)
+                .SetLoggers("trx;LogFileName=" + UiTestProject.NameWithoutExtension + "-PublishSmoke.trx"));
+        });
+
     Target Format => _ => _
         .Executes(() =>
         {
