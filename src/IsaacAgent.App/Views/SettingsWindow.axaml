@@ -90,6 +90,26 @@
 
                         <TextBlock Text="{DynamicResource SettingsEmbeddingNote}"
                                    Classes="caption" TextWrapping="Wrap" />
+
+                        <Separator Classes="isaac" Margin="0,4" />
+                        <TextBlock Text="{DynamicResource SettingsUserKnowledge}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding UserKnowledgePath}"
+                                   Classes="caption" TextWrapping="Wrap"
+                                   IsVisible="{Binding UserKnowledgePath, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="{DynamicResource SettingsOpenUserKnowledge}"
+                                    Command="{Binding OpenUserKnowledgeFolderCommand}"
+                                    Classes="ghost" />
+                            <Button Content="{DynamicResource SettingsRebuildIndex}"
+                                    Command="{Binding RebuildKnowledgeIndexCommand}"
+                                    Classes="ghost"
+                                    IsEnabled="{Binding !IsRebuildingIndex}" />
+                        </StackPanel>
+                        <TextBlock Text="{DynamicResource SettingsUserKnowledgeNote}"
+                                   Classes="caption" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding IndexStatus}"
+                                   Classes="caption" TextWrapping="Wrap"
+                                   IsVisible="{Binding IndexStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                     </StackPanel>
                 </Border>
 

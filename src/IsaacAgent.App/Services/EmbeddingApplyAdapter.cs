@@ -15,4 +15,7 @@ public sealed class EmbeddingApplyAdapter : IEmbeddingApply
 
     public Task ApplyAsync(IEmbeddingProvider newProvider, CancellationToken ct = default)
         => _inner.ApplyAsync(newProvider, ct);
+
+    public Task RebuildAsync(CancellationToken ct = default)
+        => _inner.RebuildAsync(ct);
 }

@@ -59,6 +59,12 @@ public class SettingsApplyTests
             ct.ThrowIfCancellationRequested();
         }
 
+        public Task RebuildAsync(CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+
         public void Release()
         {
             lock (_lock)
@@ -109,7 +115,7 @@ public class SettingsApplyTests
             });
 
     private static (SettingsApply Apply, ChatServiceProxy ChatProxy, RecordingEmbeddingApply Embedding, List<ProviderConfig> ChatBuilds)
-        CreateSut(EmbeddingConfig? initialEmbedding = null)
+        CreateSut(EmbeddingConfig? initialEmbedding = null, IRetriever? retriever = null)
     {
         var chatProxy = new ChatServiceProxy(Mock.Of<IChatService>());
         var chatBuilds = new List<ProviderConfig>();
@@ -127,7 +133,8 @@ public class SettingsApplyTests
             BuildChat,
             embedding,
             BuildEmbedding,
-            initialEmbedding ?? Intent().Embedding);
+            initialEmbedding ?? Intent().Embedding,
+            retriever ?? Mock.Of<IRetriever>());
 
         return (apply, chatProxy, embedding, chatBuilds);
     }
@@ -168,6 +175,52 @@ public class SettingsApplyTests
     }
 
     [Fact]
+    public async Task RebuildIndexAsync_ThenEmbeddingApply_WaitsForManualRebuildBeforeClear()
+    {
+        var manualStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var manualRelease = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var retriever = new Mock<IRetriever>();
+        retriever
+            .Setup(r => r.RebuildIndexAsync(It.IsAny<CancellationToken>()))
+            .Returns<CancellationToken>(async _ =>
+            {
+                manualStarted.TrySetResult();
+                // Ignore cancellation until released — simulates unwind still holding the build lock.
+                await manualRelease.Task.ConfigureAwait(false);
+            });
+
+        var embedding = new RecordingEmbeddingApply { BlockUntilReleased = true };
+        var chatProxy = new ChatServiceProxy(Mock.Of<IChatService>());
+        var apply = new SettingsApply(
+            chatProxy,
+            _ => Mock.Of<IChatService>(),
+            embedding,
+            _ => Mock.Of<IEmbeddingProvider>(),
+            Intent().Embedding,
+            retriever.Object);
+
+        var manualProgress = new RecordingProgress();
+        var manualTask = apply.RebuildIndexAsync(manualProgress);
+        await manualStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        var embeddingProgress = new RecordingProgress();
+        apply.Apply(Intent(embeddingSource: EmbeddingSourceType.Ollama, ollamaModel: "other"), embeddingProgress);
+
+        // Embedding apply must not enter Clear/ApplyAsync while manual rebuild is still in flight.
+        await Task.Delay(50);
+        Assert.Equal(0, embedding.CallCount);
+
+        manualRelease.TrySetResult();
+        await embedding.Started.WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(1, embedding.CallCount);
+
+        embedding.Release();
+        await manualTask.WaitAsync(TimeSpan.FromSeconds(2));
+        await WaitUntilAsync(() => embeddingProgress.FinishedCount == 1, TimeSpan.FromSeconds(2));
+    }
+
+    [Fact]
     public async Task Apply_SecondEmbeddingSave_CancelsInFlightRebuild()
     {
         var (apply, _, embedding, _) = CreateSut();
@@ -204,7 +257,8 @@ public class SettingsApplyTests
             _ => Mock.Of<IChatService>(),
             failing.Object,
             _ => Mock.Of<IEmbeddingProvider>(),
-            Intent().Embedding);
+            Intent().Embedding,
+            Mock.Of<IRetriever>());
 
         var progress = new RecordingProgress();
         var ollamaIntent = Intent(embeddingSource: EmbeddingSourceType.Ollama);

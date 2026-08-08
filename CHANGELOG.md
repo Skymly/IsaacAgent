@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   preset) into the knowledge index on explicit rebuild / Embedding apply /
   cold full build. One-time move from legacy `rag/examples` when knowledge is
   empty. `UserKnowledgeLocation` exposes the path to App.
+- **User knowledge Settings (R-012, App)**: Knowledge Base section shows the
+  User knowledge path, Open folder, and Rebuild index (via `ISettingsApply`,
+  sharing in-flight cancellation with Embedding apply), with index status text.
+
+### Fixed
+
+- **Manual rebuild vs Embedding apply race**: Settings apply awaits the prior
+  rebuild before clearing; Embedding apply clears/replaces under the retriever
+  build lock (`EmbeddingApply.RebuildAsync` / `beforeBuild`).
 
 ## [0.3.0] - 2026-08-07
 
