@@ -57,12 +57,41 @@ public static class UserKnowledgePaths
             Directory.CreateDirectory(Path.Combine(destDir, relative));
         }
 
-        foreach (var file in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        var moved = new List<(string Source, string Destination)>();
+        try
         {
-            var relative = Path.GetRelativePath(sourceDir, file);
-            var destFile = Path.Combine(destDir, relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
-            File.Move(file, destFile, overwrite: false);
+            foreach (var file in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+            {
+                var relative = Path.GetRelativePath(sourceDir, file);
+                var destFile = Path.Combine(destDir, relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(destFile)!);
+                File.Move(file, destFile, overwrite: false);
+                moved.Add((file, destFile));
+            }
+        }
+        catch
+        {
+            // Roll back successful moves so knowledge stays empty of files and a
+            // later EnsurePrepared can retry the legacy migration.
+            for (var i = moved.Count - 1; i >= 0; i--)
+            {
+                var (source, destination) = moved[i];
+                try
+                {
+                    if (File.Exists(destination) && !File.Exists(source))
+                        File.Move(destination, source, overwrite: false);
+                }
+                catch (IOException)
+                {
+                    // Best-effort rollback.
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // Best-effort rollback.
+                }
+            }
+
+            throw;
         }
     }
 

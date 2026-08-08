@@ -88,6 +88,40 @@ public class UserKnowledgePathsTests
         }
     }
 
+    [Fact]
+    public void EnsurePrepared_RollsBackPartialMoveSoRetryCanComplete()
+    {
+        var root = CreateTempRoot();
+        try
+        {
+            var knowledge = UserKnowledgePaths.ResolveDirectory(root);
+            var legacy = UserKnowledgePaths.ResolveLegacyExamplesDirectory(Path.Combine(root, "rag"));
+            Directory.CreateDirectory(knowledge);
+            Directory.CreateDirectory(legacy);
+            // Directory named like a legacy file blocks that move after others may succeed.
+            Directory.CreateDirectory(Path.Combine(knowledge, "second.md"));
+            File.WriteAllText(Path.Combine(legacy, "first.md"), "1");
+            File.WriteAllText(Path.Combine(legacy, "second.md"), "2");
+
+            Assert.ThrowsAny<IOException>(() => UserKnowledgePaths.EnsurePrepared(knowledge, legacy));
+
+            Assert.Empty(Directory.EnumerateFiles(knowledge, "*", SearchOption.AllDirectories));
+            Assert.True(File.Exists(Path.Combine(legacy, "first.md")));
+            Assert.True(File.Exists(Path.Combine(legacy, "second.md")));
+
+            Directory.Delete(Path.Combine(knowledge, "second.md"));
+            UserKnowledgePaths.EnsurePrepared(knowledge, legacy);
+
+            Assert.True(File.Exists(Path.Combine(knowledge, "first.md")));
+            Assert.True(File.Exists(Path.Combine(knowledge, "second.md")));
+            Assert.False(Directory.Exists(legacy));
+        }
+        finally
+        {
+            Directory.Delete(root, true);
+        }
+    }
+
     private static string CreateTempRoot()
     {
         var root = Path.Combine(Path.GetTempPath(), $"isaac_user_knowledge_{Guid.NewGuid():N}");
