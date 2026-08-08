@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **User knowledge (R-012, Rag)**: app-global Markdown at
+  `%APPDATA%\IsaacAgent\knowledge` is chunked (`Source = user`, MkDocs docs
+  preset) into the knowledge index on explicit rebuild / Embedding apply /
+  cold full build. One-time move from legacy `rag/examples` when knowledge is
+  empty. `UserKnowledgeLocation` exposes the path to App.
+
 ## [0.3.0] - 2026-08-07
 
 Quality theme (R-013 / R-014 / R-011): FlaUI Nightly + Publish smoke, Agent

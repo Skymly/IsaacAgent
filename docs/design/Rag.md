@@ -23,6 +23,8 @@
 | `IEmbeddingProvider` | 文本 → 向量（ONNX 或 Ollama） |
 | `InMemoryVectorStore` | 具体类型（无端口）：内存余弦相似度搜索；磁盘 `index.bin` 缓存（`LoadAsync` / `SaveAsync`） |
 | `EmbeddingApply` | **Embedding apply**：换嵌入 provider（允许维度变化）→ 作废知识索引 → 重建；新一次 apply / 外部取消令牌可取消进行中的重建 |
+| `UserKnowledgeLocation` | DI 暴露的 **User knowledge** 目录绝对路径（App Settings 只读此类型，不硬编码 AppData 布局） |
+| `UserKnowledgePaths` | 解析 `%APPDATA%\IsaacAgent\knowledge`，并从遗留 `rag/examples` 一次性搬家 |
 
 ### 知识库资源
 
@@ -51,6 +53,8 @@
 5. 嵌入资源文档为**产品知识**，与维护者 `docs/` 体系分离。
 6. 默认 ONNX 路径为空时必须解析到捆绑资产；不得要求用户手动下载模型才能首次使用。
 7. **`parse_log` 路径安全**：相对路径经 Core [`ProjectPathSafety`](Core.md) `Resolve`；绝对路径仅当 `IsAllowedAbsoluteLogPath`；默认路径来自 `GetDefaultIsaacLogPath`（存在性由工具判断）。不得再维护本地 `StartsWith` / 白名单副本。
+8. **User knowledge** 固定于 `%APPDATA%\IsaacAgent\knowledge`（与 `rag/` 同级）；仅递归 `*.md`；`Source = user`；切块用 `ForMkDocsDocs`。目录变更后须**显式重建**（Settings / Embedding apply / 冷启动全量）才进入知识索引；无监视、无启动 mtime 指纹。
+9. 遗留 `%APPDATA%\IsaacAgent\rag\examples`：仅当 knowledge 不存在或无文件且 examples 有文件时**搬家**到 knowledge；之后索引只读 knowledge。若 knowledge 已有内容则不动 orphaned examples。
 
 ## 实现概览
 
@@ -61,7 +65,8 @@
 ### 索引管线
 
 ```
-Resources/docs/**/*.md + patterns + examples
+Resources/docs/**/*.md + patterns
+  + User knowledge (%APPDATA%\IsaacAgent\knowledge/**/*.md)
   → ApiDocChunker（硬编码 API 字典）
   → MarkdownKnowledgeChunker（单一入口；ForMkDocsDocs / ForPatternsOrExamples 预设）
   → IndexBuilder（批量嵌入，O(batch) GetRange）
@@ -69,7 +74,13 @@ Resources/docs/**/*.md + patterns + examples
   → SaveAsync(index.bin)
 ```
 
-`MarkdownKnowledgeChunker` 吞掉 front matter、围栏安全的标题切分、重叠窗口与可选 MkDocs 清理；`IndexBuilder` 按源选择预设，不引入 `IChunker`。
+`MarkdownKnowledgeChunker` 吞掉 front matter、围栏安全的标题切分、重叠窗口与可选 MkDocs 清理；`IndexBuilder` 按源选择预设，不引入 `IChunker`。捆绑 patterns 用 `ForPatternsOrExamples`；User knowledge 与 MkDocs 文档同用 `ForMkDocsDocs`。
+
+### User knowledge
+
+- 路径：`UserKnowledgePaths.ResolveDirectory` → `%APPDATA%\IsaacAgent\knowledge`；`AddRag` 时 `EnsurePrepared`（创建目录 + 可选从 `rag/examples` 搬家）。
+- DI：`UserKnowledgeLocation` 单例供 App 展示路径 / 打开文件夹。
+- 检索：与捆绑知识同一余弦 Top-K 池，不加权；不改 `search_knowledge` / `get_pattern` schema（`get_pattern` 仍按 Category=`example`）。
 
 ### 嵌入 Provider
 
@@ -92,13 +103,13 @@ Resources/docs/**/*.md + patterns + examples
 
 - 启动时 `PrewarmRagIndexAsync` 后台确保索引（加载缓存或重建）
 - 失败时 `SettingsViewModel.SetIndexStatus` 显示错误
-- Settings 保存将改为 **Settings apply**（见 CONTEXT.md）；现阶段仍可能经 `ReloadEmbeddingProvider` 手搓，目标路径为 `EmbeddingApply`
+- Settings：**Settings apply**（Embedding apply）与显式「重建索引」均可触发全量重建；Settings 展示 User knowledge 路径并支持打开文件夹（见 [App.md](App.md)）
 
 ## 设计权衡
 
 - **具体 `InMemoryVectorStore`、无端口**：仅一种本地内存实现时不引入 `IVectorStore`；内存查询 + `index.bin` 磁盘缓存即可，冷启动可跳过重建，模型/维度变化仍全量 `ReplaceAll`。
 - **捆绑 ONNX vs 在线拉取**：默认离线可用；约 90 MB 模型不入库，由构建目标下载并经 CI cache 加速。
-- **嵌入资源知识 vs 用户扩展**：产品知识随发版；用户目录追加知识见 Roadmap R-012。
+- **嵌入资源知识 vs User knowledge**：产品知识随发版；User knowledge 为应用全局用户 Markdown（R-012），固定路径、显式重建，避免可配置路径与自动监视复杂度。
 
 ## 兼容基线
 
@@ -109,6 +120,7 @@ Resources/docs/**/*.md + patterns + examples
 
 - MkDocs 站点发布
 - 外部向量数据库（Pinecone 等）
+- 可配置 User knowledge 路径、项目级知识叠加、目录监视 / 启动指纹自动重建、非 `.md`、检索加权或工具侧 source 过滤
 
 ## 已知局限
 

@@ -18,14 +18,14 @@ public sealed class IndexBuilder
     private readonly IEmbeddingProvider _embedding;
     private readonly InMemoryVectorStore _store;
     private readonly ILogger<IndexBuilder> _logger;
-    private readonly string _examplesDir;
+    private readonly string _userKnowledgeDir;
     private readonly Assembly _assembly;
 
-    public IndexBuilder(IEmbeddingProvider embedding, InMemoryVectorStore store, string examplesDir, ILogger<IndexBuilder> logger)
+    public IndexBuilder(IEmbeddingProvider embedding, InMemoryVectorStore store, string userKnowledgeDir, ILogger<IndexBuilder> logger)
     {
         _embedding = embedding;
         _store = store;
-        _examplesDir = examplesDir;
+        _userKnowledgeDir = userKnowledgeDir;
         _logger = logger;
         _assembly = Assembly.GetExecutingAssembly();
     }
@@ -53,13 +53,13 @@ public sealed class IndexBuilder
         chunks.AddRange(repentogonChunks);
         _logger.LogInformation("Loaded {Count} chunks from embedded REPENTOGON docs", repentogonChunks.Count);
 
-        // 3. User-provided examples from filesystem (if any) — fence-safe split + overlap
-        if (Directory.Exists(_examplesDir))
+        // 3. User knowledge (app-global Markdown under knowledge/) — MkDocs-style docs chunking
+        if (Directory.Exists(_userKnowledgeDir))
         {
-            var exampleChunks = MarkdownKnowledgeChunker.ChunkDirectory(
-                _examplesDir, "example", MarkdownChunkOptions.ForPatternsOrExamples);
-            chunks.AddRange(exampleChunks);
-            _logger.LogInformation("Loaded {Count} example chunks from {Dir}", exampleChunks.Count, _examplesDir);
+            var userChunks = MarkdownKnowledgeChunker.ChunkDirectory(
+                _userKnowledgeDir, UserKnowledgePaths.SourceId, MarkdownChunkOptions.ForMkDocsDocs);
+            chunks.AddRange(userChunks);
+            _logger.LogInformation("Loaded {Count} user knowledge chunks from {Dir}", userChunks.Count, _userKnowledgeDir);
         }
 
         // 4. Built-in pattern examples (embedded resources)
