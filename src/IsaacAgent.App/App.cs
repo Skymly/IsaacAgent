@@ -123,6 +123,7 @@ public sealed class App : Application
             sp.GetRequiredService<IEmbeddingApply>(),
             emb => RagServiceRegistration.BuildEmbeddingProvider(sp, emb),
             config.ToEmbeddingConfig(),
+            sp.GetRequiredService<IRetriever>(),
             _shutdownCts.Token,
             sp.GetRequiredService<ILogger<SettingsApply>>()));
 

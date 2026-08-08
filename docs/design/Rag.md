@@ -91,7 +91,7 @@ Resources/docs/**/*.md + patterns
 
 构建：`IsaacAgent.Rag.csproj` 的 `EnsureOnnxAssets` 在缺少 `Resources/onnx/model.onnx` 时从 Hugging Face 下载；`vocab.txt` 入库。资产同时作为 Content（旁路 `onnx/`）与 EmbeddedResource 打包；单文件发布时由 `DefaultOnnxAssets` 解压到 `%APPDATA%\IsaacAgent\onnx\`。
 
-`EmbeddingProviderProxy` 支持热替换并 Dispose 旧 session。维度变化时须走 **Embedding apply**（`EmbeddingApply.ApplyAsync`）：先 `ResetReady` + 清空内存索引 + 删除磁盘缓存，再 `Replace`，再 `RebuildIndexAsync`。裸 `Replace` 不再拦截维度不匹配。
+`EmbeddingProviderProxy` 支持热替换并 Dispose 旧 session。维度变化时须走 **Embedding apply**（`EmbeddingApply.ApplyAsync`）：在 retriever **build lock 内**清空内存索引、删除磁盘缓存并 `Replace`，再嵌入重建。裸 `Replace` 不再拦截维度不匹配。`RebuildAsync` 与 `ApplyAsync` 共享取消门闩。
 
 **取消**：`ApplyAsync` 接受 `CancellationToken`（应用关闭可传入 shutdown token）。新一次 Embedding apply 会取消仍在进行的重建，使最终索引与最新 provider 意图一致；被取消的重建不得将知识索引标为 ready，也不应表现为成功完成。取消后再次 Embedding apply 可正常完成重建。
 

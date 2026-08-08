@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
+using IsaacAgent.Core.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
 using IsaacAgent.Rag.Indexing;
@@ -92,7 +93,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly ToastService? _toasts;
     private readonly LocalizationService? _localization;
     private readonly ThemeService? _theme;
-    private readonly IEmbeddingApply? _embeddingApply;
+    private readonly IRetriever? _retriever;
 
     public SettingsViewModel(
         AppConfiguration config,
@@ -100,7 +101,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ToastService? toasts = null,
         LocalizationService? localization = null,
         ThemeService? theme = null,
-        IEmbeddingApply? embeddingApply = null,
+        IRetriever? retriever = null,
         UserKnowledgeLocation? userKnowledge = null)
     {
         _config = config;
@@ -108,7 +109,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _toasts = toasts;
         _localization = localization;
         _theme = theme;
-        _embeddingApply = embeddingApply;
+        _retriever = retriever;
         _endpoint = config.Endpoint;
         _model = config.Model;
         _apiKey = config.ApiKey;
@@ -213,33 +214,18 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    private bool CanRebuildKnowledgeIndex() => !IsRebuildingIndex && _embeddingApply is not null;
+    private bool CanRebuildKnowledgeIndex() => !IsRebuildingIndex && _retriever is not null;
 
     [RelayCommand(CanExecute = nameof(CanRebuildKnowledgeIndex))]
     private async Task RebuildKnowledgeIndexAsync()
     {
-        if (_embeddingApply is null)
+        if (_retriever is null)
             return;
 
-        var progress = new SettingsApplyProgress(this, _toasts);
-        progress.OnRebuildStarted();
-        try
-        {
-            // Shares Embedding apply cancellation gate so Save→Apply cannot clear the store mid-rebuild.
-            await _embeddingApply.RebuildAsync().ConfigureAwait(false);
-            progress.OnRebuildSucceeded("Index rebuilt successfully.");
-        }
-        catch (OperationCanceledException)
-        {
-            progress.OnRebuildFailed("Index rebuild was cancelled.");
-        }
-        catch (Exception ex)
-        {
-            progress.OnRebuildFailed($"Index rebuild failed: {ex.Message}");
-        }
-        finally
-        {
-            progress.OnRebuildFinished();
-        }
+        // Route through Settings apply so Embedding apply shares cancellation and
+        // waits for this rebuild to exit before clearing the vector store.
+        await _settingsApply
+            .RebuildIndexAsync(new SettingsApplyProgress(this, _toasts))
+            .ConfigureAwait(false);
     }
 }

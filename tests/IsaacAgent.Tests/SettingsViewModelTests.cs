@@ -2,6 +2,7 @@ using Avalonia.Headless.XUnit;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
+using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
@@ -306,37 +307,70 @@ public class SettingsViewModelTests
     }
 
     [AvaloniaFact]
-    public async Task RebuildKnowledgeIndexCommand_CallsEmbeddingApplyRebuildAndUpdatesStatus()
+    public async Task RebuildKnowledgeIndexCommand_CallsSettingsApplyAndUpdatesStatus()
     {
-        var embeddingApply = new FakeEmbeddingApply();
-        var vm = new SettingsViewModel(new AppConfiguration(), embeddingApply: embeddingApply);
+        var retriever = new FakeRetriever();
+        var settingsApply = new RebuildSettingsApply(retriever);
+        var vm = new SettingsViewModel(new AppConfiguration(), settingsApply, retriever: retriever);
 
         await vm.RebuildKnowledgeIndexCommand.ExecuteAsync(null);
         AvaloniaTestHelper.FlushDispatcher();
 
-        Assert.Equal(1, embeddingApply.RebuildCalls);
+        Assert.Equal(1, settingsApply.RebuildCalls);
+        Assert.Equal(1, retriever.RebuildCalls);
         Assert.False(vm.IsRebuildingIndex);
         Assert.Equal("Index rebuilt successfully.", vm.IndexStatus);
     }
 
     [AvaloniaFact]
-    public void RebuildKnowledgeIndexCommand_CanExecute_FalseWhenNoEmbeddingApply()
+    public void RebuildKnowledgeIndexCommand_CanExecute_FalseWhenNoRetriever()
     {
         var vm = CreateViewModel();
         Assert.False(vm.RebuildKnowledgeIndexCommand.CanExecute(null));
     }
 
-    private sealed class FakeEmbeddingApply : IEmbeddingApply
+    private sealed class FakeRetriever : IRetriever
     {
         public int RebuildCalls { get; private set; }
+        public bool IsReady => true;
 
-        public Task ApplyAsync(IEmbeddingProvider newProvider, CancellationToken ct = default)
-            => Task.CompletedTask;
+        public Task<IReadOnlyList<RetrievalResult>> SearchAsync(string query, int topK = 5, string? categoryFilter = null, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<RetrievalResult>>([]);
 
-        public Task RebuildAsync(CancellationToken ct = default)
+        public Task EnsureIndexAsync(CancellationToken ct = default) => Task.CompletedTask;
+
+        public Task RebuildIndexAsync(CancellationToken ct = default)
         {
             RebuildCalls++;
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class RebuildSettingsApply : ISettingsApply
+    {
+        private readonly IRetriever _retriever;
+
+        public RebuildSettingsApply(IRetriever retriever) => _retriever = retriever;
+
+        public int RebuildCalls { get; private set; }
+
+        public void Apply(ProviderIntent intent, ISettingsApplyProgress progress)
+        {
+        }
+
+        public async Task RebuildIndexAsync(ISettingsApplyProgress progress)
+        {
+            RebuildCalls++;
+            progress.OnRebuildStarted();
+            try
+            {
+                await _retriever.RebuildIndexAsync().ConfigureAwait(false);
+                progress.OnRebuildSucceeded("Index rebuilt successfully.");
+            }
+            finally
+            {
+                progress.OnRebuildFinished();
+            }
         }
     }
 
@@ -348,5 +382,7 @@ public class SettingsViewModelTests
 
         public void Apply(ProviderIntent intent, ISettingsApplyProgress progress)
             => _onApply(intent);
+
+        public Task RebuildIndexAsync(ISettingsApplyProgress progress) => Task.CompletedTask;
     }
 }

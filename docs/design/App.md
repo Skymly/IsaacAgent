@@ -46,7 +46,7 @@
 
 | 类型 | 职责 |
 |------|------|
-| `ISettingsApply` / `SettingsApply` | 消费 **provider intent**：立即换 chat provider；仅当 embedding 相关字段变化时后台启动 **Embedding apply** |
+| `ISettingsApply` / `SettingsApply` | 消费 **provider intent**：立即换 chat provider；仅当 embedding 相关字段变化时后台启动 **Embedding apply**；显式 `RebuildIndexAsync` 与 Embedding apply 共用 in-flight 取消闸门 |
 | `IEmbeddingApply` / `EmbeddingApplyAdapter` | App 侧对 Rag `EmbeddingApply` 的可注入缝 |
 | `ISettingsApplyProgress` / `SettingsApplyProgress` | 进度/结果回调 → Settings 重建标志、状态文案、toast（apply 不 service-locate ViewModel） |
 | `ProviderIntent` | 内存中的 LLM + embedding 快照（非再次 `AppConfiguration.Load`） |
@@ -55,13 +55,13 @@
 
 - Save 持久化后调用 Settings apply；**不再**使用静态 `App.ReloadLlmProvider` / `App.ReloadEmbeddingProvider`
 - LLM-only 变更跳过 Embedding apply；embedding 变更 fire-and-forget 重建，Save 不等待完成
-- 再次需要重建的 Save 取消上一次 in-flight rebuild（`CancellationToken`，并与 shutdown token 链接）
+- 再次需要重建的 Save **或**显式 Rebuild 取消上一次 in-flight rebuild（`CancellationToken`，并与 shutdown token 链接），并 **await** 其退出后再开始下一次（避免 Embedding apply 在手动重建仍持有 build lock 时清空向量库）
 - Language / theme / accent / font 仍走既有 Theme / Localization / `FontSizeService` 路径（不属于 Settings apply）
 
 ### User knowledge（Settings）
 
 - 路径来自 Rag `UserKnowledgeLocation`（不硬编码 AppData）
-- Settings Knowledge Base 区：只读路径、打开文件夹、经 `IEmbeddingApply.RebuildAsync` 显式重建（与 Embedding apply 共享取消门闩）；进度经既有 `ISettingsApplyProgress` / `IndexStatus`
+- Settings Knowledge Base 区：只读路径、打开文件夹、经 `ISettingsApply.RebuildIndexAsync` 显式重建（与 Embedding apply 共用闸门）；进度经既有 `ISettingsApplyProgress` / `IndexStatus`
 - 不提供文件列表或用户块计数（见 [Rag.md](Rag.md)）
 
 ### 设置与安全
