@@ -2,7 +2,6 @@ using Avalonia.Headless.XUnit;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
-using IsaacAgent.Core.Models;
 using IsaacAgent.Core.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
@@ -307,37 +306,34 @@ public class SettingsViewModelTests
     }
 
     [AvaloniaFact]
-    public async Task RebuildKnowledgeIndexCommand_CallsRetrieverAndUpdatesStatus()
+    public async Task RebuildKnowledgeIndexCommand_CallsEmbeddingApplyRebuildAndUpdatesStatus()
     {
-        var retriever = new FakeRetriever();
-        var vm = new SettingsViewModel(new AppConfiguration(), retriever: retriever);
+        var embeddingApply = new FakeEmbeddingApply();
+        var vm = new SettingsViewModel(new AppConfiguration(), embeddingApply: embeddingApply);
 
         await vm.RebuildKnowledgeIndexCommand.ExecuteAsync(null);
         AvaloniaTestHelper.FlushDispatcher();
 
-        Assert.Equal(1, retriever.RebuildCalls);
+        Assert.Equal(1, embeddingApply.RebuildCalls);
         Assert.False(vm.IsRebuildingIndex);
         Assert.Equal("Index rebuilt successfully.", vm.IndexStatus);
     }
 
     [AvaloniaFact]
-    public void RebuildKnowledgeIndexCommand_CanExecute_FalseWhenNoRetriever()
+    public void RebuildKnowledgeIndexCommand_CanExecute_FalseWhenNoEmbeddingApply()
     {
         var vm = CreateViewModel();
         Assert.False(vm.RebuildKnowledgeIndexCommand.CanExecute(null));
     }
 
-    private sealed class FakeRetriever : IRetriever
+    private sealed class FakeEmbeddingApply : IEmbeddingApply
     {
         public int RebuildCalls { get; private set; }
-        public bool IsReady => true;
 
-        public Task<IReadOnlyList<RetrievalResult>> SearchAsync(string query, int topK = 5, string? categoryFilter = null, CancellationToken ct = default)
-            => Task.FromResult<IReadOnlyList<RetrievalResult>>([]);
+        public Task ApplyAsync(IEmbeddingProvider newProvider, CancellationToken ct = default)
+            => Task.CompletedTask;
 
-        public Task EnsureIndexAsync(CancellationToken ct = default) => Task.CompletedTask;
-
-        public Task RebuildIndexAsync(CancellationToken ct = default)
+        public Task RebuildAsync(CancellationToken ct = default)
         {
             RebuildCalls++;
             return Task.CompletedTask;

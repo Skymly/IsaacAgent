@@ -5,7 +5,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
-using IsaacAgent.Core.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
 using IsaacAgent.Rag.Indexing;
@@ -93,7 +92,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly ToastService? _toasts;
     private readonly LocalizationService? _localization;
     private readonly ThemeService? _theme;
-    private readonly IRetriever? _retriever;
+    private readonly IEmbeddingApply? _embeddingApply;
 
     public SettingsViewModel(
         AppConfiguration config,
@@ -101,7 +100,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ToastService? toasts = null,
         LocalizationService? localization = null,
         ThemeService? theme = null,
-        IRetriever? retriever = null,
+        IEmbeddingApply? embeddingApply = null,
         UserKnowledgeLocation? userKnowledge = null)
     {
         _config = config;
@@ -109,7 +108,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _toasts = toasts;
         _localization = localization;
         _theme = theme;
-        _retriever = retriever;
+        _embeddingApply = embeddingApply;
         _endpoint = config.Endpoint;
         _model = config.Model;
         _apiKey = config.ApiKey;
@@ -214,19 +213,20 @@ public sealed partial class SettingsViewModel : ObservableObject
         }
     }
 
-    private bool CanRebuildKnowledgeIndex() => !IsRebuildingIndex && _retriever is not null;
+    private bool CanRebuildKnowledgeIndex() => !IsRebuildingIndex && _embeddingApply is not null;
 
     [RelayCommand(CanExecute = nameof(CanRebuildKnowledgeIndex))]
     private async Task RebuildKnowledgeIndexAsync()
     {
-        if (_retriever is null)
+        if (_embeddingApply is null)
             return;
 
         var progress = new SettingsApplyProgress(this, _toasts);
         progress.OnRebuildStarted();
         try
         {
-            await _retriever.RebuildIndexAsync().ConfigureAwait(false);
+            // Shares Embedding apply cancellation gate so Save→Apply cannot clear the store mid-rebuild.
+            await _embeddingApply.RebuildAsync().ConfigureAwait(false);
             progress.OnRebuildSucceeded("Index rebuilt successfully.");
         }
         catch (OperationCanceledException)

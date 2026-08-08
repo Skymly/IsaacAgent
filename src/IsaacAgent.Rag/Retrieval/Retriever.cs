@@ -64,12 +64,21 @@ public sealed class Retriever : IRetriever, IDisposable
         }
     }
 
-    public async Task RebuildIndexAsync(CancellationToken ct = default)
+    public Task RebuildIndexAsync(CancellationToken ct = default)
+        => RebuildIndexAsync(beforeBuild: null, ct);
+
+    /// <summary>
+    /// Rebuilds under the build lock. Optional <paramref name="beforeBuild"/> runs after
+    /// resetting ready and before embedding — used by Embedding apply to clear/replace
+    /// without racing a concurrent rebuild.
+    /// </summary>
+    public async Task RebuildIndexAsync(Action? beforeBuild, CancellationToken ct = default)
     {
         await _buildLock.WaitAsync(ct);
         try
         {
             Interlocked.Exchange(ref _isReady, 0);
+            beforeBuild?.Invoke();
             await _builder.BuildAsync(ct);
             ct.ThrowIfCancellationRequested();
             await _store.SaveAsync(_indexPath, ct);

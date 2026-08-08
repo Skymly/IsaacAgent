@@ -59,6 +59,12 @@ public class SettingsApplyTests
             ct.ThrowIfCancellationRequested();
         }
 
+        public Task RebuildAsync(CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+
         public void Release()
         {
             lock (_lock)

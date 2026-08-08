@@ -61,7 +61,7 @@
 ### User knowledge（Settings）
 
 - 路径来自 Rag `UserKnowledgeLocation`（不硬编码 AppData）
-- Settings Knowledge Base 区：只读路径、打开文件夹、`IRetriever.RebuildIndexAsync` 显式重建；进度经既有 `ISettingsApplyProgress` / `IndexStatus`
+- Settings Knowledge Base 区：只读路径、打开文件夹、经 `IEmbeddingApply.RebuildAsync` 显式重建（与 Embedding apply 共享取消门闩）；进度经既有 `ISettingsApplyProgress` / `IndexStatus`
 - 不提供文件列表或用户块计数（见 [Rag.md](Rag.md)）
 
 ### 设置与安全

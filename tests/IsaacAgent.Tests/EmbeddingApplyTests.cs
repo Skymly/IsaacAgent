@@ -243,4 +243,34 @@ public class EmbeddingApplyTests
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task ApplyAsync_CancelsInFlightRebuild_AndCompletesWithNewProvider()
+    {
+        var initial = new StubEmbeddingProvider { ModelName = "dim-3", Dimensions = 3 };
+        var (apply, proxy, retriever, store, _, tempDir) = CreateSut(initial);
+
+        try
+        {
+            var blocking = new BlockingEmbeddingProvider { ModelName = "slow-rebuild", Dimensions = 3 };
+            // Swap proxy to blocking so RebuildAsync embeds via the slow provider.
+            proxy.Replace(blocking);
+            var rebuild = apply.RebuildAsync();
+            await blocking.Started.WaitAsync(TimeSpan.FromSeconds(10));
+
+            var latest = new StubEmbeddingProvider { ModelName = "latest", Dimensions = 5 };
+            await apply.ApplyAsync(latest);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => rebuild);
+
+            Assert.Equal("latest", proxy.ModelName);
+            Assert.Equal(5, store.Dimensions);
+            Assert.True(retriever.IsReady);
+            Assert.True(store.Count > 0);
+            Assert.NotEmpty(await retriever.SearchAsync("item"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
 }
