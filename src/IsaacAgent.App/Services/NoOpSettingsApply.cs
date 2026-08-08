@@ -8,4 +8,6 @@ public sealed class NoOpSettingsApply : ISettingsApply
     public void Apply(ProviderIntent intent, ISettingsApplyProgress progress)
     {
     }
+
+    public Task RebuildIndexAsync(ISettingsApplyProgress progress) => Task.CompletedTask;
 }

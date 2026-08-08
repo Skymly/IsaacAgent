@@ -307,14 +307,16 @@ public class SettingsViewModelTests
     }
 
     [AvaloniaFact]
-    public async Task RebuildKnowledgeIndexCommand_CallsRetrieverAndUpdatesStatus()
+    public async Task RebuildKnowledgeIndexCommand_CallsSettingsApplyAndUpdatesStatus()
     {
         var retriever = new FakeRetriever();
-        var vm = new SettingsViewModel(new AppConfiguration(), retriever: retriever);
+        var settingsApply = new RebuildSettingsApply(retriever);
+        var vm = new SettingsViewModel(new AppConfiguration(), settingsApply, retriever: retriever);
 
         await vm.RebuildKnowledgeIndexCommand.ExecuteAsync(null);
         AvaloniaTestHelper.FlushDispatcher();
 
+        Assert.Equal(1, settingsApply.RebuildCalls);
         Assert.Equal(1, retriever.RebuildCalls);
         Assert.False(vm.IsRebuildingIndex);
         Assert.Equal("Index rebuilt successfully.", vm.IndexStatus);
@@ -344,6 +346,34 @@ public class SettingsViewModelTests
         }
     }
 
+    private sealed class RebuildSettingsApply : ISettingsApply
+    {
+        private readonly IRetriever _retriever;
+
+        public RebuildSettingsApply(IRetriever retriever) => _retriever = retriever;
+
+        public int RebuildCalls { get; private set; }
+
+        public void Apply(ProviderIntent intent, ISettingsApplyProgress progress)
+        {
+        }
+
+        public async Task RebuildIndexAsync(ISettingsApplyProgress progress)
+        {
+            RebuildCalls++;
+            progress.OnRebuildStarted();
+            try
+            {
+                await _retriever.RebuildIndexAsync().ConfigureAwait(false);
+                progress.OnRebuildSucceeded("Index rebuilt successfully.");
+            }
+            finally
+            {
+                progress.OnRebuildFinished();
+            }
+        }
+    }
+
     private sealed class RecordingSettingsApply : ISettingsApply
     {
         private readonly Action<ProviderIntent> _onApply;
@@ -352,5 +382,7 @@ public class SettingsViewModelTests
 
         public void Apply(ProviderIntent intent, ISettingsApplyProgress progress)
             => _onApply(intent);
+
+        public Task RebuildIndexAsync(ISettingsApplyProgress progress) => Task.CompletedTask;
     }
 }

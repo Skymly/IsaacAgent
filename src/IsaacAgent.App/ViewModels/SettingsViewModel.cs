@@ -222,24 +222,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         if (_retriever is null)
             return;
 
-        var progress = new SettingsApplyProgress(this, _toasts);
-        progress.OnRebuildStarted();
-        try
-        {
-            await _retriever.RebuildIndexAsync().ConfigureAwait(false);
-            progress.OnRebuildSucceeded("Index rebuilt successfully.");
-        }
-        catch (OperationCanceledException)
-        {
-            progress.OnRebuildFailed("Index rebuild was cancelled.");
-        }
-        catch (Exception ex)
-        {
-            progress.OnRebuildFailed($"Index rebuild failed: {ex.Message}");
-        }
-        finally
-        {
-            progress.OnRebuildFinished();
-        }
+        // Route through Settings apply so Embedding apply shares cancellation and
+        // waits for this rebuild to exit before clearing the vector store.
+        await _settingsApply
+            .RebuildIndexAsync(new SettingsApplyProgress(this, _toasts))
+            .ConfigureAwait(false);
     }
 }
