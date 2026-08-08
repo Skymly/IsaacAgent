@@ -26,7 +26,7 @@
 |-----------|------|
 | `ChatTabViewModel` | 单 Tab 聊天；持有 `AgentSession`；切换项目 Dispose |
 | `ProjectViewModel` | 文件树；`RefreshFilesAsync` UI 线程 marshal；新建项目经 **Scaffolding** |
-| `SettingsViewModel` | 配置编辑、索引状态；Save 经注入的 **Settings apply**；语言/主题经注入的 Localization / Theme |
+| `SettingsViewModel` | 配置编辑、索引状态、**User knowledge** 路径 / 打开文件夹 / 显式重建；Save 经注入的 **Settings apply**；语言/主题经注入的 Localization / Theme |
 | `TemplateGalleryViewModel` | 模板浏览；脚手架经 **Scaffolding** |
 | `CommandPaletteViewModel` | 命令面板；构造注入 `MainViewModel` / `MainWindow` / `SkillRegistry`（不 service-locate） |
 
@@ -57,6 +57,12 @@
 - LLM-only 变更跳过 Embedding apply；embedding 变更 fire-and-forget 重建，Save 不等待完成
 - 再次需要重建的 Save 取消上一次 in-flight rebuild（`CancellationToken`，并与 shutdown token 链接）
 - Language / theme / accent / font 仍走既有 Theme / Localization / `FontSizeService` 路径（不属于 Settings apply）
+
+### User knowledge（Settings）
+
+- 路径来自 Rag `UserKnowledgeLocation`（不硬编码 AppData）
+- Settings Knowledge Base 区：只读路径、打开文件夹、`IRetriever.RebuildIndexAsync` 显式重建；进度经既有 `ISettingsApplyProgress` / `IndexStatus`
+- 不提供文件列表或用户块计数（见 [Rag.md](Rag.md)）
 
 ### 设置与安全
 

@@ -1,10 +1,14 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
+using IsaacAgent.Core.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
+using IsaacAgent.Rag.Indexing;
 
 namespace IsaacAgent.App.ViewModels;
 
@@ -42,6 +46,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private string? _onnxEmbeddingVocabPath;
+
+    [ObservableProperty]
+    private string _userKnowledgePath = "";
 
     [ObservableProperty]
     private bool _isRebuildingIndex;
@@ -86,19 +93,23 @@ public sealed partial class SettingsViewModel : ObservableObject
     private readonly ToastService? _toasts;
     private readonly LocalizationService? _localization;
     private readonly ThemeService? _theme;
+    private readonly IRetriever? _retriever;
 
     public SettingsViewModel(
         AppConfiguration config,
         ISettingsApply? settingsApply = null,
         ToastService? toasts = null,
         LocalizationService? localization = null,
-        ThemeService? theme = null)
+        ThemeService? theme = null,
+        IRetriever? retriever = null,
+        UserKnowledgeLocation? userKnowledge = null)
     {
         _config = config;
         _settingsApply = settingsApply ?? NoOpSettingsApply.Instance;
         _toasts = toasts;
         _localization = localization;
         _theme = theme;
+        _retriever = retriever;
         _endpoint = config.Endpoint;
         _model = config.Model;
         _apiKey = config.ApiKey;
@@ -108,6 +119,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         _ollamaEmbeddingModel = config.OllamaEmbeddingModel;
         _onnxEmbeddingModelPath = config.OnnxEmbeddingModelPath;
         _onnxEmbeddingVocabPath = config.OnnxEmbeddingVocabPath;
+        _userKnowledgePath = userKnowledge?.DirectoryPath ?? "";
         _selectedLanguage = string.IsNullOrEmpty(config.Language) ? "en" : config.Language;
         _selectedTheme = string.IsNullOrEmpty(config.Theme) ? "dark" : config.Theme;
         _accentColor = config.AccentColor;
@@ -176,5 +188,58 @@ public sealed partial class SettingsViewModel : ObservableObject
     public void SetIndexStatus(string status)
     {
         Dispatcher.UIThread.Post(() => IndexStatus = status);
+    }
+
+    partial void OnIsRebuildingIndexChanged(bool value)
+        => RebuildKnowledgeIndexCommand.NotifyCanExecuteChanged();
+
+    [RelayCommand]
+    private void OpenUserKnowledgeFolder()
+    {
+        if (string.IsNullOrWhiteSpace(UserKnowledgePath))
+            return;
+
+        try
+        {
+            Directory.CreateDirectory(UserKnowledgePath);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = UserKnowledgePath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            SetIndexStatus($"Failed to open User knowledge folder: {ex.Message}");
+        }
+    }
+
+    private bool CanRebuildKnowledgeIndex() => !IsRebuildingIndex && _retriever is not null;
+
+    [RelayCommand(CanExecute = nameof(CanRebuildKnowledgeIndex))]
+    private async Task RebuildKnowledgeIndexAsync()
+    {
+        if (_retriever is null)
+            return;
+
+        var progress = new SettingsApplyProgress(this, _toasts);
+        progress.OnRebuildStarted();
+        try
+        {
+            await _retriever.RebuildIndexAsync().ConfigureAwait(false);
+            progress.OnRebuildSucceeded("Index rebuilt successfully.");
+        }
+        catch (OperationCanceledException)
+        {
+            progress.OnRebuildFailed("Index rebuild was cancelled.");
+        }
+        catch (Exception ex)
+        {
+            progress.OnRebuildFailed($"Index rebuild failed: {ex.Message}");
+        }
+        finally
+        {
+            progress.OnRebuildFinished();
+        }
     }
 }

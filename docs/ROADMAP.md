@@ -5,15 +5,13 @@
 
 最后更新：2026-08-08
 
-**v0.4 主题**：User knowledge（R-012）— Rag 索引已落地；App Settings 待跟进。
+**v0.4 主题**：User knowledge（R-012）— Rag 索引 + App Settings 已落地。
 
 ---
 
 ## 进行中
 
-| ID | 项 | 说明 | 目标阶段 |
-|----|-----|------|----------|
-| R-012 | 用户可扩展 RAG 知识 | User knowledge：`%APPDATA%\IsaacAgent\knowledge`；App Settings 打开/重建待跟进 | v0.4 |
+（无）
 
 ---
 
@@ -52,6 +50,7 @@
 
 | ID | 项 | 完成版本 | 备注 |
 |----|-----|----------|------|
+| R-012 | 用户可扩展 RAG 知识 | — | User knowledge：`%APPDATA%\IsaacAgent\knowledge`；遗留 `rag/examples` 搬家；Settings 打开/重建；见 [design/Rag.md](design/Rag.md)、[design/App.md](design/App.md) |
 | R-105 | 立刻打 `v0.3` tag | v0.3.0 | Git tag `v0.3.0` + GitHub Release；CHANGELOG 收束 Unreleased |
 | R-011 | 非 UI Agent/工具链 E2E | v0.3.0 | Spec #94；ticket #95；`AgentToolChainIntegrationTests`（scripted LLM + production Tools via `ReconfigureForProject`；`read_file`/`write_file`/`list_files`/`validate_xml`）；Nuke `UnitTest`/`Ci`/`CiAll`；正交于 FlaUI；非 `tools/e2e-test` |
 | R-014 | FlaUI 加深（Chat/Settings + Publish smoke） | — | Spec #86；tickets #87–#89；`UiTest` 全套（含 Chat/Settings）+ Nuke `UiTestPublish`（`Publish` + `FlaUI=PublishSmoke` A→B）；Nightly `ui-tests.yml` 同 job 两步；不进 PR `Ci`/`CiAll`/`Release` |

@@ -85,6 +85,10 @@
     <sys:String x:Key="SettingsOnnxModelPath">ONNX モデルパス</sys:String>
     <sys:String x:Key="SettingsTokenizerVocabPath">トークナイザー語彙パス</sys:String>
     <sys:String x:Key="SettingsEmbeddingNote">注意: 既定は同梱の all-MiniLM-L6-v2 ONNX です（パスは空のままで可）。エンベディングソースの変更は保存時に適用され、バックグラウンドでインデックスを再構築します。再起動は不要です。</sys:String>
+    <sys:String x:Key="SettingsUserKnowledge">ユーザー知識</sys:String>
+    <sys:String x:Key="SettingsOpenUserKnowledge">フォルダーを開く</sys:String>
+    <sys:String x:Key="SettingsRebuildIndex">インデックスを再構築</sys:String>
+    <sys:String x:Key="SettingsUserKnowledgeNote">このフォルダーに Markdown（.md）を追加してからインデックスを再構築してください。変更は自動では取り込まれません。</sys:String>
     <sys:String x:Key="SettingsAppearance">外観</sys:String>
     <sys:String x:Key="SettingsLanguage">言語</sys:String>
     <sys:String x:Key="SettingsTheme">テーマ</sys:String>

@@ -2,8 +2,11 @@ using Avalonia.Headless.XUnit;
 using IsaacAgent.Agent.Engine;
 using IsaacAgent.App.Services;
 using IsaacAgent.App.ViewModels;
+using IsaacAgent.Core.Models;
+using IsaacAgent.Core.Services;
 using IsaacAgent.LLM;
 using IsaacAgent.Rag.Embedding;
+using IsaacAgent.Rag.Indexing;
 using Xunit;
 
 namespace IsaacAgent.Tests;
@@ -293,6 +296,52 @@ public class SettingsViewModelTests
         vm.Save();
 
         Assert.Equal(HandEditConflictMode.Skip, config.HandEditConflictMode);
+    }
+
+    [AvaloniaFact]
+    public void Constructor_LoadsUserKnowledgePath()
+    {
+        var location = new UserKnowledgeLocation(@"C:\Users\test\AppData\Roaming\IsaacAgent\knowledge");
+        var vm = new SettingsViewModel(new AppConfiguration(), userKnowledge: location);
+        Assert.Equal(location.DirectoryPath, vm.UserKnowledgePath);
+    }
+
+    [AvaloniaFact]
+    public async Task RebuildKnowledgeIndexCommand_CallsRetrieverAndUpdatesStatus()
+    {
+        var retriever = new FakeRetriever();
+        var vm = new SettingsViewModel(new AppConfiguration(), retriever: retriever);
+
+        await vm.RebuildKnowledgeIndexCommand.ExecuteAsync(null);
+        AvaloniaTestHelper.FlushDispatcher();
+
+        Assert.Equal(1, retriever.RebuildCalls);
+        Assert.False(vm.IsRebuildingIndex);
+        Assert.Equal("Index rebuilt successfully.", vm.IndexStatus);
+    }
+
+    [AvaloniaFact]
+    public void RebuildKnowledgeIndexCommand_CanExecute_FalseWhenNoRetriever()
+    {
+        var vm = CreateViewModel();
+        Assert.False(vm.RebuildKnowledgeIndexCommand.CanExecute(null));
+    }
+
+    private sealed class FakeRetriever : IRetriever
+    {
+        public int RebuildCalls { get; private set; }
+        public bool IsReady => true;
+
+        public Task<IReadOnlyList<RetrievalResult>> SearchAsync(string query, int topK = 5, string? categoryFilter = null, CancellationToken ct = default)
+            => Task.FromResult<IReadOnlyList<RetrievalResult>>([]);
+
+        public Task EnsureIndexAsync(CancellationToken ct = default) => Task.CompletedTask;
+
+        public Task RebuildIndexAsync(CancellationToken ct = default)
+        {
+            RebuildCalls++;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class RecordingSettingsApply : ISettingsApply
