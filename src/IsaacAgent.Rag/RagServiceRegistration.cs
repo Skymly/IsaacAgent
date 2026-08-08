@@ -20,9 +20,14 @@ public static class RagServiceRegistration
         Directory.CreateDirectory(dataDir);
 
         var indexPath = Path.Combine(dataDir, "index.bin");
-        var examplesDir = Path.Combine(dataDir, "examples");
+        var isaacAgentRoot = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(dataDir))
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "IsaacAgent");
+        var knowledgeDir = UserKnowledgePaths.EnsurePrepared(
+            UserKnowledgePaths.ResolveDirectory(isaacAgentRoot),
+            UserKnowledgePaths.ResolveLegacyExamplesDirectory(dataDir));
 
         services.AddSingleton(embeddingConfig);
+        services.AddSingleton(new UserKnowledgeLocation(knowledgeDir));
         services.AddSingleton<InMemoryVectorStore>();
 
         services.AddSingleton<EmbeddingProviderProxy>(sp => new EmbeddingProviderProxy(BuildEmbeddingProvider(sp, embeddingConfig)));
@@ -32,8 +37,9 @@ public static class RagServiceRegistration
         {
             var embedding = sp.GetRequiredService<IEmbeddingProvider>();
             var store = sp.GetRequiredService<InMemoryVectorStore>();
+            var location = sp.GetRequiredService<UserKnowledgeLocation>();
             var logger = sp.GetRequiredService<ILogger<IndexBuilder>>();
-            return new IndexBuilder(embedding, store, examplesDir, logger);
+            return new IndexBuilder(embedding, store, location.DirectoryPath, logger);
         });
 
         services.AddSingleton<Retriever>(sp =>

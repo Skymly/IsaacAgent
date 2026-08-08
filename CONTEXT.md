@@ -28,6 +28,10 @@ _Avoid_: Vector DB, RAG database
 Where text→vector comes from for the knowledge index: bundled ONNX (default) or Ollama.
 _Avoid_: Embedding backend, embedder engine
 
+**User knowledge**:
+App-global Markdown under `%APPDATA%\IsaacAgent\knowledge` that enters the knowledge index only after an explicit rebuild; same retrieval pool as bundled product knowledge. Not project files; not Chat session store.
+_Avoid_: Custom knowledge, examples folder (legacy path name), user RAG corpus
+
 ### Agent work
 
 **Skill**:
